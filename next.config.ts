@@ -22,6 +22,12 @@ const POSTHOG_ASSETS = `https://${POSTHOG_REGION}-assets.i.posthog.com`;
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // The OG card reads its faces and the mark off disk at request time. Neither
+  // is imported, so nothing traces them into the deployed function — without
+  // this the route builds fine and 500s on every crawler.
+  outputFileTracingIncludes: {
+    "/og/[[...slug]]": ["./app/og/fonts/*.ttf", "./public/logo/snapcn.png"],
+  },
   // PostHog's endpoints are sensitive to a trailing-slash redirect in front of
   // them; Next would otherwise rewrite `/ingest/e/` and then 308 it.
   skipTrailingSlashRedirect: true,
