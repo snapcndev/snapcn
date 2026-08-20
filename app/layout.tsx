@@ -102,7 +102,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@SriNath693",
+    // `site` is the product's account, `creator` the author's — they are not
+    // the same handle, and X shows the site one on the card.
+    site: "@snapcndev",
     creator: "@SriNath693",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
