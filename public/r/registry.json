@@ -39,6 +39,7 @@
           "target": "components/snap-cn/answer-stream.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -58,6 +59,7 @@
           "target": "components/snap-cn/text-reveal.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -77,6 +79,7 @@
           "target": "components/snap-cn/text-highlight.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -96,6 +99,7 @@
           "target": "components/snap-cn/text-swap.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -115,6 +119,7 @@
           "target": "components/snap-cn/text-swell.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -134,6 +139,7 @@
           "target": "components/snap-cn/text-build.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -153,6 +159,7 @@
           "target": "components/snap-cn/word-flip.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -173,6 +180,7 @@
           "target": "components/snap-cn/word-captions.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -193,6 +201,7 @@
           "target": "components/snap-cn/karaoke-captions.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -212,6 +221,7 @@
           "target": "components/snap-cn/logo-assemble.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -231,6 +241,7 @@
           "target": "components/snap-cn/logo-flicker.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -250,6 +261,7 @@
           "target": "components/snap-cn/phone-frame.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -269,6 +281,7 @@
           "target": "components/snap-cn/laptop-frame.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -288,6 +301,7 @@
           "target": "components/snap-cn/terminal-simulator.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -328,6 +342,7 @@
           "target": "components/snap-cn/follower-rush.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -349,6 +364,7 @@
           "target": "components/snap-cn/prompt-zoom.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -368,6 +384,7 @@
           "target": "components/snap-cn/orbit-gallery.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -388,6 +405,7 @@
           "target": "components/snap-cn/hero-launch.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -407,6 +425,7 @@
           "target": "components/snap-cn/moodboard-reveal.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {
@@ -429,6 +448,7 @@
           "target": "components/snap-cn/search-typing.tsx"
         }
       ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
       "type": "registry:component"
     },
     {

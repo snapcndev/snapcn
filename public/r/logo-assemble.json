@@ -17,5 +17,6 @@
       "target": "components/snap-cn/logo-assemble.tsx"
     }
   ],
+  "docs": "New components every week → https://snapcn.dev/#newsletter",
   "type": "registry:component"
 }

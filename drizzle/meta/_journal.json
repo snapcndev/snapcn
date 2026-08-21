@@ -8,6 +8,13 @@
       "when": 1783660432347,
       "tag": "0000_init_auth_showcase",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787293791504,
+      "tag": "0001_dashing_lady_ursula",
+      "breakpoints": true
     }
   ]
 }

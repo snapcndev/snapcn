@@ -18,5 +18,6 @@
       "target": "components/snap-cn/word-captions.tsx"
     }
   ],
+  "docs": "New components every week → https://snapcn.dev/#newsletter",
   "type": "registry:component"
 }

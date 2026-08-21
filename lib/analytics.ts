@@ -26,6 +26,10 @@ import { useCallback } from "react";
  *   • Does the editor work?     editor_* — export failures are a bug report we
  *                               would otherwise never receive, because the user
  *                               just closes the tab.
+ *   • Who will be there on      email_subscribed. The launch list is the largest
+ *     launch day?               revenue channel in GTM_PLAN.md §3, and a list is
+ *                               only warm if it started collecting months before
+ *                               the ask. `source` says which surface earned it.
  *   • Community loop            showcase_submitted, signed_in.
  *
  * Deliberately NOT here: scroll depth, rage clicks, generic clicks, time on
@@ -100,6 +104,15 @@ type AnalyticsEvents = {
   editor_export_failed: {
     clip_count: number;
     reason: string;
+  };
+
+  /**
+   * An address joined the launch list. Not a proxy for intent to buy — it is
+   * the one channel we can reach again without paying for the reach twice.
+   */
+  email_subscribed: {
+    /** Which surface earned it, so a launch mail can be split by intent. */
+    source: string;
   };
 
   showcase_submitted: Record<string, never>;
