@@ -7,7 +7,7 @@ Organic blobs merging and splitting like lava. Frame-driven (`speed={0}` + `fram
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-metaballs
+shadcn add @snapcn/shader-metaballs
 ```
 
 Lands at `components/snap-cn/shader-metaballs.tsx`. Installs `@paper-design/shaders-react`.

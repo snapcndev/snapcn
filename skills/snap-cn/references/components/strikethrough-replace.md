@@ -7,7 +7,7 @@ Draws a strike line across the `from` text, then fades the `to` text in beneath 
 ## Install
 
 ```bash
-shadcn add @snap-cn/strikethrough-replace
+shadcn add @snapcn/strikethrough-replace
 ```
 
 Lands at `components/snap-cn/strikethrough-replace.tsx`.

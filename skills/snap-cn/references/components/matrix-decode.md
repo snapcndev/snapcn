@@ -7,7 +7,7 @@ Random scramble characters resolve left-to-right into the target text, cycling t
 ## Install
 
 ```bash
-shadcn add @snap-cn/matrix-decode
+shadcn add @snapcn/matrix-decode
 ```
 
 Lands at `components/snap-cn/matrix-decode.tsx`.

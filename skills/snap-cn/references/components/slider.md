@@ -7,10 +7,10 @@ Slider whose fill is a numeric value channel plus a thumb idle/hover/press chann
 ## Install
 
 ```bash
-shadcn add @snap-cn/slider
+shadcn add @snapcn/slider
 ```
 
-Lands at `components/snap-cn/slider.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/slider.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

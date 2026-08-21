@@ -7,7 +7,7 @@ Molten metallic surface with flowing specular highlights. Frame-driven (`speed={
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-liquid-metal
+shadcn add @snapcn/shader-liquid-metal
 ```
 
 Lands at `components/snap-cn/shader-liquid-metal.tsx`. Installs `@paper-design/shaders-react`.

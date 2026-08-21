@@ -7,7 +7,7 @@ Words pop in with a soft overshoot scale, each bouncing slightly past 1× before
 ## Install
 
 ```bash
-shadcn add @snap-cn/spring-scale-in
+shadcn add @snapcn/spring-scale-in
 ```
 
 Lands at `components/snap-cn/spring-scale-in.tsx`.

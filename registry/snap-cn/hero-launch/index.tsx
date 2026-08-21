@@ -148,7 +148,7 @@ function CardMedia({ src, t }: { src: string; t: SnapCnTheme }) {
  * are the props the video editor drives.
  */
 export function HeroLaunch({
-  heading = "npx shadcn add @snap-cn",
+  heading = "npx shadcn add @snapcn",
   image1 = SHOWCASE[0],
   image2 = SHOWCASE[1],
   theme,

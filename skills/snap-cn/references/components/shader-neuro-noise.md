@@ -7,7 +7,7 @@ Organic neural-web noise field that slowly morphs. Frame-driven (`speed={0}` + `
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-neuro-noise
+shadcn add @snapcn/shader-neuro-noise
 ```
 
 Lands at `components/snap-cn/shader-neuro-noise.tsx`. Installs `@paper-design/shaders-react`.

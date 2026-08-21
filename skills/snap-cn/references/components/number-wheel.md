@@ -7,7 +7,7 @@ A mechanical odometer that rolls an integer up or down to its target value. Dire
 ## Install
 
 ```bash
-shadcn add @snap-cn/number-wheel
+shadcn add @snapcn/number-wheel
 ```
 
 Lands at `components/snap-cn/number-wheel.tsx`.

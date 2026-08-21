@@ -7,10 +7,10 @@ Select option row whose idle/hover/press/selected state is a pure function of th
 ## Install
 
 ```bash
-shadcn add @snap-cn/select-item
+shadcn add @snapcn/select-item
 ```
 
-Lands at `components/snap-cn/select-item.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/select-item.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

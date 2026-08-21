@@ -7,10 +7,10 @@ A disclosure whose opened/closed state is a pure function of the timeline; the p
 ## Install
 
 ```bash
-shadcn add @snap-cn/accordion
+shadcn add @snapcn/accordion
 ```
 
-Lands at `components/snap-cn/accordion.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/accordion.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

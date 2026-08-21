@@ -7,7 +7,7 @@ Concentric bands swirling around a center point. Frame-driven (`speed={0}` + `fr
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-swirl
+shadcn add @snapcn/shader-swirl
 ```
 
 Lands at `components/snap-cn/shader-swirl.tsx`. Installs `@paper-design/shaders-react`.

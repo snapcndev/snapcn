@@ -7,7 +7,7 @@ The shared core lib behind the UI Primitives tier: the timeline-fold hook (maps 
 ## Install
 
 ```bash
-shadcn add @snap-cn/snap-cn-ui
+shadcn add @snapcn/snap-cn-ui
 ```
 
 You rarely install it directly — it is pulled transitively as a `registryDependency` whenever you add a primitive that needs it.
@@ -18,5 +18,5 @@ You rarely install it directly — it is pulled transitively as a `registryDepen
 
 ## Don't use when
 
-- You just want to use an existing primitive — add the primitive (`shadcn add @snap-cn/<name>`); this lib comes along automatically.
+- You just want to use an existing primitive — add the primitive (`shadcn add @snapcn/<name>`); this lib comes along automatically.
 - You are in the animation tier (`snapcn`) — those components are frame-driven and don't need it.

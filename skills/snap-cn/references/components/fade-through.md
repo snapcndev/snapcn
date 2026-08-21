@@ -7,7 +7,7 @@ A Material-style content transition: the outgoing text fades to zero, then the i
 ## Install
 
 ```bash
-shadcn add @snap-cn/fade-through
+shadcn add @snapcn/fade-through
 ```
 
 Lands at `components/snap-cn/fade-through.tsx`.

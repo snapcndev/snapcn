@@ -7,10 +7,10 @@ Select whose opened/closed state is a pure function of the timeline; the trigger
 ## Install
 
 ```bash
-shadcn add @snap-cn/select
+shadcn add @snapcn/select
 ```
 
-Lands at `components/snap-cn/select.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/button`, `@snap-cn/select-item` automatically.
+Lands at `components/snap-cn/select.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/button`, `@snapcn/select-item` automatically.
 
 ## Props
 

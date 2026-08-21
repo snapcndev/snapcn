@@ -27,7 +27,7 @@ const KNOWN_COMPONENTS = new Set(INSTALL_ALL_NAMES);
  * snapcn's product is not the website. The website is a brochure; the product
  * ships when someone runs
  *
- *     npx shadcn@latest add @snap-cn/orbit-gallery
+ *     npx shadcn@latest add @snapcn/orbit-gallery
  *
  * which the CLI resolves through the shadcn registry directory into a plain GET
  * to `/r/orbit-gallery.json` from a terminal — so the namespace form is counted

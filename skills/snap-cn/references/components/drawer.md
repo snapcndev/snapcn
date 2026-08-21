@@ -7,10 +7,10 @@ A bottom panel whose opened/closed state is a pure function of the timeline; the
 ## Install
 
 ```bash
-shadcn add @snap-cn/drawer
+shadcn add @snapcn/drawer
 ```
 
-Lands at `components/snap-cn/drawer.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/drawer.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

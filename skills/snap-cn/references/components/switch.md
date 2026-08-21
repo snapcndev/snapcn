@@ -7,10 +7,10 @@ Switch whose checked/unchecked state is a pure function of the timeline; the tra
 ## Install
 
 ```bash
-shadcn add @snap-cn/switch
+shadcn add @snapcn/switch
 ```
 
-Lands at `components/snap-cn/switch.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/switch.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

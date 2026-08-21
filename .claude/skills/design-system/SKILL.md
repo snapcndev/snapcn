@@ -69,7 +69,7 @@ const ui = inputStyleContext(t);
 ```
 
 Now the two cannot drift apart. Declare the primitive in `registryDependencies`
-(`@snap-cn/input`, `@snap-cn/caret`, `@snap-cn/snap-cn-ui`) so a user installing
+(`@snapcn/input`, `@snapcn/caret`, `@snapcn/snap-cn-ui`) so a user installing
 your component gets it.
 
 Composing the *rendered* primitive is a different question, and often the wrong

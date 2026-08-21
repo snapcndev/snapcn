@@ -7,7 +7,7 @@ Deterministic spinning arc that loops on the Remotion frame — a pure motion at
 ## Install
 
 ```bash
-shadcn add @snap-cn/spinner
+shadcn add @snapcn/spinner
 ```
 
 Lands at `components/snap-cn/spinner.tsx`.

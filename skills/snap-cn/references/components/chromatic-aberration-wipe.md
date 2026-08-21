@@ -7,7 +7,7 @@ An ultra-fast slide transition between two scenes with an RGB channel-split glit
 ## Install
 
 ```bash
-shadcn add @snap-cn/chromatic-aberration-wipe
+shadcn add @snapcn/chromatic-aberration-wipe
 ```
 
 Lands at `components/snap-cn/chromatic-aberration-wipe.tsx`.

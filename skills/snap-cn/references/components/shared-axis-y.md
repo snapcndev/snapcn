@@ -7,7 +7,7 @@ Per-word hard-cut transition that swaps two text values with staircase timing al
 ## Install
 
 ```bash
-shadcn add @snap-cn/shared-axis-y
+shadcn add @snapcn/shared-axis-y
 ```
 
 Lands at `components/snap-cn/shared-axis-y.tsx`.

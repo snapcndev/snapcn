@@ -7,10 +7,10 @@ Tabs widget whose active-tab state is a pure function of the timeline; the slidi
 ## Install
 
 ```bash
-shadcn add @snap-cn/tabs
+shadcn add @snapcn/tabs
 ```
 
-Lands at `components/snap-cn/tabs.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/tabs.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

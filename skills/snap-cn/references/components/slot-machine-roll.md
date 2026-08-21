@@ -7,7 +7,7 @@ A vertical character reel scrolls from one string value to another, like a slot 
 ## Install
 
 ```bash
-shadcn add @snap-cn/slot-machine-roll
+shadcn add @snapcn/slot-machine-roll
 ```
 
 Lands at `components/snap-cn/slot-machine-roll.tsx`.

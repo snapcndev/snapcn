@@ -7,10 +7,10 @@ Progress bar whose fill is a pure function of a numeric value channel. Muted tra
 ## Install
 
 ```bash
-shadcn add @snap-cn/progress
+shadcn add @snapcn/progress
 ```
 
-Lands at `components/snap-cn/progress.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/progress.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

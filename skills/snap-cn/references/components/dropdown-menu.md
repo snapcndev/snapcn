@@ -7,10 +7,10 @@ A dropdown menu whose opened/closed state is a pure function of the timeline; th
 ## Install
 
 ```bash
-shadcn add @snap-cn/dropdown-menu
+shadcn add @snapcn/dropdown-menu
 ```
 
-Lands at `components/snap-cn/dropdown-menu.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/button`, `@snap-cn/dropdown-menu-item` automatically.
+Lands at `components/snap-cn/dropdown-menu.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/button`, `@snapcn/dropdown-menu-item` automatically.
 
 ## Props
 

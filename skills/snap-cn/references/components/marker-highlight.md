@@ -7,7 +7,7 @@ A colored marker block animates behind a phrase as the text color shifts — the
 ## Install
 
 ```bash
-shadcn add @snap-cn/marker-highlight
+shadcn add @snapcn/marker-highlight
 ```
 
 Lands at `components/snap-cn/marker-highlight.tsx`.

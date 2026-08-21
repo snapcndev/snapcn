@@ -7,10 +7,10 @@ A ⌘K command palette whose opened/closed state is a pure function of the timel
 ## Install
 
 ```bash
-shadcn add @snap-cn/command-menu
+shadcn add @snapcn/command-menu
 ```
 
-Lands at `components/snap-cn/command-menu.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/command-menu-item` automatically.
+Lands at `components/snap-cn/command-menu.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/command-menu-item` automatically.
 
 ## Props
 

@@ -7,7 +7,7 @@ Odometer-style counter where each decimal place scrolls at its own speed, new di
 ## Install
 
 ```bash
-shadcn add @snap-cn/rolling-number
+shadcn add @snapcn/rolling-number
 ```
 
 Lands at `components/snap-cn/rolling-number.tsx`.

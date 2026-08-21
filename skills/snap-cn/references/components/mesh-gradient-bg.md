@@ -7,7 +7,7 @@ Living gradient with amorphous color blobs slowly drifting across the frame. Blo
 ## Install
 
 ```bash
-shadcn add @snap-cn/mesh-gradient-bg
+shadcn add @snapcn/mesh-gradient-bg
 ```
 
 Lands at `components/snap-cn/mesh-gradient-bg.tsx`.

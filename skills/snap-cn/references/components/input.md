@@ -7,10 +7,10 @@ A text input whose idle/hover/active/typing/invalid state is a pure function of 
 ## Install
 
 ```bash
-shadcn add @snap-cn/input
+shadcn add @snapcn/input
 ```
 
-Lands at `components/snap-cn/input.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/caret` automatically.
+Lands at `components/snap-cn/input.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/caret` automatically.
 
 ## Props
 

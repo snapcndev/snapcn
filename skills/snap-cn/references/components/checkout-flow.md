@@ -7,10 +7,10 @@ A cursor-driven checkout card: the card and its fields blur-in, then the pointer
 ## Install
 
 ```bash
-shadcn add @snap-cn/checkout-flow
+shadcn add @snapcn/checkout-flow
 ```
 
-Lands at `components/snap-cn/checkout-flow.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/toggle-group`, `@snap-cn/input`, `@snap-cn/checkbox`, `@snap-cn/button`, `@snap-cn/field`, `@snap-cn/blur-in`, `@snap-cn/cursor`, `@snap-cn/toast` automatically.
+Lands at `components/snap-cn/checkout-flow.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/toggle-group`, `@snapcn/input`, `@snapcn/checkbox`, `@snapcn/button`, `@snapcn/field`, `@snapcn/blur-in`, `@snapcn/cursor`, `@snapcn/toast` automatically.
 
 ## Props
 

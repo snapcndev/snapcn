@@ -7,7 +7,7 @@ Overlapping translucent color panels sliding past each other. Frame-driven (`spe
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-color-panels
+shadcn add @snapcn/shader-color-panels
 ```
 
 Lands at `components/snap-cn/shader-color-panels.tsx`. Installs `@paper-design/shaders-react`.

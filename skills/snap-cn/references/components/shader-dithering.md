@@ -7,7 +7,7 @@ Ordered-dither shading over an animated gradient field. Frame-driven (`speed={0}
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-dithering
+shadcn add @snapcn/shader-dithering
 ```
 
 Lands at `components/snap-cn/shader-dithering.tsx`. Installs `@paper-design/shaders-react`.

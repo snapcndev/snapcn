@@ -7,10 +7,10 @@ A multi-step onboarding composition: a horizontal stepper advances through panel
 ## Install
 
 ```bash
-shadcn add @snap-cn/onboarding-stepper-flow
+shadcn add @snapcn/onboarding-stepper-flow
 ```
 
-Lands at `components/snap-cn/onboarding-stepper-flow.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/stepper`, `@snap-cn/input`, `@snap-cn/radio`, `@snap-cn/switch`, `@snap-cn/button` automatically.
+Lands at `components/snap-cn/onboarding-stepper-flow.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/stepper`, `@snapcn/input`, `@snapcn/radio`, `@snapcn/switch`, `@snapcn/button` automatically.
 
 ## Props
 

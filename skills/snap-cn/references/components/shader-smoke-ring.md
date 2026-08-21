@@ -7,7 +7,7 @@ Soft smoke ring curling and dissipating in place. Frame-driven (`speed={0}` + `f
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-smoke-ring
+shadcn add @snapcn/shader-smoke-ring
 ```
 
 Lands at `components/snap-cn/shader-smoke-ring.tsx`. Installs `@paper-design/shaders-react`.

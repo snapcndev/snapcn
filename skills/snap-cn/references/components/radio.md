@@ -7,10 +7,10 @@ Radio button whose checked/unchecked state is a pure function of the timeline; t
 ## Install
 
 ```bash
-shadcn add @snap-cn/radio
+shadcn add @snapcn/radio
 ```
 
-Lands at `components/snap-cn/radio.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/radio.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

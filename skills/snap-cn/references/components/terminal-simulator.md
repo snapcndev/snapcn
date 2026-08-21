@@ -7,7 +7,7 @@ Terminal window that types out commands and rolls old lines off the top. Each li
 ## Install
 
 ```bash
-shadcn add @snap-cn/terminal-simulator
+shadcn add @snapcn/terminal-simulator
 ```
 
 Lands at `components/snap-cn/terminal-simulator.tsx`.

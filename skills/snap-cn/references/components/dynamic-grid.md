@@ -7,7 +7,7 @@ Subtle moving grid background with configurable cell size and scroll direction. 
 ## Install
 
 ```bash
-shadcn add @snap-cn/dynamic-grid
+shadcn add @snapcn/dynamic-grid
 ```
 
 Lands at `components/snap-cn/dynamic-grid.tsx`.

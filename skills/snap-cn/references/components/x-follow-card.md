@@ -7,10 +7,10 @@ Animated X profile follow card — spring bounce-in, staggered blur-in, and a sy
 ## Install
 
 ```bash
-shadcn add @snap-cn/x-follow-card
+shadcn add @snapcn/x-follow-card
 ```
 
-Lands at `components/snap-cn/x-follow-card.tsx`. Pulls `@snap-cn/cursor` automatically. Renders offline — `avatarUrl=""` / `coverUrl=""` fall back to gradients, no network fetch.
+Lands at `components/snap-cn/x-follow-card.tsx`. Pulls `@snapcn/cursor` automatically. Renders offline — `avatarUrl=""` / `coverUrl=""` fall back to gradients, no network fetch.
 
 ## Props
 

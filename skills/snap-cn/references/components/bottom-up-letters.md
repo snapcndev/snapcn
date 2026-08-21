@@ -7,7 +7,7 @@ Letters rise from below in a pronounced staircase cadence, one symbol at a time,
 ## Install
 
 ```bash
-shadcn add @snap-cn/bottom-up-letters
+shadcn add @snapcn/bottom-up-letters
 ```
 
 Lands at `components/snap-cn/bottom-up-letters.tsx`.

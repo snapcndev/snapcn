@@ -7,7 +7,7 @@ A calm, tiny scale pop — text fades in while scaling up from `scaleFrom` to 1.
 ## Install
 
 ```bash
-shadcn add @snap-cn/micro-scale-fade
+shadcn add @snapcn/micro-scale-fade
 ```
 
 Lands at `components/snap-cn/micro-scale-fade.tsx`.

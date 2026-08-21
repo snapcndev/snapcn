@@ -7,10 +7,10 @@ An animated cursor that moves between waypoints, clicks (ripple), and drags. The
 ## Install
 
 ```bash
-shadcn add @snap-cn/cursor
+shadcn add @snapcn/cursor
 ```
 
-Lands at `components/snap-cn/cursor.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/cursor.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

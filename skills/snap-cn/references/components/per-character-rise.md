@@ -7,7 +7,7 @@ Letters slide up from below with no blur — crisp, deliberate, kinetic. Each ch
 ## Install
 
 ```bash
-shadcn add @snap-cn/per-character-rise
+shadcn add @snapcn/per-character-rise
 ```
 
 Lands at `components/snap-cn/per-character-rise.tsx`.

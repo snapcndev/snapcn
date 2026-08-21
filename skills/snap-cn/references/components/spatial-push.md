@@ -7,7 +7,7 @@ A new scene physically presses the old one back into the frame — the incoming 
 ## Install
 
 ```bash
-shadcn add @snap-cn/spatial-push
+shadcn add @snapcn/spatial-push
 ```
 
 Lands at `components/snap-cn/spatial-push.tsx`.

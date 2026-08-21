@@ -7,10 +7,10 @@ A dropdown menu action row whose idle/hover/press state is a pure function of th
 ## Install
 
 ```bash
-shadcn add @snap-cn/dropdown-menu-item
+shadcn add @snapcn/dropdown-menu-item
 ```
 
-Lands at `components/snap-cn/dropdown-menu-item.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/dropdown-menu-item.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

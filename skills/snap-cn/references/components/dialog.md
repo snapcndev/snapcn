@@ -7,10 +7,10 @@ A modal dialog whose opened/closed state is a pure function of the timeline; the
 ## Install
 
 ```bash
-shadcn add @snap-cn/dialog
+shadcn add @snapcn/dialog
 ```
 
-Lands at `components/snap-cn/dialog.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/dialog.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

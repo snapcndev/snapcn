@@ -7,7 +7,7 @@ Lines reveal upward through a soft clip mask with a compact stagger between each
 ## Install
 
 ```bash
-shadcn add @snap-cn/mask-reveal-up
+shadcn add @snapcn/mask-reveal-up
 ```
 
 Lands at `components/snap-cn/mask-reveal-up.tsx`.

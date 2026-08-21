@@ -7,7 +7,7 @@ Dots orbiting on concentric paths across the frame. Frame-driven (`speed={0}` + 
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-dot-orbit
+shadcn add @snapcn/shader-dot-orbit
 ```
 
 Lands at `components/snap-cn/shader-dot-orbit.tsx`. Installs `@paper-design/shaders-react`.

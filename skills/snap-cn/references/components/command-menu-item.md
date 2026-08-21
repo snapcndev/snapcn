@@ -7,10 +7,10 @@ A command-palette row whose idle/hover/press/selected state is a pure function o
 ## Install
 
 ```bash
-shadcn add @snap-cn/command-menu-item
+shadcn add @snapcn/command-menu-item
 ```
 
-Lands at `components/snap-cn/command-menu-item.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/command-menu-item.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

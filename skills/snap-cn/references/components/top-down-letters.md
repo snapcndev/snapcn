@@ -7,7 +7,7 @@ Letters descend from above in a pronounced staircase — one character at a time
 ## Install
 
 ```bash
-shadcn add @snap-cn/top-down-letters
+shadcn add @snapcn/top-down-letters
 ```
 
 Lands at `components/snap-cn/top-down-letters.tsx`.

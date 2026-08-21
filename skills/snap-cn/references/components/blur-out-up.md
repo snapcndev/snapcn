@@ -7,7 +7,7 @@ Words arrive clean then depart upward with increasing blur, producing an airy, e
 ## Install
 
 ```bash
-shadcn add @snap-cn/blur-out-up
+shadcn add @snapcn/blur-out-up
 ```
 
 Lands at `components/snap-cn/blur-out-up.tsx`.

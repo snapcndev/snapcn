@@ -16,7 +16,7 @@ export const heroLaunchConfig: ComponentConfig = {
     },
     heading: {
       type: "text",
-      default: "npx shadcn add @snap-cn",
+      default: "npx shadcn add @snapcn",
       label: "Headline",
     },
   },

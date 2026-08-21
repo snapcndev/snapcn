@@ -4,7 +4,7 @@ import { CodeBlockCommand } from "./code-block-command";
 
 /**
  * The install command for a single component. Spelled once, in
- * `installCommand` — see there for why it is the `@snap-cn/<name>` short form.
+ * `installCommand` — see there for why it is the `@snapcn/<name>` short form.
  *
  * Both `registry/*` items publish to the same flat `/r/<name>.json`, so the
  * `registry` prop no longer picks a path — it only names the component for the

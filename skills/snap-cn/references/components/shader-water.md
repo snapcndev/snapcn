@@ -7,7 +7,7 @@ Caustic water-surface ripples with subtle refraction. Frame-driven (`speed={0}` 
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-water
+shadcn add @snapcn/shader-water
 ```
 
 Lands at `components/snap-cn/shader-water.tsx`. Installs `@paper-design/shaders-react`.

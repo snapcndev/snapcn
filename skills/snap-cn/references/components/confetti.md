@@ -7,7 +7,7 @@ Deterministic confetti burst overlay for Remotion — seeded particles with grav
 ## Install
 
 ```bash
-shadcn add @snap-cn/confetti
+shadcn add @snapcn/confetti
 ```
 
 Lands at `components/snap-cn/confetti.tsx`.

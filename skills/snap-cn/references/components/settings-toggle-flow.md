@@ -7,10 +7,10 @@ Two-column settings card composition: the card and its controls blur-in, then a 
 ## Install
 
 ```bash
-shadcn add @snap-cn/settings-toggle-flow
+shadcn add @snapcn/settings-toggle-flow
 ```
 
-Lands at `components/snap-cn/settings-toggle-flow.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/switch`, `@snap-cn/select`, `@snap-cn/slider`, `@snap-cn/button`, `@snap-cn/blur-in`, `@snap-cn/cursor`, `@snap-cn/toast` automatically.
+Lands at `components/snap-cn/settings-toggle-flow.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/switch`, `@snapcn/select`, `@snapcn/slider`, `@snapcn/button`, `@snapcn/blur-in`, `@snapcn/cursor`, `@snapcn/toast` automatically.
 
 ## Props
 

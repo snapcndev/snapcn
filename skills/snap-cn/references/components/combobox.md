@@ -7,10 +7,10 @@ A combobox whose opened/closed state is a pure function of the timeline; the pan
 ## Install
 
 ```bash
-shadcn add @snap-cn/combobox
+shadcn add @snapcn/combobox
 ```
 
-Lands at `components/snap-cn/combobox.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/input`, `@snap-cn/select-item` automatically.
+Lands at `components/snap-cn/combobox.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/input`, `@snapcn/select-item` automatically.
 
 ## Props
 

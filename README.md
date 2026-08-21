@@ -30,10 +30,10 @@ device frames, captions — as components you install with the shadcn CLI and ow
 You need a Remotion project. Don't have one? `npx create-video@latest` takes about a minute.
 
 ```bash
-npx shadcn@latest add @snap-cn/text-reveal
+npx shadcn@latest add @snapcn/text-reveal
 ```
 
-`@snap-cn` is in the [shadcn registry directory](https://github.com/shadcn-ui/ui/pull/11386), so the
+`@snapcn` is in the [shadcn registry directory](https://github.com/shadcn-ui/ui/pull/11471), so the
 CLI resolves it with no `registries` entry to add first. The source lands in your repo along with
 anything it depends on, and there's no runtime package to keep on your dependency list.
 

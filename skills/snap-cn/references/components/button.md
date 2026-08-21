@@ -7,10 +7,10 @@ A button whose idle/hover/press/loading/success state is a pure function of the 
 ## Install
 
 ```bash
-shadcn add @snap-cn/button
+shadcn add @snapcn/button
 ```
 
-Lands at `components/snap-cn/button.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/spinner` automatically.
+Lands at `components/snap-cn/button.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/spinner` automatically.
 
 ## Props
 

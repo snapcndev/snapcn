@@ -7,10 +7,10 @@ Single shimmer placeholder block — a motion atom. A directional highlight grad
 ## Install
 
 ```bash
-shadcn add @snap-cn/skeleton-block
+shadcn add @snapcn/skeleton-block
 ```
 
-Lands at `components/snap-cn/skeleton-block.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/skeleton-block.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 
