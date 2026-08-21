@@ -79,6 +79,9 @@ export interface GalleryItem {
   href: string;
   /** Explicit override; otherwise a stable shape is derived by master index. */
   tile?: TileShape;
+  /** ISO date the component landed. Only set on recent arrivals — it exists to
+   *  feed the "New" shelf, not to be a complete changelog. See `NEW_ITEMS`. */
+  added?: string;
 }
 
 export const GALLERY_ITEMS: GalleryItem[] = [
@@ -191,6 +194,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A four-shot launch title — the eyebrow rushes past the camera on a receding type plane, the name assembles on paper, and a macro pan cuts wide as the tagline builds itself last word first",
     category: "scenes",
     href: "/docs/scenes/announce-title",
+    added: "2026-08-20",
   },
   {
     name: "Status Cycle",
@@ -198,6 +202,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A status pill whose label rolls behind a hard clip while its width springs past the target and back, then the field crossfades to a column of chips stepping up from below",
     category: "scenes",
     href: "/docs/scenes/status-cycle",
+    added: "2026-08-20",
   },
   {
     name: "Product Hero",
@@ -234,6 +239,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "An assistant landing screen that offers its suggestions, then cuts hard into the caret — a measured 2.547× push anchored on the text insertion point — where the prompt types itself",
     category: "ai-input",
     href: "/docs/ai-input/prompt-zoom",
+    added: "2026-07-26",
   },
   {
     name: "Answer Stream",
@@ -241,11 +247,30 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "The beat after send — a macro shot on the button cuts hard to the answer building itself, while the camera pulls back about a focal point above the frame to keep up with it",
     category: "ai-input",
     href: "/docs/ai-input/answer-stream",
+    added: "2026-07-28",
     tile: "wide",
   },
 ];
 
 export const GALLERY_COUNT = GALLERY_ITEMS.length;
+
+/** How many components the "New" shelf holds. */
+export const NEW_COUNT = 6;
+
+/**
+ * The "New" shelf — the most recently added components, newest first.
+ *
+ * Deliberately a *rank*, not a "within the last N days" window. A window needs
+ * today's date, which the server render and the client hydration can disagree
+ * about across a midnight boundary; and on a repo this young a 30-day window
+ * matches every component, which is the same as matching none. A fixed count is
+ * always populated, never stale, and needs no clock.
+ */
+export const NEW_ITEMS: GalleryItem[] = GALLERY_ITEMS.filter(
+  (item) => item.added,
+)
+  .sort((a, b) => (b.added ?? "").localeCompare(a.added ?? ""))
+  .slice(0, NEW_COUNT);
 
 /**
  * Deterministic tile shape per card, stable regardless of the active filter or
@@ -287,6 +312,9 @@ export function slugFromHref(href: string): string {
 
 export type SortMode = "curated" | "az" | "category";
 
+/** What the pill bar can select: a real category, the "New" shelf, or nothing. */
+export type GalleryFilter = CategoryId | "new";
+
 const CATEGORY_RANK = new Map(GALLERY_CATEGORIES.map((c, i) => [c.id, i]));
 
 /**
@@ -295,12 +323,15 @@ const CATEGORY_RANK = new Map(GALLERY_CATEGORIES.map((c, i) => [c.id, i]));
  * so the two never disagree. A stable JS sort keeps curated order within groups.
  */
 export function getFilteredSortedItems(
-  category: CategoryId | null,
+  filter: GalleryFilter | null,
   sort: SortMode,
 ): GalleryItem[] {
-  const filtered = category
-    ? GALLERY_ITEMS.filter((item) => item.category === category)
-    : GALLERY_ITEMS;
+  const filtered =
+    filter === "new"
+      ? NEW_ITEMS
+      : filter
+        ? GALLERY_ITEMS.filter((item) => item.category === filter)
+        : GALLERY_ITEMS;
 
   if (sort === "az") {
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
