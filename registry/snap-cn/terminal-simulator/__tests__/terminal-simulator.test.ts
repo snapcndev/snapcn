@@ -40,7 +40,7 @@ describe("autoPause", () => {
   });
 
   it("auto-freezes lines ending in an ellipsis for 18 frames", () => {
-    expect(autoPause(line("Resolving registry @snap-cn..."))).toBe(18);
+    expect(autoPause(line("Resolving registry @snapcn..."))).toBe(18);
     expect(autoPause(line("Compiling...   "))).toBe(18);
   });
 

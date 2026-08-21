@@ -7,7 +7,7 @@ Words fade in and slide upward one after another with a configurable stagger del
 ## Install
 
 ```bash
-shadcn add @snap-cn/staggered-fade-up
+shadcn add @snapcn/staggered-fade-up
 ```
 
 Lands at `components/snap-cn/staggered-fade-up.tsx`.

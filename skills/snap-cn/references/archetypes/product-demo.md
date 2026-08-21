@@ -53,7 +53,7 @@ Budget each `<TransitionSeries.Sequence durationInFrames>` around the component'
 ## Step 4 — assemble (raw `<TransitionSeries>`)
 
 Standard variant skeleton. Swap the slot components and content for the gathered contract. Install each
-picked component first (`shadcn add @snap-cn/<name>`); deps auto-install.
+picked component first (`shadcn add @snapcn/<name>`); deps auto-install.
 
 ```tsx
 import { AbsoluteFill } from "remotion";

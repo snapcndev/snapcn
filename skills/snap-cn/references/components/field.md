@@ -7,10 +7,10 @@ A static layout family for composing labeled form controls, modeled on shadcn's 
 ## Install
 
 ```bash
-shadcn add @snap-cn/field
+shadcn add @snapcn/field
 ```
 
-Lands at `components/snap-cn/field.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/field.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

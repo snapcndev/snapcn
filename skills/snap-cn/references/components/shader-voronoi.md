@@ -7,7 +7,7 @@ Animated Voronoi cells shifting and re-tessellating. Frame-driven (`speed={0}` +
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-voronoi
+shadcn add @snapcn/shader-voronoi
 ```
 
 Lands at `components/snap-cn/shader-voronoi.tsx`. Installs `@paper-design/shaders-react`.

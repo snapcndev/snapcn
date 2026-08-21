@@ -7,10 +7,10 @@ Inertial fly-through of a repo's stargazers with a synced count-up odometer that
 ## Install
 
 ```bash
-shadcn add @snap-cn/github-stars
+shadcn add @snapcn/github-stars
 ```
 
-Lands at `components/snap-cn/github-stars.tsx`. Pulls `@snap-cn/number-wheel` automatically.
+Lands at `components/snap-cn/github-stars.tsx`. Pulls `@snapcn/number-wheel` automatically.
 
 ## Props
 

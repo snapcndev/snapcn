@@ -7,10 +7,10 @@ Tooltip whose hidden/visible state is a pure function of the timeline. The Toolt
 ## Install
 
 ```bash
-shadcn add @snap-cn/tooltip
+shadcn add @snapcn/tooltip
 ```
 
-Lands at `components/snap-cn/tooltip.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/tooltip.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

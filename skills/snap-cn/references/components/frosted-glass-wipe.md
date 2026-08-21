@@ -7,7 +7,7 @@ An elegant scene transition through a sliding pane of frosted glass. A blurred, 
 ## Install
 
 ```bash
-shadcn add @snap-cn/frosted-glass-wipe
+shadcn add @snapcn/frosted-glass-wipe
 ```
 
 Lands at `components/snap-cn/frosted-glass-wipe.tsx`.

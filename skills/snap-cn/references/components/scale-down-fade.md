@@ -7,7 +7,7 @@ Subtle premium settle-in: text enters slightly oversized and scales down to 1× 
 ## Install
 
 ```bash
-shadcn add @snap-cn/scale-down-fade
+shadcn add @snapcn/scale-down-fade
 ```
 
 Lands at `components/snap-cn/scale-down-fade.tsx`.

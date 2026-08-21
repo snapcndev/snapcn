@@ -7,7 +7,7 @@ Words gently fade into place one after another with a short vertical drift, repl
 ## Install
 
 ```bash
-shadcn add @snap-cn/per-word-crossfade
+shadcn add @snapcn/per-word-crossfade
 ```
 
 Lands at `components/snap-cn/per-word-crossfade.tsx`.

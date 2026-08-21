@@ -7,7 +7,7 @@ Grainy multi-stop gradient that drifts slowly with film-grain texture laid over 
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-grain-gradient
+shadcn add @snapcn/shader-grain-gradient
 ```
 
 Lands at `components/snap-cn/shader-grain-gradient.tsx`. Installs `@paper-design/shaders-react`.

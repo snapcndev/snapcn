@@ -7,7 +7,7 @@ Aggressively scales into the center of a scene element until the frame goes whit
 ## Install
 
 ```bash
-shadcn add @snap-cn/zoom-through-transition
+shadcn add @snapcn/zoom-through-transition
 ```
 
 Lands at `components/snap-cn/zoom-through-transition.tsx`.

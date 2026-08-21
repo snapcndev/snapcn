@@ -7,7 +7,7 @@ Seamlessly looping horizontal text strip driven by `pixelsPerFrame`, with an opt
 ## Install
 
 ```bash
-shadcn add @snap-cn/infinite-marquee
+shadcn add @snapcn/infinite-marquee
 ```
 
 Lands at `components/snap-cn/infinite-marquee.tsx`.

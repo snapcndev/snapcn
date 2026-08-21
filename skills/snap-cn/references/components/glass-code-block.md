@@ -7,7 +7,7 @@ A premium frosted-glass code editor window with a regex tokenizer and line-by-li
 ## Install
 
 ```bash
-shadcn add @snap-cn/glass-code-block
+shadcn add @snapcn/glass-code-block
 ```
 
 Lands at `components/snap-cn/glass-code-block.tsx`.

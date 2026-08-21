@@ -7,7 +7,7 @@ A word appears in the center; each subsequent word enters from the right and pus
 ## Install
 
 ```bash
-shadcn add @snap-cn/kinetic-center-build
+shadcn add @snapcn/kinetic-center-build
 ```
 
 Lands at `components/snap-cn/kinetic-center-build.tsx`.

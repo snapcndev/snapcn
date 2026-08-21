@@ -7,7 +7,7 @@ Glowing border frame that pulses around the edges. Frame-driven (`speed={0}` + `
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-pulsing-border
+shadcn add @snapcn/shader-pulsing-border
 ```
 
 Lands at `components/snap-cn/shader-pulsing-border.tsx`. Installs `@paper-design/shaders-react`.

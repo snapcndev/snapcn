@@ -7,10 +7,10 @@ Side panel whose opened/closed state is a pure function of the timeline; the bac
 ## Install
 
 ```bash
-shadcn add @snap-cn/sheet
+shadcn add @snapcn/sheet
 ```
 
-Lands at `components/snap-cn/sheet.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/sheet.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

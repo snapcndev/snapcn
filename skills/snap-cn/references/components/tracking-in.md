@@ -7,7 +7,7 @@ Letter-spacing collapses from wide to normal while a blur simultaneously clears,
 ## Install
 
 ```bash
-shadcn add @snap-cn/tracking-in
+shadcn add @snapcn/tracking-in
 ```
 
 Lands at `components/snap-cn/tracking-in.tsx`.

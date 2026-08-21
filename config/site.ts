@@ -14,14 +14,15 @@ export const X_URL = "https://x.com/snapcndev";
 /**
  * The one place the install command is spelled.
  *
- * `@snap-cn` is in the shadcn registry directory (shadcn-ui/ui#11386, merged
- * 2026-08-11), so the CLI resolves the namespace on its own: no `registries`
+ * `@snapcn` is in the shadcn registry directory (added in shadcn-ui/ui#11386,
+ * renamed from the hyphenated `@snap-cn` in #11471), so the CLI resolves the
+ * namespace on its own: no `registries`
  * entry in the reader's `components.json`, no registry-item URL. Every item —
  * both `registry/*` tiers — publishes to the same flat `/r/<name>.json`, so
- * `@snap-cn/<name>` addresses all of them. There is no `@snap-cn-ui` namespace.
+ * `@snapcn/<name>` addresses all of them. There is no `@snapcn-ui` namespace.
  */
 export const installCommand = (name: string) =>
-  `npx shadcn@latest add @snap-cn/${name}`;
+  `npx shadcn@latest add @snapcn/${name}`;
 
 /** Canonical example install command shown on the landing page. */
 export const INSTALL_COMMAND = installCommand("text-reveal");
@@ -32,7 +33,7 @@ export const INSTALL_ALL_NAMES: string[] = [
 ].map((item) => item.name);
 
 export const INSTALL_ALL_COMMAND = `npx shadcn@latest add ${INSTALL_ALL_NAMES.map(
-  (name) => `@snap-cn/${name}`,
+  (name) => `@snapcn/${name}`,
 ).join(" ")}`;
 
 // snapcn design system motion: fast, subtle ease-out tweens — no bounce or

@@ -7,7 +7,7 @@ Animates a single word inside a sentence from a base color to a brand highlight 
 ## Install
 
 ```bash
-shadcn add @snap-cn/inline-highlight
+shadcn add @snapcn/inline-highlight
 ```
 
 Lands at `components/snap-cn/inline-highlight.tsx`.

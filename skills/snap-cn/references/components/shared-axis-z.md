@@ -7,7 +7,7 @@ Scale-based shared-axis transition: the outgoing text shrinks away while the inc
 ## Install
 
 ```bash
-shadcn add @snap-cn/shared-axis-z
+shadcn add @snapcn/shared-axis-z
 ```
 
 Lands at `components/snap-cn/shared-axis-z.tsx`.

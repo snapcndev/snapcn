@@ -7,7 +7,7 @@ Each new word drops in from above into its own line and pushes the stack downwar
 ## Install
 
 ```bash
-shadcn add @snap-cn/short-slide-down
+shadcn add @snapcn/short-slide-down
 ```
 
 Lands at `components/snap-cn/short-slide-down.tsx`.

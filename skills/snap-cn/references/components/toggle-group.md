@@ -7,10 +7,10 @@ Segmented control whose active value is a pure function of the timeline; a raise
 ## Install
 
 ```bash
-shadcn add @snap-cn/toggle-group
+shadcn add @snapcn/toggle-group
 ```
 
-Lands at `components/snap-cn/toggle-group.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/toggle-group.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

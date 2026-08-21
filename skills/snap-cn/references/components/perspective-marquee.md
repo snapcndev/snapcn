@@ -7,7 +7,7 @@ A 3D-tilted infinite marquee with depth-of-field blur on items rolling toward th
 ## Install
 
 ```bash
-shadcn add @snap-cn/perspective-marquee
+shadcn add @snapcn/perspective-marquee
 ```
 
 Lands at `components/snap-cn/perspective-marquee.tsx`.

@@ -7,7 +7,7 @@ Simplex noise flow field, smoother than Perlin. Frame-driven (`speed={0}` + `fra
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-simplex-noise
+shadcn add @snapcn/shader-simplex-noise
 ```
 
 Lands at `components/snap-cn/shader-simplex-noise.tsx`. Installs `@paper-design/shaders-react`.

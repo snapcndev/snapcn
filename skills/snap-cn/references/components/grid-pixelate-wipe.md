@@ -7,7 +7,7 @@ Dissolves from one scene to the next through a deterministic grid of mask cells.
 ## Install
 
 ```bash
-shadcn add @snap-cn/grid-pixelate-wipe
+shadcn add @snapcn/grid-pixelate-wipe
 ```
 
 Lands at `components/snap-cn/grid-pixelate-wipe.tsx`.

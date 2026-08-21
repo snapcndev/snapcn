@@ -1,4 +1,4 @@
-# @snap-cn/render-sdk
+# @snapcn/render-sdk
 
 An OSS engine library for rendering [Remotion](https://remotion.dev) with adapters per execution
 backend. In spirit — like [files-sdk](https://github.com/haydenbleasel/files-sdk): one
@@ -33,15 +33,15 @@ via a single contract on top of different backends (self-hosted server, AWS Lamb
 One package + subpath exports, `@remotion/*` are **optional peer deps** (you install only the backend you need).
 
 ```
-@snap-cn/render-sdk          → RenderSdk, types, InMemoryStore, waitForCompletion, RenderError
-@snap-cn/render-sdk/server   → RenderServer   (peer: @remotion/renderer)
-@snap-cn/render-sdk/lambda   → RenderLambda   (peer: @remotion/lambda)
+@snapcn/render-sdk          → RenderSdk, types, InMemoryStore, waitForCompletion, RenderError
+@snapcn/render-sdk/server   → RenderServer   (peer: @remotion/renderer)
+@snapcn/render-sdk/lambda   → RenderLambda   (peer: @remotion/lambda)
 ```
 
 ```ts
-import { RenderSdk } from "@snap-cn/render-sdk";
-import { RenderServer } from "@snap-cn/render-sdk/server";
-import { RenderLambda } from "@snap-cn/render-sdk/lambda";
+import { RenderSdk } from "@snapcn/render-sdk";
+import { RenderServer } from "@snapcn/render-sdk/server";
+import { RenderLambda } from "@snapcn/render-sdk/lambda";
 ```
 
 `@remotion/bundler` is **not a peer dep of the SDK** — it is only needed in the user's build script.
@@ -204,7 +204,7 @@ The type is always `Promise<string>`; the instance is not blocked by the absence
 ## 8. Lifecycle (browser scenario)
 
 ```
-BROWSER                              CONSUMER (its own routes)         @snap-cn/render-sdk
+BROWSER                              CONSUMER (its own routes)         @snapcn/render-sdk
   │ POST /api/render {inputProps} ──► POST route (validation/auth) ──► start()
   │ ◄──────────────────────────────── { handle } ◄───────────────── handle
   │
@@ -340,6 +340,6 @@ const { serveUrl } = await deploySite({ region, entryPoint, /* ... */ });
 ## 16. Future (v1.1+)
 
 - Redis/SQL `StateStore` (durable, multi-instance).
-- A thin browser client (`@snap-cn/render-sdk/client`) — to remove the poll-loop duplication.
+- A thin browser client (`@snapcn/render-sdk/client`) — to remove the poll-loop duplication.
 - `cancel` (hard for server, soft for lambda + `capabilities`).
 - Adapters: Vercel Sandbox, Cloud Run (after the lambda runtime is ported).

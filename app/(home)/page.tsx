@@ -3,6 +3,7 @@ import { GALLERY_CATEGORIES, GALLERY_COUNT } from "@/lib/gallery-data";
 import { Changelog } from "./components/sections/changelog";
 import { FAQ_ITEMS, Faq } from "./components/sections/faq";
 import { Hero } from "./components/sections/hero";
+import { Newsletter } from "./components/sections/newsletter";
 import { ShowcaseCarousel } from "./components/sections/showcase-carousel";
 import { WallOfLove } from "./components/sections/wall-of-love";
 import { WhatYouGet } from "./components/sections/what-you-get";
@@ -88,6 +89,7 @@ export default function Page() {
       <Changelog />
       <Faq />
       <WallOfLove />
+      <Newsletter />
     </>
   );
 }

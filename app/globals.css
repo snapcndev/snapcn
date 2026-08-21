@@ -62,6 +62,20 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* The "New" pill's double chevron. Each arrow breathes between near-off and
+     full; the lower one runs a beat ahead (a negative animation-delay on the
+     path, so nothing waits at page load), which makes the pair read as one
+     light travelling upward rather than two icons blinking at each other. */
+  --animate-chevron-glow: chevron-glow 1.7s ease-in-out infinite;
+  @keyframes chevron-glow {
+    0%,
+    100% {
+      opacity: 0.12;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
   --animate-marquee: marquee var(--marquee-duration, 48s) linear infinite;
   @keyframes marquee {
     from {

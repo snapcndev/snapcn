@@ -7,7 +7,7 @@ Volumetric light rays radiating from an off-screen source. Frame-driven (`speed=
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-god-rays
+shadcn add @snapcn/shader-god-rays
 ```
 
 Lands at `components/snap-cn/shader-god-rays.tsx`. Installs `@paper-design/shaders-react`.

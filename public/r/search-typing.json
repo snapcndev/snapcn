@@ -20,5 +20,6 @@
       "target": "components/snap-cn/search-typing.tsx"
     }
   ],
+  "docs": "New components every week → https://snapcn.dev/#newsletter",
   "type": "registry:component"
 }

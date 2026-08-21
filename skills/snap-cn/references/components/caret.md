@@ -7,7 +7,7 @@ A blinking text caret — a controlled vertical bar, or a pure motion atom that 
 ## Install
 
 ```bash
-shadcn add @snap-cn/caret
+shadcn add @snapcn/caret
 ```
 
 Lands at `components/snap-cn/caret.tsx`.

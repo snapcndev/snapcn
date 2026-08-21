@@ -7,7 +7,7 @@ Domain-warped color field that folds and stretches like liquid. Frame-driven (`s
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-warp
+shadcn add @snapcn/shader-warp
 ```
 
 Lands at `components/snap-cn/shader-warp.tsx`. Installs `@paper-design/shaders-react`.

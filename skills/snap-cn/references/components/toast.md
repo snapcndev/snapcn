@@ -7,10 +7,10 @@ Toast notification whose hidden/visible state is a pure function of the timeline
 ## Install
 
 ```bash
-shadcn add @snap-cn/toast
+shadcn add @snapcn/toast
 ```
 
-Lands at `components/snap-cn/toast.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/toast.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

@@ -45,16 +45,16 @@ function frontmatterField(fm: string, key: string): string {
 function toPlainMarkdown(body: string, url: string): string {
   return (
     body
-      // The `@snap-cn/<name>` short form, matching what the site's own
+      // The `@snapcn/<name>` short form, matching what the site's own
       // InstallBlock prints — the CLI resolves the namespace from the shadcn
       // registry directory, so an agent can paste this as-is.
       .replace(
         /<InstallBlock\s+registry="[\w-]+"\s+name="([\w-]+)"\s*\/>/g,
-        "```bash\nnpx shadcn@latest add @snap-cn/$1\n```",
+        "```bash\nnpx shadcn@latest add @snapcn/$1\n```",
       )
       .replace(
         /<InstallBlock\s+name="([\w-]+)"\s*\/>/g,
-        "```bash\nnpx shadcn@latest add @snap-cn/$1\n```",
+        "```bash\nnpx shadcn@latest add @snapcn/$1\n```",
       )
       .replace(
         /<(ComponentPreview|UiComponentPreview|BlockPreview)[\s\S]*?\/>/g,
@@ -138,7 +138,7 @@ export function collectDocsPages(): LlmsPage[] {
 
 export const LLMS_HEADER = `# snapcn
 
-> snapcn is a shadcn-style registry of production-ready video components for Remotion (React). Developers install components with \`npx shadcn@latest add ${SITE_URL}/r/<component>.json\`; the source and everything it depends on is copied into their project and they own the code. Typical use: building product demo videos, launch videos and social clips in React.
+> snapcn is a shadcn-style registry of production-ready video components for Remotion (React). Developers install components with \`npx shadcn@latest add @snapcn/<component>\`; the source and everything it depends on is copied into their project and they own the code. Typical use: building product demo videos, launch videos and social clips in React.
 
 Prerequisites: an existing Remotion project (\`npx create-video@latest\`) and the shadcn CLI. License: MIT. Author: Sri Nath (https://x.com/SriNath693). Site: ${SITE_URL}
 `;

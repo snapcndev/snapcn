@@ -29,7 +29,7 @@ export const SYNTAX_DARK: SyntaxPalette = {
   number: "#89ddff",
   boolean: "#f78c6c",
   // Comments and punctuation, lightened from Material's #676e95. That value is
-  // lit for Material's own #292d3e surface; on this panel's #0f0e17 it measures
+  // lit for Material's own #292d3e surface; on this panel's #0a0a0a it measures
   // 3.87:1 and fails AA. Same hue and chroma, walked up in OKLCH to 4.66:1 —
   // and a code comment nobody can read is a code comment that may as well not
   // be in the snippet.
@@ -60,16 +60,26 @@ export const SYNTAX: Record<CodeTheme, SyntaxPalette> = {
 // Chrome (surface, title bar, traffic lights, chip) per theme.
 const CHROME: Record<
   CodeTheme,
-  { container: string; titleBar: string; dot: string; chip: string }
+  {
+    container: string;
+    /** Same colour as `container`, as a value — the sticky line-number gutter
+     *  has to paint it itself or the code scrolls visibly underneath it. */
+    surface: string;
+    titleBar: string;
+    dot: string;
+    chip: string;
+  }
 > = {
   dark: {
-    container: "bg-[#0f0e17] ring-white/10",
+    container: "bg-[#0a0a0a] ring-white/10",
+    surface: "#0a0a0a",
     titleBar: "border-white/[0.06]",
     dot: "bg-white/15",
     chip: "bg-white/5 text-white/55 ring-white/10",
   },
   light: {
     container: "bg-[#f6f8fa] ring-black/[0.08]",
+    surface: "#f6f8fa",
     titleBar: "border-black/[0.06]",
     dot: "bg-black/15",
     chip: "bg-black/[0.04] text-black/55 ring-black/[0.08]",
@@ -225,10 +235,25 @@ export function CodeSnippet({
       {/* Code */}
       <pre
         className={cn(
-          "relative overflow-x-auto px-6 py-6 font-mono text-[13px] leading-[1.95] whitespace-pre [scrollbar-width:none] sm:text-sm [&::-webkit-scrollbar]:hidden",
+          "relative flex overflow-x-auto py-6 pr-6 font-mono text-[13px] leading-[1.95] whitespace-pre [scrollbar-width:none] sm:text-sm [&::-webkit-scrollbar]:hidden",
           bodyClassName,
         )}
       >
+        {/* Sticky so the numbers survive a horizontal scroll, and select-none
+            so copying the snippet does not drag the gutter along with it. */}
+        <span
+          aria-hidden
+          className="sticky left-0 shrink-0 select-none pl-6 pr-5 text-right tabular-nums"
+          style={{
+            color: palette.punctuation,
+            backgroundColor: chrome.surface,
+          }}
+        >
+          {code
+            .split("\n")
+            .map((_, i) => i + 1)
+            .join("\n")}
+        </span>
         <code>{highlight(code, palette)}</code>
       </pre>
     </div>

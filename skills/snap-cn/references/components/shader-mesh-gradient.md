@@ -7,7 +7,7 @@ WebGL mesh gradient with drifting color blobs, driven per-frame. The production-
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-mesh-gradient
+shadcn add @snapcn/shader-mesh-gradient
 ```
 
 Lands at `components/snap-cn/shader-mesh-gradient.tsx`. Installs `@paper-design/shaders-react`.

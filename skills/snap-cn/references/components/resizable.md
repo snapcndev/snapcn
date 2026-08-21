@@ -7,10 +7,10 @@ Two panels split by a draggable handle, where the split ratio is a numeric chann
 ## Install
 
 ```bash
-shadcn add @snap-cn/resizable
+shadcn add @snapcn/resizable
 ```
 
-Lands at `components/snap-cn/resizable.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/resizable.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

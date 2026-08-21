@@ -7,10 +7,10 @@ An AI prompt composition: a prompt types into the field, the Generate button run
 ## Install
 
 ```bash
-shadcn add @snap-cn/ai-prompt-flow
+shadcn add @snapcn/ai-prompt-flow
 ```
 
-Lands at `components/snap-cn/ai-prompt-flow.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/input`, `@snap-cn/button`, `@snap-cn/skeleton`, `@snap-cn/skeleton-block`, `@snap-cn/toast` automatically.
+Lands at `components/snap-cn/ai-prompt-flow.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/input`, `@snapcn/button`, `@snapcn/skeleton`, `@snapcn/skeleton-block`, `@snapcn/toast` automatically.
 
 ## Props
 

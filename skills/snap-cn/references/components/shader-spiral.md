@@ -7,7 +7,7 @@ Rotating spiral arms radiating from the center. Frame-driven (`speed={0}` + `fra
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-spiral
+shadcn add @snapcn/shader-spiral
 ```
 
 Lands at `components/snap-cn/shader-spiral.tsx`. Installs `@paper-design/shaders-react`.

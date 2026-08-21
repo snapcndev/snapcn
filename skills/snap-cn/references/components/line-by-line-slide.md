@@ -7,7 +7,7 @@ Each line of a multi-line text block enters from the left with a staggered slide
 ## Install
 
 ```bash
-shadcn add @snap-cn/line-by-line-slide
+shadcn add @snapcn/line-by-line-slide
 ```
 
 Lands at `components/snap-cn/line-by-line-slide.tsx`.

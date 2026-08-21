@@ -182,7 +182,7 @@ import { useCursorPath } from "@/components/snap-cn/use-cursor-path";
 ```json
 {
   "dependencies": ["remotion", "@remotion/google-fonts"],
-  "registryDependencies": ["@snap-cn/cursor"],
+  "registryDependencies": ["@snapcn/cursor"],
   "files": [{ "path": "x-follow-card/index.tsx", "target": "components/snap-cn/x-follow-card.tsx" }]
 }
 ```
@@ -241,7 +241,7 @@ When building a new *-follow-card variant (e.g., Instagram):
 
 8. **Keep control keys identical:** Do NOT rename or reorder the 13 control keys (name, handle, bio, avatarUrl, coverUrl, location, website, joined, verified, accentColor, theme, background, orientation). Network-specific differences (like button labels) go in the helper text or component comments, not in the control shape.
 
-9. **Registry dependencies:** `registryDependencies: ["@snap-cn/cursor"]`, `dependencies: ["remotion", "@remotion/google-fonts"]`. Ship only `index.tsx` in files[].
+9. **Registry dependencies:** `registryDependencies: ["@snapcn/cursor"]`, `dependencies: ["remotion", "@remotion/google-fonts"]`. Ship only `index.tsx` in files[].
 
 10. **Avoid deeper sibling imports:** Do not import `use-cursor-path/helpers` or other `@/components/snap-cn/*` modules at a depth > 1 segment. The tsconfig glob does not resolve them.
 

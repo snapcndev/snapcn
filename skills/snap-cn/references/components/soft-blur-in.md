@@ -7,7 +7,7 @@ Per-character fade-in with a gentle blur that clears and a slight upward drift â
 ## Install
 
 ```bash
-shadcn add @snap-cn/soft-blur-in
+shadcn add @snapcn/soft-blur-in
 ```
 
 Lands at `components/snap-cn/soft-blur-in.tsx`.

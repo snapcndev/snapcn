@@ -7,7 +7,7 @@ Classic Perlin noise clouds drifting across the frame. Frame-driven (`speed={0}`
 ## Install
 
 ```bash
-shadcn add @snap-cn/shader-perlin-noise
+shadcn add @snapcn/shader-perlin-noise
 ```
 
 Lands at `components/snap-cn/shader-perlin-noise.tsx`. Installs `@paper-design/shaders-react`.

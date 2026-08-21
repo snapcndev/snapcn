@@ -7,7 +7,7 @@ Three RGB-offset copies of the text jitter and separate for a brief glitch windo
 ## Install
 
 ```bash
-shadcn add @snap-cn/rgb-glitch-text
+shadcn add @snapcn/rgb-glitch-text
 ```
 
 Lands at `components/snap-cn/rgb-glitch-text.tsx`.

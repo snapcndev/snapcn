@@ -7,10 +7,10 @@ Signup card composition: a shadcn-style card (Full Name, Email, Password, Confir
 ## Install
 
 ```bash
-shadcn add @snap-cn/signup-flow
+shadcn add @snapcn/signup-flow
 ```
 
-Lands at `components/snap-cn/signup-flow.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/cursor`, `@snap-cn/input`, `@snap-cn/button`, `@snap-cn/toast`, `@snap-cn/field`, `@snap-cn/blur-in` automatically.
+Lands at `components/snap-cn/signup-flow.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/cursor`, `@snapcn/input`, `@snapcn/button`, `@snapcn/toast`, `@snapcn/field`, `@snapcn/blur-in` automatically.
 
 ## Props
 

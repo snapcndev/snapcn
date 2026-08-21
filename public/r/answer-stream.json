@@ -19,5 +19,6 @@
       "target": "components/snap-cn/answer-stream.tsx"
     }
   ],
+  "docs": "New components every week → https://snapcn.dev/#newsletter",
   "type": "registry:component"
 }

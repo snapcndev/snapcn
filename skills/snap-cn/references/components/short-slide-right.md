@@ -7,7 +7,7 @@ The whole phrase glides in from the left as one compact horizontal move while in
 ## Install
 
 ```bash
-shadcn add @snap-cn/short-slide-right
+shadcn add @snapcn/short-slide-right
 ```
 
 Lands at `components/snap-cn/short-slide-right.tsx`.

@@ -6,17 +6,17 @@ export const heroLaunchConfig: ComponentConfig = {
   controls: {
     image1: {
       type: "image",
-      default: "/showcase-videos/iphone-17-reveal.mp4",
+      default: "/demos/moodboard-reveal.mp4",
       label: "Left card (image/video)",
     },
     image2: {
       type: "image",
-      default: "/showcase-videos/airpods-pro.mp4",
+      default: "/demos/orbit-gallery.mp4",
       label: "Right card (image/video)",
     },
     heading: {
       type: "text",
-      default: "npx shadcn add @snap-cn",
+      default: "npx shadcn add @snapcn",
       label: "Headline",
     },
   },

@@ -32,7 +32,7 @@ const ROUND_BTN =
 
 // Both tiers publish to the same flat `/r/<name>.json`, so the tier no longer
 // picks a path. See `installCommand` in config/site.ts for why this is a URL and
-// not `@snap-cn/<slug>`.
+// not `@snapcn/<slug>`.
 
 function typeLabel(href: string) {
   if (href.startsWith("/docs/ui/blocks/")) return "Block";
@@ -146,7 +146,7 @@ function OverlayBody({
   const preview = useMemo(() => resolvePreview(slug), [slug]);
   const category = CATEGORY_LABEL.get(item.category) ?? item.category;
   // One string for both the label and the clipboard. They used to be written out
-  // separately, so the row showed a bare `@snap-cn/text-reveal` — which is not a
+  // separately, so the row showed a bare `@snapcn/text-reveal` — which is not a
   // command and does nothing if you type it — while the copy button quietly
   // handed over the real thing. What it says is now what you get.
   const installCommand = buildInstallCommand(slug);

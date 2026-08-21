@@ -22,21 +22,21 @@ Prerequisites: a Remotion project (`npx create-video@latest`).
 
 ```bash
 # Add any component (namespaced shadcn registry)
-shadcn add @snap-cn/blur-out-up
+shadcn add @snapcn/blur-out-up
 
 # Component lands at components/snap-cn/blur-out-up.tsx
 ```
 
-`@snap-cn/<name>` is the canonical namespaced form. It needs no `registries` entry — the
+`@snapcn/<name>` is the canonical namespaced form. It needs no `registries` entry — the
 namespace is in the shadcn registry directory. The plain registry URL
 `https://snapcn.dev/r/<name>.json` also works.
 
 ### Dependencies install automatically
 
 Many components pull others via `registryDependencies` — `shadcn` installs them transitively.
-For example, `shadcn add @snap-cn/claude-chat` also pulls `@snap-cn/snap-cn-ui` and `@snap-cn/caret`.
+For example, `shadcn add @snapcn/claude-chat` also pulls `@snapcn/snap-cn-ui` and `@snapcn/caret`.
 
-- **`@snap-cn/snap-cn-ui`** is the shared core lib (timeline-fold hook, theme context, color math).
+- **`@snapcn/snap-cn-ui`** is the shared core lib (timeline-fold hook, theme context, color math).
   Most UI Primitives depend on it. You rarely install it directly.
 
 ## Two tiers
@@ -48,7 +48,7 @@ snapcn has two kinds of components — they have **different APIs**:
   and for text: `fontSize`, `color`, `fontWeight`.
 - **UI Primitives** (`snap-cn-ui`) — timeline-driven shadcn-style primitives (button, dialog,
   select, command-menu, tooltip…). State-based props (`state`, `style`, `variant`, `theme`).
-  **No `speed` prop.** Built on `@snap-cn/snap-cn-ui`.
+  **No `speed` prop.** Built on `@snapcn/snap-cn-ui`.
 
 ## Component categories
 

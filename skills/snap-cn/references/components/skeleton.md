@@ -7,10 +7,10 @@ Skeleton→content crossfade whose loading/loaded state is a pure function of th
 ## Install
 
 ```bash
-shadcn add @snap-cn/skeleton
+shadcn add @snapcn/skeleton
 ```
 
-Lands at `components/snap-cn/skeleton.tsx`. Pulls `@snap-cn/snap-cn-ui`, `@snap-cn/skeleton-block` automatically.
+Lands at `components/snap-cn/skeleton.tsx`. Pulls `@snapcn/snap-cn-ui`, `@snapcn/skeleton-block` automatically.
 
 ## Props
 

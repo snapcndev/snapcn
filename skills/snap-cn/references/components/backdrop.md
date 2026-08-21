@@ -7,7 +7,7 @@ Configurable full-frame background with Screen Studio-style padding and a rounde
 ## Install
 
 ```bash
-shadcn add @snap-cn/backdrop
+shadcn add @snapcn/backdrop
 ```
 
 Lands at `components/snap-cn/backdrop.tsx`.

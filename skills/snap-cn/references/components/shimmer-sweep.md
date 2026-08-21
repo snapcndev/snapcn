@@ -7,7 +7,7 @@ A light-shine sweeps horizontally across muted text via `background-clip: text`,
 ## Install
 
 ```bash
-shadcn add @snap-cn/shimmer-sweep
+shadcn add @snapcn/shimmer-sweep
 ```
 
 Lands at `components/snap-cn/shimmer-sweep.tsx`.

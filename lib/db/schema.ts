@@ -109,3 +109,23 @@ export const showcaseSubmissions = pgTable("showcase_submission", {
     .notNull()
     .defaultNow(),
 });
+
+// --- Email list ---
+
+/**
+ * The launch list. Section 3 of GTM_PLAN.md prices this as the largest single
+ * revenue channel at launch and the plan assumed it existed — it did not, and
+ * a list can only be warm if it started collecting months before the ask.
+ *
+ * `source` records which surface the address came from (home page, docs, a
+ * post-install page) so a cold blast can be split by intent instead of sent to
+ * everyone at once.
+ */
+export const subscribers = pgTable("subscriber", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  source: text("source").notNull().default("home"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

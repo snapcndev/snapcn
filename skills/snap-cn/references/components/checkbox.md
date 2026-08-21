@@ -7,10 +7,10 @@ A checkbox whose checked/unchecked state is a pure function of the timeline; the
 ## Install
 
 ```bash
-shadcn add @snap-cn/checkbox
+shadcn add @snapcn/checkbox
 ```
 
-Lands at `components/snap-cn/checkbox.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/checkbox.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

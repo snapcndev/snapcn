@@ -7,7 +7,7 @@ A cinematic focus pull: text opens heavy-blurred, sharpens to full crispness at 
 ## Install
 
 ```bash
-shadcn add @snap-cn/focus-blur-resolve
+shadcn add @snapcn/focus-blur-resolve
 ```
 
 Lands at `components/snap-cn/focus-blur-resolve.tsx`.

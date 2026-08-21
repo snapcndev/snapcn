@@ -7,10 +7,10 @@ A wrapper that reveals a single child with blur + opacity + a directional offset
 ## Install
 
 ```bash
-shadcn add @snap-cn/blur-in
+shadcn add @snapcn/blur-in
 ```
 
-Lands at `components/snap-cn/blur-in.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/blur-in.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

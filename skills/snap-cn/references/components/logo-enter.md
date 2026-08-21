@@ -7,7 +7,7 @@ A stacked group of round, ring-bordered brand chips that spring in one-by-one (s
 ## Install
 
 ```bash
-shadcn add @snap-cn/logo-enter
+shadcn add @snapcn/logo-enter
 ```
 
 Lands at `components/snap-cn/logo-enter.tsx`. Renders transparent — set the scene background with `backdrop`.

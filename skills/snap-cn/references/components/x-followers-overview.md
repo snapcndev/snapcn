@@ -7,10 +7,10 @@ X follow notifications cycle through as 3D flipping text — '<name> followed yo
 ## Install
 
 ```bash
-shadcn add @snap-cn/x-followers-overview
+shadcn add @snapcn/x-followers-overview
 ```
 
-Lands at `components/snap-cn/x-followers-overview.tsx`. Pulls `@snap-cn/confetti` automatically. Renders offline from the sample list — no network fetch.
+Lands at `components/snap-cn/x-followers-overview.tsx`. Pulls `@snapcn/confetti` automatically. Renders offline from the sample list — no network fetch.
 
 ## Props
 

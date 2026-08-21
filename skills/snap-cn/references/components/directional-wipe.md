@@ -7,7 +7,7 @@ Slides one scene in from an edge while pushing the outgoing scene off in the sam
 ## Install
 
 ```bash
-shadcn add @snap-cn/directional-wipe
+shadcn add @snapcn/directional-wipe
 ```
 
 Lands at `components/snap-cn/directional-wipe.tsx`.

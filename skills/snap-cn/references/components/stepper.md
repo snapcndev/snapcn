@@ -7,10 +7,10 @@ Horizontal onboarding stepper whose progress is a pure function of a continuous 
 ## Install
 
 ```bash
-shadcn add @snap-cn/stepper
+shadcn add @snapcn/stepper
 ```
 
-Lands at `components/snap-cn/stepper.tsx`. Pulls `@snap-cn/snap-cn-ui` automatically.
+Lands at `components/snap-cn/stepper.tsx`. Pulls `@snapcn/snap-cn-ui` automatically.
 
 ## Props
 

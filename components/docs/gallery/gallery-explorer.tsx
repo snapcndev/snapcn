@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTrackEvent } from "@/lib/analytics";
 import {
-  type CategoryId,
   GALLERY_CATEGORIES,
   GALLERY_ITEMS,
+  type GalleryFilter,
   getFilteredSortedItems,
   ITEM_BY_SLUG,
   type SortMode,
@@ -29,13 +29,59 @@ import { cn } from "@/lib/utils";
 import { GalleryCard } from "./gallery-card";
 import { GalleryDetailOverlay } from "./gallery-detail-overlay";
 
-const CATEGORY_IDS = GALLERY_CATEGORIES.map((c) => c.id);
+// "new" leads the bar: the shelf a returning visitor checks first, and the only
+// one that changes between visits. It is a filter, not a category — see
+// `GalleryFilter` in gallery-data.
+const FILTER_IDS: GalleryFilter[] = [
+  "new",
+  ...GALLERY_CATEGORIES.map((c) => c.id),
+];
 const SORT_ORDER: SortMode[] = ["curated", "az", "category"];
 const SORT_LABELS: Record<SortMode, string> = {
   curated: "Curated",
   az: "A–Z",
   category: "Category",
 };
+
+/**
+ * The double chevron on the "New" pill.
+ *
+ * Both arrows run the same `chevron-glow` loop; the lower one is offset by a
+ * *negative* delay so it is already a beat into the cycle on first paint. That
+ * phase difference is the whole effect — the eye reads a light moving up the
+ * pair, not two icons blinking. `motion-reduce` drops the animation entirely,
+ * which leaves both arrows at their natural full opacity.
+ *
+ * The glow is a drop-shadow in `currentColor`, dark mode only: a halo around a
+ * dark blue on a light surface reads as a smudge, not as light.
+ */
+function NewChevrons() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      fill="none"
+      className="size-5 shrink-0 dark:drop-shadow-[0_0_3px_currentColor]"
+    >
+      <path
+        d="M5.2168 11.2812L8.3418 8.15625L11.4668 11.2812"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="animate-chevron-glow [animation-delay:-0.28s] motion-reduce:animate-none"
+      />
+      <path
+        d="M5.2168 6.90625L8.3418 3.78125L11.4668 6.90625"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="animate-chevron-glow motion-reduce:animate-none"
+      />
+    </svg>
+  );
+}
 
 function pillClassName(active: boolean) {
   return cn(
@@ -61,7 +107,7 @@ export function GalleryExplorer({
 }) {
   const [{ category, sort }, setState] = useQueryStates(
     {
-      category: parseAsStringLiteral(CATEGORY_IDS),
+      category: parseAsStringLiteral(FILTER_IDS),
       sort: parseAsStringLiteral(SORT_ORDER).withDefault("curated"),
     },
     { history: "replace" },
@@ -76,7 +122,7 @@ export function GalleryExplorer({
   // Which shelf people shop. A category nobody ever filters to is either badly
   // named or badly stocked, and this is the only way to tell which.
   const setFilter = useCallback(
-    (next: { category?: CategoryId | null; sort?: SortMode }) => {
+    (next: { category?: GalleryFilter | null; sort?: SortMode }) => {
       void setState(next);
       trackEvent("gallery_filtered", {
         category: next.category !== undefined ? next.category : category,
@@ -91,8 +137,8 @@ export function GalleryExplorer({
   // keep working, then strip the hash.
   useEffect(() => {
     const hash = window.location.hash.slice(1);
-    if (hash && (CATEGORY_IDS as string[]).includes(hash)) {
-      void setState({ category: hash as CategoryId });
+    if (hash && (FILTER_IDS as string[]).includes(hash)) {
+      void setState({ category: hash as GalleryFilter });
       history.replaceState(
         null,
         "",
@@ -141,6 +187,24 @@ export function GalleryExplorer({
               className={pillClassName(category === null)}
             >
               All
+            </button>
+            <button
+              type="button"
+              aria-pressed={category === "new"}
+              onClick={() => setFilter({ category: "new" })}
+              className={cn(
+                pillClassName(category === "new"),
+                "inline-flex items-center gap-0.5 pr-2.5",
+                // Only when unselected: the blue is what pulls the click. Once
+                // selected the pill takes the same inverted treatment as every
+                // other one, where sky on `bg-foreground` would fail contrast.
+                // sky-700/sky-400 rather than one sky-500 — 500 measures 2.35:1
+                // on the light gallery mat and 6.45:1 on the dark one.
+                category !== "new" && "text-sky-700 dark:text-sky-400",
+              )}
+            >
+              New
+              <NewChevrons />
             </button>
             {GALLERY_CATEGORIES.map((c) => (
               <button
