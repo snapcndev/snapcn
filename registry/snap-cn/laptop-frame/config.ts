@@ -6,7 +6,7 @@ export const laptopFrameConfig: ComponentConfig = {
   controls: {
     screenSrc: {
       type: "image",
-      default: "/showcase-videos/airpods-pro.mp4",
+      default: "/demos/answer-stream.mp4",
       label: "Screen (image or video)",
     },
     entrance: {
