@@ -6,6 +6,15 @@
  */
 export type AuthProviderId = "google" | "github" | "twitter" | "facebook";
 
+/**
+ * Auth.js's id for the email magic-link provider.
+ *
+ * Kept out of `AuthProviderId` on purpose: every OAuth provider is one button,
+ * and this one is a form. Widening the union would put an id in `PROVIDER_LABELS`
+ * that the button list must then remember to skip.
+ */
+export const EMAIL_PROVIDER_ID = "resend";
+
 export const PROVIDER_LABELS: Record<AuthProviderId, string> = {
   google: "Google",
   github: "GitHub",

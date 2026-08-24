@@ -1,6 +1,8 @@
 import {
   boolean,
+  index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -109,6 +111,41 @@ export const showcaseSubmissions = pgTable("showcase_submission", {
     .notNull()
     .defaultNow(),
 });
+
+// --- Video editor projects ---
+
+/**
+ * A saved timeline. The editor's work, for a signed-in user, kept server-side
+ * instead of in that one browser's `localStorage`.
+ *
+ * The whole row is the *project*, not the export: the MP4 is scratch (deleted
+ * as it downloads, swept after ten minutes), and a few KB of JSON that can be
+ * re-rendered on demand is a far cheaper thing to keep than a video file we
+ * would need a blob store to hold. "My videos" is this list.
+ *
+ * `data` is the same `{clips, audio, font}` shape as the local draft — the
+ * client revives both through `reviveDraft`, so a row written by an older build
+ * (or hand-edited) degrades to a valid timeline instead of a broken render.
+ */
+export const videoProjects = pgTable(
+  "video_project",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default("Untitled video"),
+    data: jsonb("data").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // The only query there is: this user's projects, most recently touched first.
+  (t) => [index("video_project_user_idx").on(t.userId, t.updatedAt)],
+);
 
 // --- Email list ---
 
