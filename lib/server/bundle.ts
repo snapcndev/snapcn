@@ -1,7 +1,6 @@
 import "server-only";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { bundle } from "@remotion/bundler";
 import { remotionWebpackAlias } from "./remotion-aliases";
 
 /**
@@ -26,15 +25,28 @@ export function getServeUrl(): Promise<string> {
       return PREBUNDLED_DIR;
     }
     try {
-      // Imported here, not at module scope. This file is reachable from the
-      // /api/render route, and `@remotion/tailwind-v4` pulls in the native
-      // `@tailwindcss/oxide` binary — which Turbopack cannot place in an ESM
-      // chunk, so a static import fails the whole site build. It is only ever
-      // needed on this Node-side path.
-      const { enableTailwind } = await import(
-        /* webpackIgnore: true */ /* turbopackIgnore: true */
-        "@remotion/tailwind-v4"
-      );
+      // Both imported here, not at module scope, and for the same reason: they
+      // pull native binaries (`@tailwindcss/oxide`, and `@rspack/binding` via
+      // `@remotion/bundler` -> `@rspack/core`).
+      //
+      // `@remotion/bundler` was a top-level import until it took the site down.
+      // A serverless deploy does not trace those `.node` files into the
+      // function, so requiring the module throws at *evaluation* — and this
+      // file is reachable from `/api/audio` and `/api/showcase` through
+      // cleanup -> render-queue -> render -> here. Two routes that never render
+      // anything returned 500 because the renderer failed to load beside them.
+      // Deferring the import means only a request that actually bundles can hit
+      // it, and it fails as a job error instead of taking the route down.
+      const [{ enableTailwind }, { bundle }] = await Promise.all([
+        import(
+          /* webpackIgnore: true */ /* turbopackIgnore: true */
+          "@remotion/tailwind-v4"
+        ),
+        import(
+          /* webpackIgnore: true */ /* turbopackIgnore: true */
+          "@remotion/bundler"
+        ),
+      ]);
       return await bundle({
         entryPoint: ENTRY_POINT,
         // Webpack doesn't read tsconfig `paths`; teach it every alias the

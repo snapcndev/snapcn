@@ -1,10 +1,22 @@
 import "server-only";
-import {
-  makeCancelSignal,
-  renderMedia,
-  selectComposition,
-} from "@remotion/renderer";
 import { getServeUrl } from "./bundle";
+
+/**
+ * Loaded on demand, never at module scope.
+ *
+ * `@remotion/renderer` ships a native compositor binary. A serverless deploy
+ * does not trace those `.node` files into the function, so importing this
+ * module at the top level throws at *evaluation* — and because bundlers hoist
+ * the whole chunk, that took down every route that merely sat downstream of
+ * `render-queue` (`/api/audio`, `/api/showcase`, `/api/projects`), none of
+ * which render anything. Behind a function call, only a real render can hit it.
+ */
+function loadRenderer() {
+  return import(
+    /* webpackIgnore: true */ /* turbopackIgnore: true */
+    "@remotion/renderer"
+  );
+}
 
 /**
  * Server-side MP4 render of any registered Remotion composition (
@@ -53,6 +65,8 @@ export async function renderComposition({
     throw new Error("Render aborted before it started");
   }
 
+  const { makeCancelSignal, renderMedia, selectComposition } =
+    await loadRenderer();
   const serveUrl = await getServeUrl();
 
   const composition = await selectComposition({
