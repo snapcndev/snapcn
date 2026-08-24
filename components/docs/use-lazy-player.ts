@@ -14,9 +14,9 @@ import { useAutoplay } from "@/app/(home)/components/use-autoplay";
  * `useAutoplay`, and pauses playback whenever the card scrolls back out of view,
  * so at most a handful of previews are ever actively rendering.
  *
- * "Preview" means either tier: a live `<Player>` *or* the `<video>` of a card
- * with a rendered demo. The play/pause below drives both — see the note on that
- * effect for why leaving the `<video>` to the browser is not good enough.
+ * This drives the live `<Player>` tier only. A card whose preview is a rendered
+ * demo is a plain `<video>`, and that element belongs to `RenderedDemo` — see
+ * the note on the effect below.
  *
  * Extracted verbatim from `component-card.tsx` so both the docs `ComponentCard`
  * and the gallery `GalleryCard` share one implementation — no copy-paste drift
@@ -48,32 +48,28 @@ export function useLazyPlayer() {
 
   useAutoplay(playerRef, mounted);
 
-  // Drive whichever preview the card actually rendered. A card with a rendered
-  // demo has no `<Player>` at all — it is a plain `<video>` — so `playerRef` is
-  // null there and this used to `return` before doing anything, leaving every
-  // mp4 card's playback entirely to the browser.
-  //
-  // That is not safe to assume. Cards mount 200px *before* they scroll into view
-  // (`rootMargin` below), so a `<video autoPlay>` is created off-screen, where
-  // Chrome's muted-autoplay policy declines to start it — measured on this page:
-  // `inView=false paused=true t=0 readyState=4`, fully downloaded and never
-  // started. Whether it ever starts is then Chrome's call, and under Energy
-  // Saver or on battery it may simply not, which leaves the card frozen on a
-  // first frame that is usually blank.
-  //
-  // So say it explicitly. Redundant when the browser would have done it anyway,
-  // decisive when it would not.
+  /**
+   * Play/pause the live `<Player>` with the card's visibility.
+   *
+   * It used to reach into the DOM for a `<video>` as well and force-play that,
+   * because Chrome's muted-autoplay policy declines to start an element created
+   * off-screen and the card would sit frozen on a blank first frame.
+   *
+   * That is no longer this hook's call to make. `RenderedDemo` now ships a
+   * poster and plays on hover, and a `querySelector` from out here quietly
+   * overruled it — every one of the 22 demos on `/docs/components` downloaded
+   * and looped anyway, which is the 9.9MB the poster exists to avoid. Two
+   * places deciding whether a video plays is how they end up disagreeing; the
+   * element belongs to the component that renders it.
+   */
   useEffect(() => {
     if (!mounted) return;
     const player = playerRef.current;
-    const video = containerRef.current?.querySelector("video");
+    if (!player) return;
     if (visible) {
-      if (player && !player.isPlaying()) player.play();
-      // `play()` rejects if the element is torn down mid-call; nothing to do.
-      if (video?.paused) video.play().catch(() => {});
+      if (!player.isPlaying()) player.play();
     } else {
-      player?.pause();
-      video?.pause();
+      player.pause();
     }
   }, [mounted, visible]);
 

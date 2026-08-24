@@ -13,7 +13,11 @@ import {
   TILE_RATIOS,
 } from "@/lib/gallery-data";
 import { resolvePreview } from "@/lib/gallery-preview";
-import { RenderedDemo, renderedDemoSrc } from "@/lib/rendered-demos";
+import {
+  RenderedDemo,
+  renderedDemoPoster,
+  renderedDemoSrc,
+} from "@/lib/rendered-demos";
 import { useLazyPlayer } from "../use-lazy-player";
 import { cardAttr, morphFromCard } from "./shared-media-transition";
 
@@ -45,6 +49,7 @@ export function GalleryCard({
   // Cards only ever show the default scene, so a rendered demo is always the
   // right picture for the slugs that have one. See lib/rendered-demos.tsx.
   const demoSrc = renderedDemoSrc(slug);
+  const demoPoster = renderedDemoPoster(slug);
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     // No handler (e.g. the pre-hydration server fallback) → navigate normally.
@@ -143,7 +148,7 @@ export function GalleryCard({
       <div ref={containerRef} className="absolute inset-0">
         {preview && Composition && mounted ? (
           demoSrc ? (
-            <RenderedDemo src={demoSrc} />
+            <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
           ) : (
             <Player
               ref={playerRef}

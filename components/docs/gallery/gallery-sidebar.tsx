@@ -1,10 +1,18 @@
 "use client";
 
-import { ArrowUpRight, ChevronsLeft } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PanelToggleIcon } from "@/components/icons/panel-toggle";
 import { SearchButton } from "@/components/search-button";
 import { SnapCnLogo } from "@/components/snapcn-logo";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { GITHUB_URL, X_URL } from "@/config/site";
 import { DOCS_NAV } from "@/lib/docs-nav";
 import { GALLERY_COUNT } from "@/lib/gallery-data";
@@ -34,9 +42,9 @@ export function GallerySidebar({
   collapsed: boolean;
   onToggle: () => void;
 }) {
-  const year = new Date().getFullYear();
+  const _year = new Date().getFullYear();
   const isActive = useSectionActive();
-  const pathname = usePathname();
+  const _pathname = usePathname();
   // The written docs are one of the six sections, so their page tree only opens
   // while you are in them — the Components gallery and the Showcase keep the
   // short rail they had. `DOCS_SECTIONS[0]` is the Docs entry, and its
@@ -54,6 +62,32 @@ export function GallerySidebar({
         collapsed && "-translate-x-full",
       )}
     >
+      <SidebarBody onToggle={onToggle} inDocs={inDocs} isActive={isActive} />
+    </aside>
+  );
+}
+
+/**
+ * Everything inside the rail.
+ *
+ * Extracted so the mobile drawer can mount the same markup. Below `lg` the
+ * fixed rail is hidden, and until now that meant a phone had no route to Docs,
+ * Components, Templates or anything else — the nav simply did not exist there.
+ */
+function SidebarBody({
+  onToggle,
+  inDocs,
+  isActive,
+}: {
+  onToggle?: () => void;
+  inDocs: boolean;
+  isActive: (section: (typeof DOCS_SECTIONS)[number]) => boolean;
+}) {
+  const pathname = usePathname();
+  const year = new Date().getFullYear();
+
+  return (
+    <>
       <div className="flex items-center justify-between gap-2">
         <Link href="/" aria-label="snapcn home" className="shrink-0">
           <SnapCnLogo />
@@ -72,7 +106,7 @@ export function GallerySidebar({
             aria-label="Collapse sidebar"
             className="flex size-7 shrink-0 items-center justify-center rounded-4xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <ChevronsLeft className="size-4" />
+            <PanelToggleIcon className="size-[18px]" />
           </button>
         </div>
       </div>
@@ -190,7 +224,44 @@ export function GallerySidebar({
         </p>
         <p className="text-[13px] text-muted-foreground">© {year} snapcn</p>
       </div>
-    </aside>
+    </>
+  );
+}
+
+/**
+ * The rail as a drawer, for viewports the fixed one is hidden on.
+ *
+ * Same `SidebarBody`, so there is one nav and it cannot drift from the desktop
+ * one — the alternative was a second list of links that would have to be kept
+ * in step by hand.
+ */
+export function GallerySidebarMobile() {
+  const isActive = useSectionActive();
+  const inDocs = isActive(DOCS_SECTIONS[0]);
+
+  return (
+    <Sheet>
+      {/* In the flow of whichever chrome mounts it, not `fixed`. A fixed button
+          cannot line up with a bar it is not part of — it sat above the title
+          rather than beside it — and it needed a border and a shadow to look
+          deliberate floating over the content. In flow it inherits the bar's
+          own centring and can be a bare icon like the controls beside it. */}
+      <SheetTrigger
+        aria-label="Open navigation"
+        className="grid size-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+      >
+        <PanelToggleIcon className="size-[18px]" />
+      </SheetTrigger>
+      <SheetContent
+        side="left"
+        className="w-[min(20rem,85vw)] overflow-y-auto bg-background px-5 py-5"
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Navigation</SheetTitle>
+        </SheetHeader>
+        <SidebarBody inDocs={inDocs} isActive={isActive} />
+      </SheetContent>
+    </Sheet>
   );
 }
 

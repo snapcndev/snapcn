@@ -1,14 +1,28 @@
 "use client";
 
-import { Player } from "@remotion/player";
 import { ArrowUpRight } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { getDefaults } from "@/lib/customizer-config";
-import { RenderedDemo, renderedDemoSrc } from "@/lib/rendered-demos";
+import {
+  RenderedDemo,
+  renderedDemoPoster,
+  renderedDemoSrc,
+} from "@/lib/rendered-demos";
 import { cn } from "@/lib/utils";
-import registry from "@/registry/__index__";
+import { CONFIGS } from "@/registry/__configs__";
 import type { CardItem } from "./component-card-grid";
 import { useLazyPlayer } from "./use-lazy-player";
+
+/**
+ * The Remotion half. A card shows the rendered mp4 whenever there is one — which
+ * today is always — so the player, its scene and the registry behind it are
+ * fetched only for a component that has no demo yet, instead of being parsed on
+ * every docs page that renders a grid.
+ */
+const CardPlayer = dynamic(() => import("./card-player"), {
+  ssr: false,
+  loading: () => <PreviewPlaceholder />,
+});
 
 function slugFromHref(href?: string) {
   if (!href) return undefined;
@@ -17,11 +31,11 @@ function slugFromHref(href?: string) {
 
 function previewAspectRatio(item: CardItem) {
   const slug = slugFromHref(item.href);
-  const entry = slug ? registry[slug] : undefined;
+  const config = slug ? CONFIGS[slug] : undefined;
 
-  if (!entry) return "16 / 9";
+  if (!config) return "16 / 9";
 
-  const { compositionWidth, compositionHeight } = entry.config;
+  const { compositionWidth, compositionHeight } = config;
   return `${compositionWidth} / ${compositionHeight}`;
 }
 
@@ -38,10 +52,10 @@ function PreviewPlaceholder() {
  */
 function CardPreview({ item }: { item: CardItem }) {
   const slug = slugFromHref(item.href);
-  const entry = slug ? registry[slug] : undefined;
+  const config = slug ? CONFIGS[slug] : undefined;
   const { containerRef, playerRef, mounted } = useLazyPlayer();
 
-  if (!entry) {
+  if (!slug || !config) {
     return (
       <div ref={containerRef} className="size-full">
         <PreviewPlaceholder />
@@ -49,38 +63,21 @@ function CardPreview({ item }: { item: CardItem }) {
     );
   }
 
-  const { Component, config } = entry;
-  const inputProps = getDefaults(config.controls);
   // Cards only ever show the default scene, so a rendered demo is always the
   // right picture for the slugs that have one. See lib/rendered-demos.tsx.
-  const demoSrc = slug ? renderedDemoSrc(slug) : null;
+  const demoSrc = renderedDemoSrc(slug);
+  const demoPoster = renderedDemoPoster(slug);
 
   return (
     <div ref={containerRef} className="size-full">
       {mounted && demoSrc ? (
-        <RenderedDemo src={demoSrc} className="bg-card" />
-      ) : mounted ? (
-        <Player
-          ref={playerRef}
-          component={Component}
-          inputProps={inputProps}
-          durationInFrames={config.durationInFrames}
-          fps={config.fps}
-          compositionWidth={config.compositionWidth}
-          compositionHeight={config.compositionHeight}
-          style={{
-            width: "100%",
-            height: "100%",
-            backgroundColor: "var(--card)",
-          }}
-          controls={false}
-          loop
-          // Remotion starts playback itself once the player is ready (no time
-          // limit), so a slow-loading card never freezes on its first frame the
-          // way the rAF play() poll can when it gives up under a heavy mount.
-          autoPlay
-          acknowledgeRemotionLicense
+        <RenderedDemo
+          src={demoSrc}
+          poster={demoPoster ?? undefined}
+          className="bg-card"
         />
+      ) : mounted ? (
+        <CardPlayer slug={slug} playerRef={playerRef} />
       ) : (
         <PreviewPlaceholder />
       )}

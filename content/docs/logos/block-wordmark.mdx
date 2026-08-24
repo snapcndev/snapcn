@@ -1,0 +1,294 @@
+---
+title: Block Wordmark
+description: A wordmark that builds itself out of solid blocks — a deck shuffles, collapses, splits one block per letter, and each block flashes and cuts to its real letterform
+---
+
+<ComponentPreview name="block-wordmark" />
+
+## Installation
+
+<InstallBlock name="block-wordmark" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="block-wordmark" />
+
+## Usage
+
+A wordmark build in six beats:
+
+1. **Seed** — a single rounded square scales up off the baseline (`growDuration`).
+2. **Shuffle** — coloured cards fan out from behind it and wind back in, one full turn
+   each about a *shared* pivot on the baseline. The fan is one S-curve sampled at
+   `cardStagger` offsets, so it opens and closes exactly once (`cards`, `spinTurns`,
+   `spinDuration`, `liftRatio`).
+3. **Collapse** — the deck lands back on the seed square and dips once, which is the
+   only frame in the piece where the ink is a single block.
+4. **Split** — the square stretches horizontally and splits into one block per letter,
+   outermost blocks leading and the inner ones lagging by `splitStagger`. Any letter
+   whose ink rises above the x-height grows a tab on the correct side — the "b" of
+   `base` sprouts a left stem, a "d" a right one, an "A" an apex.
+5. **Hold** — the block row sits and scales up slowly for `holdDuration` frames. This
+   is the beat that reads as a logo rather than as an animation.
+6. **Resolve** — each block flashes a colour from `colors`, returns to ink, and is
+   **hard-cut** to its letterform `flashToSwap` frames later. The first letter goes
+   last, so the word finishes where it started.
+
+Nothing crossfades and nothing morphs. At each swap frame the block is already within a
+few pixels of the settled letter, so the cut is invisible — and a spring or a crossfade
+"to improve it" is the one change that breaks the effect.
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { BlockWordmark } from "@/components/snap-cn/block-wordmark";
+
+const Sting = () => (
+  <BlockWordmark text="snapcn" color="#0000FF" fontSize={160} />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="BlockWordmark"
+    component={Sting}
+    durationInFrames={150}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+### Any word, not just this one
+
+Nothing about the geometry is hardcoded to a four-letter lowercase word. Every glyph's
+advance width, x-height and ink top are measured at runtime behind `delayRender()`, so
+the blocks are sized to the letters they become and the ascender tabs are found by
+measurement rather than a letter list. Emoji survive (the text is split by code point)
+and spaces get a gap, not a block.
+
+Two knobs decide how literal the morph is:
+
+- `blockSizing="square"` (default) makes every block a square the height of the
+  x-height, so the row reads as an even rhythm and each block visibly *changes* into
+  its letter.
+- `blockSizing="glyph"` sizes each block to its letter's advance width, which makes the
+  resolve nearly in-place.
+
+Long words outrun the 150-frame default: the last letter resolves at roughly
+`94 + flashStagger × letters`. Drop `flashStagger` to 2 or raise `durationInFrames`.
+
+### Colour
+
+The deck and the flash colours are a prop with our defaults — the first card follows
+your `primary` token, the rest are a decorative set.
+
+The **ink** defaults to your `foreground`, so an installed copy paints in whatever
+palette it lands in. The preview above passes `color="#0000FF"` because that is
+snapcn's own mark; yours is one prop away.
+
+A full brand look — ink, deck, and a display face's heavier ascender — is one line.
+`base` rather than `snapcn` here because the ascender props only show on a word that
+has one:
+
+```tsx
+<BlockWordmark
+  text="base"
+  color="#0000FF"
+  colors="#ABF25B,#FA361A,#FCCA28,#337DFE,#F99BCA"
+  ascenderRatio={0.4}
+  ascenderStemRatio={0.415}
+/>
+```
+
+`ascenderRatio` and `ascenderStemRatio` are the two places a display face differs most
+from Inter: leave them out and they are measured per glyph, set them and you get the
+chunky flag a geometric sans draws.
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "text",
+      type: "string",
+      default: "\"base\"",
+      description: "The word to build. Split by code point, so emoji stay whole; spaces get a gap, not a block",
+    },
+    {
+      name: "fontSize",
+      type: "number",
+      default: "160",
+      description: "Size the finished wordmark is set at, in px",
+    },
+    {
+      name: "fontFamily",
+      type: "string",
+      default: "Inter",
+      description: "Loaded through @remotion/google-fonts, so the Player and the render agree",
+    },
+    {
+      name: "fontWeight",
+      type: "number | string",
+      default: "700",
+      description: "Weight of the finished letterforms and of the probe they are measured from",
+    },
+    {
+      name: "color",
+      type: "string",
+      default: "theme.foreground",
+      description: "The wordmark's ink, and the colour of the lead card in the deck",
+    },
+    {
+      name: "colors",
+      type: "string[] | string",
+      default: "theme.primary + four accents",
+      description: "The deck's cards and the flash colours, in order. Accepts an array or a comma-separated string",
+    },
+    {
+      name: "background",
+      type: "string",
+      default: "theme.background",
+      description: "Stage behind the build",
+    },
+    {
+      name: "blockGap",
+      type: "number",
+      default: "0.093",
+      description: "Gap between blocks, as a fraction of a block's side",
+    },
+    {
+      name: "cornerRadius",
+      type: "number",
+      default: "0.07",
+      description: "Corner radius of a block, as a fraction of its side",
+    },
+    {
+      name: "ascenderRatio",
+      type: "number",
+      default: "measured",
+      description: "Tab height ÷ block height. Omitted, it is measured per glyph — how far that letter actually rises above the x-height",
+    },
+    {
+      name: "ascenderStemRatio",
+      type: "number",
+      default: "measured",
+      description: "Tab width ÷ block width. Omitted, measured too: the stem of a \"b\", the whole width of a \"B\"",
+    },
+    {
+      name: "blockSizing",
+      type: "\"square\" | \"glyph\"",
+      default: "\"square\"",
+      description: "Uniform squares (an even rhythm), or each block sized to the letter it becomes (a near in-place morph)",
+    },
+    {
+      name: "maxWidth",
+      type: "number",
+      default: "0.92",
+      description: "Fraction of the frame width the row may occupy before it is scaled to fit",
+    },
+    {
+      name: "cards",
+      type: "number",
+      default: "6",
+      description: "Cards in the deck, including the lead one",
+    },
+    {
+      name: "cardStagger",
+      type: "number",
+      default: "2",
+      description: "Frames between one card's turn starting and the next card's",
+    },
+    {
+      name: "spinTurns",
+      type: "number",
+      default: "1",
+      description: "Full turns the deck makes while it fans and winds back in",
+    },
+    {
+      name: "liftRatio",
+      type: "number",
+      default: "0.665",
+      description: "How far the deck lifts off the baseline as it fans, as a fraction of a block's side",
+    },
+    {
+      name: "growDuration",
+      type: "number",
+      default: "9",
+      description: "Frames the first square takes to scale in",
+    },
+    {
+      name: "spinDuration",
+      type: "number",
+      default: "33",
+      description: "Frames the deck's turn lasts",
+    },
+    {
+      name: "splitDuration",
+      type: "number",
+      default: "5",
+      description: "Frames a block takes to travel from the collapsed square to its slot",
+    },
+    {
+      name: "splitStagger",
+      type: "number",
+      default: "1",
+      description: "Frames the inner blocks lag the outer ones by — the split runs outside-in",
+    },
+    {
+      name: "ascenderDuration",
+      type: "number",
+      default: "12",
+      description: "Frames an ascender's tab takes to grow",
+    },
+    {
+      name: "holdDuration",
+      type: "number",
+      default: "54",
+      description: "Frames the finished block row holds before the letters resolve",
+    },
+    {
+      name: "flashStagger",
+      type: "number",
+      default: "4",
+      description: "Frames between one letter's flash and the next. Lower it for long words",
+    },
+    {
+      name: "flashDuration",
+      type: "number",
+      default: "3",
+      description: "Frames a block stays lit in its flash colour",
+    },
+    {
+      name: "flashToSwap",
+      type: "number",
+      default: "5",
+      description: "Frames from a block lighting up to it being hard-cut to its letterform",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Global playback multiplier applied to the whole sequence",
+    },
+    {
+      name: "className",
+      type: "string",
+      description: "Optional className passed to the outer wrapper",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      description:
+        "Design-system token overrides. Anything you leave out falls back to the shadcn defaults",
+    },
+    {
+      name: "mode",
+      type: "\"light\" | \"dark\"",
+      description:
+        "Which end of the design system to resolve tokens against",
+    },
+  ]}
+/>

@@ -2,18 +2,9 @@
 
 import { Player, type PlayerRef } from "@remotion/player";
 import { PlayIcon } from "lucide-react";
-import {
-  parseAsBoolean,
-  parseAsFloat,
-  parseAsString,
-  parseAsStringLiteral,
-} from "nuqs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AbsoluteFill, Img } from "remotion";
-import type {
-  ControlConfig,
-  PreviewBackdropFill,
-} from "@/lib/customizer-config";
+import type { PreviewBackdropFill } from "@/lib/customizer-config";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
@@ -27,33 +18,11 @@ import { cn } from "@/lib/utils";
  */
 
 /**
- * Build nuqs parsers + URL keys from a control config. Each control becomes a
- * URL-synced query param prefixed with the component name (dashes → underscores)
- * so multiple previews on one page never collide.
+ * `buildParsers` now lives in `lib/customizer-params.ts` — it needs no Remotion,
+ * and importing it from here dragged the player into bundles that never mounted
+ * one. Re-exported so existing callers are unchanged.
  */
-export function buildParsers(name: string, controls: ControlConfig) {
-  const parsers: Record<string, any> = {};
-  const urlKeys: Record<string, string> = {};
-  const prefix = name.replace(/-/g, "_");
-
-  for (const [key, ctrl] of Object.entries(controls)) {
-    urlKeys[key] = `${prefix}_${key}`;
-    if (ctrl.type === "text" || ctrl.type === "image") {
-      parsers[key] = parseAsString.withDefault(ctrl.default);
-    } else if (ctrl.type === "number" || ctrl.type === "number-input") {
-      parsers[key] = parseAsFloat.withDefault(ctrl.default);
-    } else if (ctrl.type === "color") {
-      parsers[key] = parseAsString.withDefault(ctrl.default);
-    } else if (ctrl.type === "select") {
-      parsers[key] = parseAsStringLiteral(
-        ctrl.options as readonly string[],
-      ).withDefault(ctrl.default);
-    } else if (ctrl.type === "boolean") {
-      parsers[key] = parseAsBoolean.withDefault(ctrl.default);
-    }
-  }
-  return { parsers, urlKeys };
-}
+export { buildParsers } from "@/lib/customizer-params";
 
 /**
  * D2 — lazy-mount the Remotion player. Until the stage enters the viewport

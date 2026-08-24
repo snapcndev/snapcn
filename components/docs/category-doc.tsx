@@ -6,7 +6,7 @@ import {
   GALLERY_ITEMS,
   slugFromHref,
 } from "@/lib/gallery-data";
-import registry from "@/registry/__index__";
+import { CONFIGS } from "@/registry/__configs__";
 import { CategoryGrid } from "./category-grid";
 import { InstallBlock } from "./install-block";
 
@@ -34,7 +34,7 @@ export function CategoryDoc({ category }: { category: CategoryId }) {
   // The category's first curated entry is its flagship — the one worth showing
   // in the install and usage examples.
   const leadSlug = slugFromHref(items[0].href);
-  const config = registry[leadSlug]?.config;
+  const config = CONFIGS[leadSlug];
 
   return (
     <>
