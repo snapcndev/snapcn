@@ -104,7 +104,7 @@ has one:
 ```
 
 `ascenderRatio` and `ascenderStemRatio` are the two places a display face differs most
-from Inter: leave them out and they are measured per glyph, set them and you get the
+from the face in use: leave them out and they are measured per glyph, set them and you get the
 chunky flag a geometric sans draws.
 
 ## Props
@@ -126,8 +126,8 @@ chunky flag a geometric sans draws.
     {
       name: "fontFamily",
       type: "string",
-      default: "Inter",
-      description: "Loaded through @remotion/google-fonts, so the Player and the render agree",
+      default: "Ultra",
+      description: "Loaded through @remotion/google-fonts, so the Player and the render agree. Ultra ships one weight (400)",
     },
     {
       name: "fontWeight",
@@ -162,7 +162,7 @@ chunky flag a geometric sans draws.
     {
       name: "cornerRadius",
       type: "number",
-      default: "0.07",
+      default: "0.18",
       description: "Corner radius of a block, as a fraction of its side",
     },
     {
