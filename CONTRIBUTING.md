@@ -115,6 +115,62 @@ scene that **animates a scale on text** over many frames — see below for why t
 is the pathological case. Do not add a component because it is nice: every entry
 is an mp4 that has to be re-rendered and re-committed forever.
 
+### Every surface that shows the default scene must ask for the demo
+
+`RENDERED_DEMOS` only helps a surface that actually consults it. A surface that
+mounts `<Player>` directly opts itself out of the whole mechanism and shows the
+exact stutter the mp4 exists to prevent.
+
+**The rule: if a surface renders a component with its *default* props, it must
+call `renderedDemoSrc(slug)` first and play the mp4 when there is one.**
+
+The surfaces, and what each one shows:
+
+| Surface | Props | Source |
+|---|---|---|
+| `gallery-card.tsx` | defaults | mp4 if present, else `<Player>` |
+| `gallery-detail-overlay.tsx` | defaults | mp4 if present, else `<Player>` |
+| `component-preview.tsx` (docs page) | **customized** | mp4 only while untouched, `<Player>` once a control moves |
+| `library-panel.tsx` (editor) | defaults | mp4 if present |
+
+This is written down because it was got wrong. The detail overlay never called
+`renderedDemoSrc`, so every one of the 23 gallery components — the list and the
+gallery are the same 23 slugs — opened into a live `<Player>`. `logo-flicker` is
+in the list precisely because "images swap nearly every frame, which a live
+Player flashes harshly before the pool is cached", and that is what the overlay
+showed, at full size. The card beside it was playing the mp4 correctly the whole
+time, which is what made it hard to spot.
+
+**Do not "fix" this inside `PreviewStage`.** It looks like the one shared choke
+point, and it is the wrong one: the docs page hands it *customized* values from
+the customizer, and a fixed mp4 cannot show a prop the reader just changed. The
+check belongs at each default-props call site. There are four; they are listed
+above.
+
+### Checking it
+
+Two invariants, both scriptable, neither enforced by the build.
+
+**1. Every rendered mp4 matches its component's declared length.** A truncated
+render looks exactly like an animation that stops in the middle:
+
+```bash
+# for each slug in RENDERED_DEMOS: config.durationInFrames / fps  ==  mp4 duration
+ffprobe -v error -show_entries format=duration -of csv=p=0 public/demos/<slug>.mp4
+```
+
+**2. Every gallery component opens into a `<video>`, not a `<canvas>`.** Load
+`/docs/components?item=<slug>` and look at what is inside `[role="dialog"]`. A
+`<canvas>` there means that slug fell through to a live Player:
+
+```js
+const dlg = document.querySelector('[role="dialog"]');
+dlg.querySelector("video") ? "mp4" : dlg.querySelector("canvas") ? "PLAYER — bug" : "static";
+```
+
+Run it across every slug before touching any preview surface. Both invariants
+held for all 23 components when this was written.
+
 ---
 
 ## Motion quality: what actually makes scaled text look cheap
