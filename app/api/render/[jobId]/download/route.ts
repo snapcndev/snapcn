@@ -48,8 +48,13 @@ export async function GET(
   }
 
   const nodeStream = createReadStream(filePath);
-  // Schedule cleanup once the file has been fully read out.
-  nodeStream.on("close", () => {
+  // `end`, not `close`. `close` fires on *any* teardown — including the client
+  // aborting or the connection dropping mid-transfer — so the previous version
+  // deleted the MP4 out from under a download that had failed, and the retry
+  // 404'd on a render the user had waited minutes for. `end` fires only when
+  // the source has been read to completion; a cancelled read destroys the
+  // stream without it, and the TTL sweep reclaims the file instead.
+  nodeStream.on("end", () => {
     void deleteJobFile(jobId);
   });
 

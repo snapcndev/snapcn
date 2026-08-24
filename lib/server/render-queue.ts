@@ -47,6 +47,16 @@ export interface RenderSpec {
   height: number;
   /** Attachment filename for the finished MP4. */
   fileName: string;
+  /**
+   * Total frames the composition will render — the same figure
+   * `calculateMetadata` derives in `src/remotion/Root.tsx`.
+   *
+   * It travels on the spec rather than being dug back out of `inputProps`
+   * because the timeout needs the length *before* the render starts, and
+   * `inputProps` is deliberately opaque here (the queue is composition-
+   * agnostic). The per-account quota will want the same number.
+   */
+  durationInFrames: number;
 }
 
 /** Max simultaneous renders; the rest queue. Sized for the 8-vCPU box. */
@@ -55,12 +65,36 @@ function maxConcurrent(): number {
   return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 2;
 }
 
-/** Hard ceiling on a single render before it's aborted as stuck. */
-function renderTimeoutMs(): number {
+/** Fixed allowance per render: browser launch, serving the bundle, ffmpeg finalise. */
+const RENDER_STARTUP_MS = 60_000;
+
+/**
+ * Wall-clock budget per frame. Sized for the worst throughput we expect on a
+ * saturated box, not the typical one — this is a stuck-process guard, and a
+ * guard that fires on a merely slow render is a bug that only appears under
+ * load, which is exactly when it does the most damage.
+ */
+const RENDER_MS_PER_FRAME = 200;
+
+/**
+ * Hard ceiling on a single render before it's aborted as stuck.
+ *
+ * Scaled by length rather than flat. The guard exists so a wedged Chromium
+ * can't hold a semaphore slot forever, and any flat ceiling has to be set for
+ * the longest video the editor allows (`MAX_TOTAL_FRAMES`, three minutes) —
+ * which then lets a wedged three-second render sit on a slot for that same
+ * span. The old flat 120 s failed the other way: it was shorter than a 60 s
+ * export takes on an *idle* box, so every long render died as "stuck".
+ *
+ * `RENDER_TIMEOUT_MS` still overrides absolutely — for tests, and for a box
+ * whose throughput doesn't match the constants above.
+ */
+function renderTimeoutMs(durationInFrames: number): number {
   const parsed = Number(process.env.RENDER_TIMEOUT_MS);
-  return Number.isFinite(parsed) && parsed >= 1000
-    ? Math.floor(parsed)
-    : 120_000;
+  if (Number.isFinite(parsed) && parsed >= 1000) return Math.floor(parsed);
+  return (
+    RENDER_STARTUP_MS + Math.max(1, durationInFrames) * RENDER_MS_PER_FRAME
+  );
 }
 
 const limit = pLimit(maxConcurrent());
@@ -126,7 +160,10 @@ async function runRender(
   // Per-render timeout: abort stuck Chromium so a wedged render can't hold a
   // semaphore slot forever.
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), renderTimeoutMs());
+  const timeout = setTimeout(
+    () => controller.abort(),
+    renderTimeoutMs(spec.durationInFrames),
+  );
 
   try {
     await renderComposition({
