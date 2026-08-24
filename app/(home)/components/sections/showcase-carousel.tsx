@@ -221,7 +221,20 @@ export function ShowcaseCarousel() {
     };
 
     layout();
-    const ro = new ResizeObserver(layout);
+    // Deferred a frame for the same reason the theme observer below is, plus
+    // one this observer has on its own: `layout` writes `style.width` on the
+    // cards and `--wall-span` on `stage` — the element being observed. Writing
+    // to the observed element from inside its own callback is what raises
+    // "ResizeObserver loop completed with undelivered notifications", and it
+    // was the single loudest entry in error tracking. The browser recovers by
+    // re-delivering next frame, so this only ever cost us a noisy digest, but
+    // the synchronous read-after-write inside the callback was real work in the
+    // resize path. One rAF hop removes both.
+    let resizeFrame = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(layout);
+    });
     ro.observe(stage);
     // The theme toggle swaps both colours out from under the canvas and fires
     // nothing a ResizeObserver would hear.
@@ -245,6 +258,7 @@ export function ShowcaseCarousel() {
       attributeFilter: ["class"],
     });
     return () => {
+      cancelAnimationFrame(resizeFrame);
       ro.disconnect();
       themed.disconnect();
     };

@@ -168,6 +168,8 @@ function EmptyState() {
  * a network that hangs must produce a video in the fallback face, not a render
  * that sits there until Remotion's timeout kills it.
  */
+const FONT_TIMEOUT_MS = 8_000;
+
 function useGoogleFont(family: string | null) {
   const [handle] = useState(() =>
     family ? delayRender(`Loading font ${family}`) : null,
@@ -189,16 +191,39 @@ function useGoogleFont(family: string | null) {
     // `document.fonts.load` resolves once the face is parsed and ready to draw
     // — which is later than the stylesheet finishing, and is the moment that
     // actually matters for a screenshot.
+    //
+    // Raced against a timer, because `.catch().finally()` only covers a promise
+    // that *settles*. A stylesheet that hangs — a blocked request, a captive
+    // portal, a font host having a bad minute — leaves both loads pending
+    // forever, `continueRender` is never reached, and Remotion kills the frame
+    // with "Timed out loading Google Font ...". That was the one entry in error
+    // tracking that was our own bug rather than browser noise.
+    //
+    // Eight seconds is well past a real font fetch and well inside Remotion's
+    // own delayRender timeout, so we always lose the race first and fall back
+    // to the system face — a video in the wrong font beats no video at all.
+    const timer = setTimeout(() => {
+      if (!cancelled) {
+        cancelled = true;
+        continueRender(handle);
+      }
+    }, FONT_TIMEOUT_MS);
+
     Promise.all([
       document.fonts.load(`400 32px "${family}"`),
       document.fonts.load(`700 32px "${family}"`),
     ])
       .catch(() => undefined)
       .finally(() => {
-        if (!cancelled) continueRender(handle);
+        if (cancelled) return;
+        cancelled = true;
+        clearTimeout(timer);
+        continueRender(handle);
       });
 
     return () => {
+      clearTimeout(timer);
+      if (cancelled) return;
       cancelled = true;
       continueRender(handle);
     };
