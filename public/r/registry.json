@@ -245,6 +245,27 @@
       "type": "registry:component"
     },
     {
+      "name": "block-wordmark",
+      "title": "Block Wordmark",
+      "description": "A wordmark builds out of solid blocks — a square scales in, a coloured deck fans out around it and winds back, the stack collapses and stretches into one block per letter, then each block flashes a colour and swaps for its real letterform.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/block-wordmark/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/block-wordmark.tsx"
+        }
+      ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
+      "type": "registry:component"
+    },
+    {
       "name": "phone-frame",
       "title": "Phone Frame",
       "description": "iPhone-style device frame with a dynamic island and a screen slot — flat or lightly 3D-tilted, with rise, rotate-in, or float entrances and a subtle float loop.",

@@ -1,12 +1,13 @@
 {
   "announce-title": "8ba197cc09",
   "answer-stream": "143f6253cc",
+  "block-wordmark": "5958807d42",
   "follower-rush": "d4585a29f1",
   "hero-launch": "c55a02cffc",
   "karaoke-captions": "004af8d9ef",
   "laptop-frame": "3a82ff3fff",
-  "logo-assemble": "27284eb2ce",
-  "logo-flicker": "e0de4993ea",
+  "logo-assemble": "ae78e62f90",
+  "logo-flicker": "854e11286b",
   "moodboard-reveal": "661790c4de",
   "orbit-gallery": "b36fd55d73",
   "phone-frame": "ee0778254e",
@@ -16,9 +17,9 @@
   "terminal-simulator": "5657159ccf",
   "text-build": "14cb7ae322",
   "text-highlight": "42a02717c8",
-  "text-reveal": "c946d35f22",
+  "text-reveal": "a0301e60c3",
   "text-swap": "ae1552d6e9",
-  "text-swell": "c8eb019ded",
+  "text-swell": "fe8ab6c262",
   "word-captions": "e0f5be0fa9",
-  "word-flip": "21de2daa60"
+  "word-flip": "38e8b4a74f"
 }
