@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { GALLERY_CATEGORIES, GALLERY_ITEMS } from "./gallery-data";
+import { DOCS_PAGE_META } from "@/config/site";
+import { CANVAS, MAX_CLIPS, MAX_TOTAL_FRAMES } from "@/lib/video-editor/types";
+import {
+  GALLERY_CATEGORIES,
+  GALLERY_ITEMS,
+  itemsByReleaseDate,
+} from "./gallery-data";
+import { ROADMAP, STAGE_LABEL } from "./roadmap-data";
 
 export const SITE_URL = "https://snapcn.dev";
 
@@ -29,6 +36,8 @@ const CATEGORY_ORDER = [
   "transitions",
   "backgrounds",
   "ui",
+  "tools",
+  "project",
 ];
 
 function frontmatterField(fm: string, key: string): string {
@@ -94,8 +103,88 @@ function componentsGalleryPage(): LlmsPage {
   };
 }
 
+/**
+ * The `(gallery)` routes, which have no MDX and so were missing from the corpus
+ * entirely — including the video editor, the one thing on the site an agent can
+ * be *told about* rather than sent to install.
+ *
+ * Every line below is generated from something the site already knows: the page
+ * metadata in `config/site.ts`, the editor's own limits, the dated component
+ * list the changelog renders, and the roadmap data the roadmap page renders.
+ * Nothing here is written twice, so nothing here can drift.
+ */
+function bespokePages(): LlmsPage[] {
+  const editor = DOCS_PAGE_META["video-editor"];
+  const showcase = DOCS_PAGE_META.showcase;
+  const changelog = DOCS_PAGE_META.changelog;
+  const roadmap = DOCS_PAGE_META.roadmap;
+
+  const releases = itemsByReleaseDate()
+    .map(
+      ({ date, items }) =>
+        `- **${date}** — ${items.map((i) => i.name).join(", ")}`,
+    )
+    .join("\n");
+
+  const plan = ["shipped", "building", "next", "exploring"]
+    .map((stage) => {
+      const lines = ROADMAP.filter((entry) => entry.stage === stage)
+        .map(
+          (entry) =>
+            `- **${entry.title}**${entry.due ? ` (due ${entry.due})` : ""}: ${entry.body}${
+              entry.href ? ` ${SITE_URL}${entry.href}` : ""
+            }`,
+        )
+        .join("\n");
+      return lines
+        ? `## ${STAGE_LABEL[stage as keyof typeof STAGE_LABEL]}\n\n${lines}`
+        : "";
+    })
+    .filter(Boolean)
+    .join("\n\n");
+
+  return [
+    {
+      url: "/docs/video-editor",
+      title: editor.title,
+      description: editor.description,
+      category: "tools",
+      body: `A browser video editor at ${SITE_URL}/docs/video-editor. No install, no Remotion project needed — it is the fastest way to see what the components do.
+
+- Add clips from the registry to a timeline, edit their text, images and colours, reorder them and set each one's length.
+- Add a soundtrack, and trim where it starts.
+- Export an MP4, rendered server-side with Remotion: ${CANVAS.width}×${CANVAS.height} at ${CANVAS.fps}fps, up to ${MAX_CLIPS} clips and ${MAX_TOTAL_FRAMES / CANVAS.fps} seconds in total.
+- Exports carry a small snapcn mark unless you are signed in and turn it off. A render you run yourself, from installed components, is never marked.
+- Signed in, every timeline is saved as a project you can reopen.`,
+    },
+    {
+      url: "/docs/showcase",
+      title: showcase.title,
+      description: showcase.description,
+      category: "tools",
+      body: `Videos other people built with snapcn, at ${SITE_URL}/docs/showcase.
+
+Sign in to submit one — either a link to where you posted it, or an export straight from the video editor, which is then hosted here. Submissions are reviewed before they appear.`,
+    },
+    {
+      url: "/docs/changelog",
+      title: changelog.title,
+      description: changelog.description,
+      category: "project",
+      body: `Every component, by the day it landed. Newest first. Also available as a feed: ${SITE_URL}/docs/changelog/rss.xml\n\n${releases}`,
+    },
+    {
+      url: "/docs/roadmap",
+      title: roadmap.title,
+      description: roadmap.description,
+      category: "project",
+      body: `What is built, what is being built, and what is only an idea. Dates appear only on work already in progress; "exploring" may never ship.\n\n${plan}`,
+    },
+  ];
+}
+
 export function collectDocsPages(): LlmsPage[] {
-  const pages: LlmsPage[] = [componentsGalleryPage()];
+  const pages: LlmsPage[] = [componentsGalleryPage(), ...bespokePages()];
 
   const walk = (dir: string) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

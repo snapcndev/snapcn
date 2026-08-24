@@ -4,6 +4,7 @@ import { Caveat, Geist, Geist_Mono, Outfit } from "next/font/google";
 import localFont from "next/font/local";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
+import { SessionProvider } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { PostHogProvider } from "./posthog-provider";
 import { SnapCnThemeBridge } from "./snap-cn-theme-bridge";
@@ -136,19 +137,21 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full flex flex-col">
-        <PostHogProvider>
-          <NuqsAdapter>
-            <RootProvider
-              theme={{
-                defaultTheme: "system",
-                enableSystem: true,
-              }}
-            >
-              <ThemeShortcut />
-              <SnapCnThemeBridge>{children}</SnapCnThemeBridge>
-            </RootProvider>
-          </NuqsAdapter>
-        </PostHogProvider>
+        <SessionProvider>
+          <PostHogProvider>
+            <NuqsAdapter>
+              <RootProvider
+                theme={{
+                  defaultTheme: "system",
+                  enableSystem: true,
+                }}
+              >
+                <ThemeShortcut />
+                <SnapCnThemeBridge>{children}</SnapCnThemeBridge>
+              </RootProvider>
+            </NuqsAdapter>
+          </PostHogProvider>
+        </SessionProvider>
       </body>
     </html>
   );

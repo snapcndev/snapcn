@@ -61,10 +61,68 @@ export type NavLink = {
 // "Components" points at the gallery, not at `/docs/text`. It used to open the
 // Text & Titles category index, so the header's Components link answered with
 // one of seven categories and no sign of the rest.
+//
+// The list had drifted to two items while the site grew to eight sections. The
+// docs rail (`DOCS_SECTIONS`) lists all of them because a rail is a roadmap —
+// this is a header, and it carries what has actually shipped: the gallery, the
+// editor, and other people's work. Templates and Marketplace are still
+// `ComingSoonPage`s and stay out until they are not, the same rule the footer
+// keeps. Docs sits last because it is where you go once one of the first three
+// has convinced you.
 export const NAV_LINKS: NavLink[] = [
   { href: "/docs/components", label: "Components" },
+  { href: "/docs/video-editor", label: "Video Editor" },
+  { href: "/docs/showcase", label: "Showcase" },
   { href: "/docs", label: "Docs" },
 ];
+
+/**
+ * The `(gallery)` routes' SEO copy, in one place.
+ *
+ * These six pages are bespoke React routes, not MDX — so `source.getPage()`
+ * cannot see them, and everything that reads a page's title and description
+ * from the docs source silently skipped them. The OG card renderer fell back to
+ * the generic site card, `llms.txt` omitted them entirely, and each page kept a
+ * private copy of the two strings.
+ *
+ * One record, four consumers: the page's own `metadata`, `/og/<slug>`,
+ * `llms.txt`, and the JSON-LD each page emits.
+ */
+export interface DocsPageMeta {
+  title: string;
+  description: string;
+}
+
+export const DOCS_PAGE_META: Record<string, DocsPageMeta> = {
+  "video-editor": {
+    title: "Video Editor",
+    description:
+      "Compose a video from snapcn components — add clips, edit text and images, and export an MP4.",
+  },
+  showcase: {
+    title: "Showcase",
+    description: "Videos built with snapcn, submitted by the community.",
+  },
+  changelog: {
+    title: "Changelog",
+    description: "Every component in snapcn, by the day it landed.",
+  },
+  roadmap: {
+    title: "Roadmap",
+    description:
+      "What snapcn is, what is being built next, and what is only an idea so far.",
+  },
+  templates: {
+    title: "Templates",
+    description:
+      "Whole videos, composed from the registry and ready to render — drop in your copy and export.",
+  },
+  marketplace: {
+    title: "Marketplace",
+    description:
+      "Premium blocks and full scenes from the community, installed with the same shadcn CLI as everything else.",
+  },
+};
 
 /**
  * The footer, by column. Single source of truth, like `NAV_LINKS`.
@@ -100,11 +158,12 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
   {
     title: "Browse",
     links: [
-      // No Video editor: it is a coming-soon page now, and this column's rule
-      // (above) is that nothing unshipped goes in it. The rail still lists it —
-      // a rail is a roadmap, a footer is an index.
       { href: "/docs", label: "Documentation" },
       { href: "/docs/components", label: "All components" },
+      // The editor shipped; the note that used to sit here calling it a
+      // coming-soon page outlived the page it described. Templates and
+      // Marketplace are the ones still unbuilt, and they are still absent.
+      { href: "/docs/video-editor", label: "Video editor" },
       { href: "/docs/showcase", label: "Showcase" },
     ],
   },
@@ -114,7 +173,7 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
       { href: GITHUB_URL, label: "GitHub" },
       { href: `${GITHUB_URL}/blob/main/LICENSE`, label: "MIT license" },
       { href: `${GITHUB_URL}/issues`, label: "Issues" },
-      { href: "https://x.com/SriNath693", label: "X" },
+      { href: X_URL, label: "X" },
     ],
   },
 ];

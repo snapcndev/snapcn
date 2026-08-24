@@ -11,6 +11,12 @@ export async function getGitHubStars(): Promise<number | null> {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
       headers: { Accept: "application/vnd.github+json" },
       next: { revalidate: 3600 },
+      // Both callers are awaited inside a page render, so a GitHub outage — or a
+      // connection that resets rather than refusing — used to hold the whole
+      // route open until the socket gave up. The catch below already degrades to
+      // a bare link; this is what makes it degrade *quickly*. Same 5s budget
+      // `fetchOgImage` uses in lib/server/showcase.ts.
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { stargazers_count?: number };
@@ -40,6 +46,12 @@ export async function getGitHubUpdatedAt(): Promise<string | null> {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
       headers: { Accept: "application/vnd.github+json" },
       next: { revalidate: 3600 },
+      // Both callers are awaited inside a page render, so a GitHub outage — or a
+      // connection that resets rather than refusing — used to hold the whole
+      // route open until the socket gave up. The catch below already degrades to
+      // a bare link; this is what makes it degrade *quickly*. Same 5s budget
+      // `fetchOgImage` uses in lib/server/showcase.ts.
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { pushed_at?: string };
