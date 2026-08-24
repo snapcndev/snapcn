@@ -80,7 +80,7 @@ const ENTRIES = [
   },
 ] as const;
 
-export function Changelog() {
+export function HowItWorks() {
   const [active, setActive] = useState(0);
   const panels = useRef<(HTMLElement | null)[]>([]);
 
@@ -109,7 +109,10 @@ export function Changelog() {
   return (
     // `overflow-x-clip`, because the panels below are pulled past the container's
     // left padding and would otherwise open a horizontal scrollbar on the page.
-    <section id="changelog" className="relative overflow-x-clip pb-24 sm:pb-32">
+    <section
+      id="how-it-works"
+      className="relative overflow-x-clip pb-24 sm:pb-32"
+    >
       <div className="section">
         <FadeUp>
           <h2 className="mx-auto max-w-[12ch] text-pretty text-center font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">

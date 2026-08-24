@@ -1,5 +1,6 @@
 import { Menu } from "lucide-react";
 import Link from "next/link";
+import { UserMenu } from "@/components/auth/user-menu";
 import { SearchButton } from "@/components/search-button";
 import { SnapCnLogo } from "@/components/snapcn-logo";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -37,6 +38,9 @@ export function HeaderActions() {
         <GithubButton />
       </div>
       <ThemeToggle />
+      <div className="hidden sm:block">
+        <UserMenu />
+      </div>
 
       <Sheet>
         <SheetTrigger
@@ -57,6 +61,7 @@ export function HeaderActions() {
           </SheetHeader>
           <NavMobile links={NAV_LINKS} />
           <div className="mt-4 flex flex-col gap-4 px-6 pb-6">
+            <UserMenu className="w-full" />
             <GithubButton />
             <SheetClose
               render={
