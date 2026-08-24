@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
   let spec: RenderSpec;
   try {
-    spec = buildSpec(body, { signedIn, origin: new URL(request.url).origin });
+    spec = buildSpec(body, { signedIn, origin: publicOrigin(request) });
   } catch (err) {
     if (err instanceof RenderInputError) {
       return NextResponse.json(
@@ -126,6 +126,30 @@ export function buildSpec(
     // here so the queue can size the timeout before the render starts.
     durationInFrames: totalDuration(clips),
   };
+}
+
+/**
+ * The origin a *browser* would use, which is not always the one in `request.url`.
+ *
+ * Behind a reverse proxy the request arrives on an internal socket: the proxy
+ * sets `x-forwarded-proto: https` while the URL still carries `localhost:3000`.
+ * Reading `new URL(request.url).origin` there yields `https://localhost:3000` —
+ * a scheme and a port that never agree — and the renderer, which fetches the
+ * soundtrack over the network, dies on a TLS handshake against a plain HTTP
+ * port. It cost a working export the moment the app moved behind TLS.
+ *
+ * Forwarded headers win when present, because only the proxy knows the public
+ * name. They are trusted for the same reason `clientIp` trusts them: nothing
+ * reaches this process except through our own proxy.
+ */
+function publicOrigin(request: NextRequest): string {
+  const url = new URL(request.url);
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const host =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    request.headers.get("host")?.trim();
+  if (host) return `${proto || url.protocol.replace(":", "")}://${host}`;
+  return url.origin;
 }
 
 /** First hop of x-forwarded-for (the real client behind the proxy), else fallback. */
