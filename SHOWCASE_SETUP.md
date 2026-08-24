@@ -67,6 +67,17 @@ Add every `.env.local` value to your host (Vercel → Project → Settings →
 Environment Variables), then redeploy. Add the production callback URLs to each
 OAuth app.
 
+**On a container host (Coolify, Fly, Railway), do this too** — an approved
+showcase video is a file on disk, and without it the whole library is deleted
+on the next redeploy:
+
+1. Mount a persistent volume at `/data`.
+2. Set `RENDER_WORK_DIR=/data/renders`, `AUDIO_WORK_DIR=/data/audio`,
+   `SHOWCASE_WORK_DIR=/data/showcase`.
+3. Keep the app at **one replica**. The render job registry is in-process and
+   the MP4s are on local disk, so a second container 404s the polls and
+   downloads that land on the wrong one.
+
 ---
 
 ## Verify the flow

@@ -30,7 +30,7 @@ export function SubmitForm({ onDone }: { onDone?: () => void }) {
         toast.error(data.error ?? "Couldn't submit — please try again.");
         return;
       }
-      trackEvent("showcase_submitted");
+      trackEvent("showcase_submitted", { source: "gallery" });
       toast.success("Submitted! We'll review it shortly.");
       setTitle("");
       setPostUrl("");

@@ -1,8 +1,24 @@
 /**
  * Shared (client- and server-safe) helpers for classifying a submitted post
- * URL by social platform. Kept free of any server-only imports so both the
- * submit form and the server query layer can use it.
+ * URL — by social platform, and by whether we host the video ourselves. Kept
+ * free of any server-only imports so the cards, the submit form and the server
+ * query layer can all use it.
  */
+
+/** Public path a video we host is played from. */
+export const showcaseVideoUrl = (jobId: string) =>
+  `/api/showcase/video/${jobId}`;
+
+/**
+ * True for a submission whose video lives on our origin rather than someone
+ * else's post.
+ *
+ * The distinction is carried by `post_url` itself rather than a column: a
+ * hosted entry stores its own relative path there, which keeps the NOT NULL
+ * constraint satisfied and cost the feature no migration.
+ */
+export const isHostedVideo = (postUrl: string) =>
+  postUrl.startsWith("/api/showcase/video/");
 
 export const PLATFORMS = [
   "x",

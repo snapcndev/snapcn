@@ -35,9 +35,11 @@ type SessionUser = {
 export function ShowcaseHeader({
   user,
   providers,
+  emailEnabled = false,
 }: {
   user: SessionUser;
   providers: AuthProviderId[];
+  emailEnabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const signedIn = Boolean(user?.id);
@@ -115,7 +117,10 @@ export function ShowcaseHeader({
               {signedIn ? (
                 <SubmitForm onDone={() => setOpen(false)} />
               ) : (
-                <SignInButtons providers={providers} />
+                <SignInButtons
+                  providers={providers}
+                  emailEnabled={emailEnabled}
+                />
               )}
             </DialogContent>
           </Dialog>
