@@ -19,15 +19,19 @@ the snapcn repo. Install it with the [`skills`](https://skills.sh) CLI:
 npx skills add snapcndev/snapcn
 ```
 
-This finds the `snapcn` skill and installs it into your agent (for Claude Code:
-`.claude/skills/snap-cn/`). The CLI is interactive — pick the skill and target agent when prompted.
+The CLI is interactive — it lists every skill in the repo, and you pick the one you want plus the
+target agent. `snapcn` is the one you want; the rest are the design and motion skills we build the
+library with. It installs into your agent's skills folder (for Claude Code: `.claude/skills/snapcn/`).
+
+To skip the picker, name the skill directly — that is the copy-paste line:
+
+```bash
+npx skills add snapcndev/snapcn --skill snapcn --yes
+```
 
 ### Common flags
 
 ```bash
-# Install straight to the snapcn skill, no prompts
-npx skills add snapcndev/snapcn --skill snapcn --yes
-
 # Install globally (available in every project)
 npx skills add snapcndev/snapcn --skill snapcn -g
 
@@ -43,7 +47,7 @@ npx skills add snapcndev/snapcn --list
 To try it for a single session without writing files:
 
 ```bash
-npx skills use snapcndev/snapcn@snap-cn | claude
+npx skills use snapcndev/snapcn@snapcn | claude
 ```
 
 ## What's inside
@@ -51,7 +55,9 @@ npx skills use snapcndev/snapcn@snap-cn | claude
 | File | Contents |
 |---|---|
 | `SKILL.md` | Install flow, the two tiers, categories, patterns, design defaults |
-| `references/components.md` | Every component — props, defaults, dependencies, duration & vibe |
+| `references/components/` | One file per component — props, defaults, example, use / don't-use — plus `index.md`, the router table |
+| `references/archetypes/` | Per-archetype build recipes (product demo, changelog, logo bumper…) |
+| `references/anatomy.md` | Composing a full video: strategy, the product-demo beats, the quality bar |
 | `references/design.md` | Anti-slop design defaults + tokens (palette, fonts, canvas) |
 | `references/motion-principles.md` | The 12 motion principles adapted to snapcn |
 | `references/anti-patterns.md` | Common generation mistakes and their fixes |
