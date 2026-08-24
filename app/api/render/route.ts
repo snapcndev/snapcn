@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { anonymousId, distinctIdFromCookie } from "@/lib/analytics-server";
 import { ensureCleanupSweep } from "@/lib/server/cleanup";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 import { enqueueRender, type RenderSpec } from "@/lib/server/render-queue";
@@ -77,6 +78,13 @@ export async function POST(request: NextRequest) {
     }
     throw err;
   }
+
+  // Read here, not in the queue: the render runs detached and by the time it
+  // starts there is no request left to take a cookie from. This is what joins a
+  // render to the person who opened the editor.
+  spec.distinctId =
+    distinctIdFromCookie(request.cookies) ??
+    (await anonymousId(ip, request.headers.get("user-agent") ?? ""));
 
   const jobId = enqueueRender(spec);
   return NextResponse.json({ jobId }, { status: 202 });

@@ -74,7 +74,33 @@ export type ServerEvent =
   /** `/llms.txt` or `/llms-full.txt` — the size of the AI-agent channel. */
   | "llms_txt_fetched"
   /** A docs search, with its result count. Zero-result queries are the roadmap. */
-  | "docs_searched";
+  | "docs_searched"
+  /**
+   * A render reached the front of the queue and started.
+   *
+   * Paired with the two below so the funnel is legible: `editor_export_started`
+   * fires in the browser and can only say someone asked. These three are the
+   * only view of what the box actually did — and since the renderer moved onto
+   * hardware we own, its throughput is our problem rather than a platform's.
+   *
+   * `queued_ms` is the one to watch. It is the wait for a concurrency slot, so
+   * it stays near zero until demand passes `RENDER_MAX_CONCURRENT` and then
+   * climbs fast. That number, not CPU, is what says "buy a bigger box".
+   */
+  | "render_started"
+  /**
+   * A finished MP4. `render_ms` over `frames` gives frames-per-second on this
+   * hardware, which is the figure that decides whether the editor's length cap
+   * is still honest.
+   */
+  | "render_succeeded"
+  /**
+   * A render that did not produce a file. `reason` is the message shown to the
+   * user, `timed_out` separates a wedged Chromium from a genuine failure —
+   * they need different fixes and would otherwise be one indistinguishable
+   * number.
+   */
+  | "render_failed";
 
 type Props = Record<string, unknown>;
 

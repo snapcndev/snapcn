@@ -1,5 +1,6 @@
 "use client";
 
+import type { CaptureResult } from "posthog-js";
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { useEffect } from "react";
@@ -73,10 +74,62 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       loaded: (ph) => {
         if (process.env.NODE_ENV === "development") ph.debug();
       },
-      before_send: (event) =>
-        process.env.NODE_ENV === "development" ? null : event,
+      before_send: (event) => {
+        if (process.env.NODE_ENV === "development") return null;
+        // Error tracking is only worth reading if everything in it is
+        // actionable. Three classes of noise are not — see `isNoise`.
+        if (event?.event === "$exception" && isNoise(event)) return null;
+        return event;
+      },
     });
   }, []);
 
   return <PHProvider client={posthog}>{children}</PHProvider>;
+}
+
+/**
+ * Exceptions that are reported but are not bugs in this app.
+ *
+ * The weekly digest was 222 exceptions, and ~170 of them were these three. A
+ * digest nobody can act on is a digest nobody opens, which costs us the real
+ * errors sitting underneath.
+ *
+ * Each entry is dropped for a stated reason. Nothing goes in this list because
+ * it is merely frequent.
+ */
+const NOISE = [
+  // The browser telling us a ResizeObserver callback outlasted its frame. It
+  // is a notification, not a failure: the observation is re-delivered on the
+  // next frame and nothing is lost. Ours is rAF-deferred (see
+  // showcase-carousel), but third-party widgets raise it too and we cannot fix
+  // those.
+  "ResizeObserver loop completed with undelivered notifications",
+  "ResizeObserver loop limit exceeded",
+  // posthog-js aborting its own request. The SDK already downgrades this to a
+  // console warning internally; it only reaches error tracking because the
+  // rejected fetch surfaces as an unhandled rejection, which
+  // `capture_exceptions` picks up. An analytics beacon that did not arrive is
+  // not an application error — and reporting it means a flaky network becomes
+  // a wall of exceptions.
+  "PostHog request timed out",
+  // A <video> whose `src` changed or whose element was removed while the media
+  // was still loading. That is the normal life of a lazy player and a
+  // carousel: the user scrolls away mid-fetch and the browser abandons it.
+  "The fetching process for the media resource was aborted",
+] as const;
+
+function isNoise(event: CaptureResult): boolean {
+  const props = event.properties ?? {};
+  const list = props.$exception_list;
+  const messages: string[] = [
+    typeof props.$exception_message === "string"
+      ? props.$exception_message
+      : "",
+    ...(Array.isArray(list)
+      ? list.map((e: { value?: unknown }) =>
+          typeof e?.value === "string" ? e.value : "",
+        )
+      : []),
+  ];
+  return messages.some((m) => NOISE.some((n) => m.includes(n)));
 }
