@@ -53,13 +53,42 @@ export function RenderedDemo({
   const play = () => ref.current?.play().catch(() => {});
   const stop = () => ref.current?.pause();
 
+  /**
+   * Whether this reader asked for reduced motion — and so the only reader for
+   * whom the pointer drives playback at all.
+   *
+   * A ref, not state: nothing in the render depends on it, it is read inside
+   * the handlers, and making it state would cost every card on the page a
+   * re-render to learn something that never changes.
+   */
+  const reduced = useRef(false);
+
+  /**
+   * Pointer and focus move the video for a reduced-motion reader **only**.
+   *
+   * These fired for everybody, on top of the autoplay below, and the `stop`
+   * half is the bug that produced: hover a card, move the mouse away, and
+   * `onMouseLeave` paused a demo that was playing perfectly well — leaving one
+   * frozen card in a grid of moving ones, which is precisely the "looked
+   * broken" state the observer's own comment was written to prevent. Moving a
+   * pointer across a card is not a request to stop the video under it.
+   */
+  const pointerPlay = () => {
+    if (reduced.current) play();
+  };
+  const pointerStop = () => {
+    if (reduced.current) stop();
+  };
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
     // Read once, at mount: a preference change mid-session is not worth a
     // listener per card, and the reader still has hover.
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    reduced.current =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    if (reduced.current) return;
 
     // Every demo on screen plays. `isIntersecting` rather than a ratio: a card
     // half-cut by the fold is still a card the reader is looking at, and it
@@ -98,13 +127,14 @@ export function RenderedDemo({
       // grid had been looked at, which is the bug this whole mechanism exists
       // to prevent.
       preload="none"
-      // Kept for the reduced-motion reader, who gets no autoplay: hover — or
-      // focus, since the card is a link and the keyboard tabs through the grid
-      // — is then the only way to see the thing move.
-      onMouseEnter={play}
-      onMouseLeave={stop}
-      onFocus={play}
-      onBlur={stop}
+      // Reduced-motion readers only — see `pointerPlay`. For them hover, or
+      // focus (the card is a link, so the keyboard tabs through the grid), is
+      // the only way to see the thing move. For everyone else these are inert
+      // and the IntersectionObserver owns playback.
+      onMouseEnter={pointerPlay}
+      onMouseLeave={pointerStop}
+      onFocus={pointerPlay}
+      onBlur={pointerStop}
       // `contain`, not `cover`: the Player letterboxes rather than crops, and a
       // demo that silently crops its own composition is a lie about the output.
       className={cn("size-full object-contain", className)}
