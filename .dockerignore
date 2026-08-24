@@ -1,18 +1,13 @@
-# Keep the build context small + force a clean build inside the image.
+# node_modules is NOT copied, and that is not just about image size: pnpm
+# resolves @remotion/compositor-* per platform, so a macOS tree copied into a
+# Linux image ships the darwin binary and every render fails to launch.
 node_modules
 .next
-.git
-.omc
-.claude
-
-# Generated inside the Docker build (RUN pnpm run bundle:remotion) — never copy a
-# local/stale bundle in.
 .remotion-bundle
-
-# Local env + misc
+.git
 .env*
-*.tsbuildinfo
-.DS_Store
-coverage
-.vercel
-.source
+!.env.example
+.lighthouse
+social-exports
+out
+*.log
