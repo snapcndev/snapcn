@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import type { ShowcaseItem } from "@/lib/server/showcase";
-import { PLATFORM_LABELS } from "@/lib/showcase/platform";
+import { isHostedVideo, PLATFORM_LABELS } from "@/lib/showcase/platform";
 
 /** Pending-submission moderation list: approve/reject each via the API. */
 export function AdminList({ items }: { items: ShowcaseItem[] }) {
@@ -50,17 +50,35 @@ export function AdminList({ items }: { items: ShowcaseItem[] }) {
           className="flex flex-col gap-3 border border-border p-4 sm:flex-row sm:items-center"
         >
           <div className="min-w-0 flex-1">
-            <a
-              href={item.postUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-foreground hover:underline"
-            >
-              {item.title}
-            </a>
-            <p className="truncate text-sm text-muted-foreground">
-              {PLATFORM_LABELS[item.platform]} · {item.postUrl}
-            </p>
+            {/* Approving a video you cannot watch is not review. A hosted entry
+                plays right here; a link entry stays a link out. */}
+            {isHostedVideo(item.postUrl) ? (
+              <>
+                {/* biome-ignore lint/a11y/useMediaCaption: user-submitted video, no transcript to ship */}
+                <video
+                  src={item.postUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="mb-3 aspect-video w-full max-w-sm bg-muted object-contain"
+                />
+                <p className="font-medium text-foreground">{item.title}</p>
+              </>
+            ) : (
+              <>
+                <a
+                  href={item.postUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-foreground hover:underline"
+                >
+                  {item.title}
+                </a>
+                <p className="truncate text-sm text-muted-foreground">
+                  {PLATFORM_LABELS[item.platform]} · {item.postUrl}
+                </p>
+              </>
+            )}
             {item.description ? (
               <p className="mt-1 text-sm text-muted-foreground">
                 {item.description}

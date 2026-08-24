@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { GALLERY_CATEGORIES, GALLERY_COUNT } from "@/lib/gallery-data";
-import { Changelog } from "./components/sections/changelog";
 import { FAQ_ITEMS, Faq } from "./components/sections/faq";
 import { Hero } from "./components/sections/hero";
+import { HowItWorks } from "./components/sections/how-it-works";
 import { Newsletter } from "./components/sections/newsletter";
 import { ShowcaseCarousel } from "./components/sections/showcase-carousel";
 import { WallOfLove } from "./components/sections/wall-of-love";
@@ -86,7 +86,7 @@ export default function Page() {
       <Hero />
       <ShowcaseCarousel />
       <WhatYouGet />
-      <Changelog />
+      <HowItWorks />
       <Faq />
       <WallOfLove />
       <Newsletter />

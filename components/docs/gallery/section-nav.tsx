@@ -48,6 +48,8 @@ export const DOCS_SECTIONS = [
     href: "/docs/marketplace",
     match: "/docs/marketplace",
   },
+  { label: "Roadmap", href: "/docs/roadmap", match: "/docs/roadmap" },
+  { label: "Changelog", href: "/docs/changelog", match: "/docs/changelog" },
 ] as const;
 
 export type DocsSection = (typeof DOCS_SECTIONS)[number];

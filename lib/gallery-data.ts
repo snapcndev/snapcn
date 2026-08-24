@@ -79,8 +79,9 @@ export interface GalleryItem {
   href: string;
   /** Explicit override; otherwise a stable shape is derived by master index. */
   tile?: TileShape;
-  /** ISO date the component landed. Only set on recent arrivals — it exists to
-   *  feed the "New" shelf, not to be a complete changelog. See `NEW_ITEMS`. */
+  /** ISO date the component landed, from the commit that introduced it. Set on
+   *  every item: it feeds both the "New" shelf and `/docs/changelog`, and a
+   *  changelog with holes in it is worse than no changelog. */
   added?: string;
 }
 
@@ -91,6 +92,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A cinematic zoom-out title reveal — the lead word appears large, then scales down and slides into place as the sentence sweeps in and settles",
     category: "text",
     href: "/docs/text/text-reveal",
+    added: "2026-07-24",
   },
   {
     name: "Text Swell",
@@ -98,6 +100,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "The lead word floats toward you and hangs there while the sentence assembles around it, letters bouncing up off the baseline — then the whole line falls back",
     category: "text",
     href: "/docs/text/text-swell",
+    added: "2026-07-24",
   },
   {
     name: "Text Highlight",
@@ -105,6 +108,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "Animated emphasis on one span inside a static sentence — marker, color, underline, strikethrough, or shimmer",
     category: "text",
     href: "/docs/text/text-highlight",
+    added: "2026-07-24",
   },
   {
     name: "Text Swap",
@@ -112,6 +116,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "Replace one line of text with another using exit-then-enter scheduling and five transition presets",
     category: "text",
     href: "/docs/text/text-swap",
+    added: "2026-07-24",
   },
   {
     name: "Text Build",
@@ -119,6 +124,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "Words enter one at a time while the already-placed words reflow to stay centered — as a line or a stack",
     category: "text",
     href: "/docs/text/text-build",
+    added: "2026-07-24",
   },
   {
     name: "Word Flip",
@@ -126,6 +132,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A headline types itself out, then one word cycles on a 3D flip — anticipation dip, motion-blurred throw, zero reflow",
     category: "text",
     href: "/docs/text/word-flip",
+    added: "2026-07-24",
   },
   {
     name: "Word Captions",
@@ -133,6 +140,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "Burned-in captions in the styles big channels use — the YouTube box by default (white Roboto on a per-line black box), plus outlined and accent presets",
     category: "captions",
     href: "/docs/captions/word-captions",
+    added: "2026-07-24",
     tile: "tall",
   },
   {
@@ -141,6 +149,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A caption line over any footage — the YouTube per-line black box by default, with karaoke fill, highlight-bar, and pill presets",
     category: "captions",
     href: "/docs/captions/karaoke-captions",
+    added: "2026-07-24",
   },
   {
     name: "Logo Assemble",
@@ -148,6 +157,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A ring of image cards revolves and drains to the centre, giving birth to a simple logo that slides left as the brand name reveals to its right",
     category: "logos",
     href: "/docs/logos/logo-assemble",
+    added: "2026-07-24",
     tile: "wide",
   },
   {
@@ -156,6 +166,16 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "Images flip across the screen very fast, the flicker decelerates and fades, and the logo and brand name resolve underneath",
     category: "logos",
     href: "/docs/logos/logo-flicker",
+    added: "2026-07-24",
+    tile: "wide",
+  },
+  {
+    name: "Block Wordmark",
+    description:
+      "A square scales in, a deck of coloured cards fans out around it and winds back, then the stack stretches into one block per letter and each block flashes a colour and swaps for its real letterform",
+    category: "logos",
+    href: "/docs/logos/block-wordmark",
+    added: "2026-08-23",
     tile: "wide",
   },
   {
@@ -164,6 +184,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "iPhone-style device frame with a dynamic island — sways in 3D showing off a glowing ride-summary map that draws itself",
     category: "screens",
     href: "/docs/screens/phone-frame",
+    added: "2026-07-24",
     tile: "tall",
   },
   {
@@ -172,6 +193,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "MacBook that opens, runs a notch notification, then dives into the screen until an image or video fills the frame",
     category: "screens",
     href: "/docs/screens/laptop-frame",
+    added: "2026-07-24",
     tile: "wide",
   },
   {
@@ -180,6 +202,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "Terminal window with chunked command playback, freeze-frame pauses, step scrolling, and an optional cursor-pinned zoom",
     category: "screens",
     href: "/docs/screens/terminal-simulator",
+    added: "2026-07-24",
   },
   {
     name: "Follower Rush",
@@ -187,6 +210,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "An X-style follower notification that piles up — avatars stack in and the count explodes, then the row bends into an undulating wave of faces",
     category: "social",
     href: "/docs/social/follower-rush",
+    added: "2026-07-24",
   },
   {
     name: "Announce Title",
@@ -210,6 +234,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "Cinematic product-launch hero — two cards slide into formation as the headline reveals above",
     category: "scenes",
     href: "/docs/scenes/hero-launch",
+    added: "2026-07-24",
   },
   {
     name: "Orbit Gallery",
@@ -217,6 +242,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A ring of feature cards orbits a central product mark, each rotating upright as it swings to the front",
     category: "scenes",
     href: "/docs/scenes/orbit-gallery",
+    added: "2026-07-24",
   },
   {
     name: "Moodboard Reveal",
@@ -224,6 +250,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A kinetic headline with a swapping inline image, then a scattered photo gallery flies in and the camera pushes through it — dark to light — onto a hero image",
     category: "scenes",
     href: "/docs/scenes/moodboard-reveal",
+    added: "2026-07-24",
     tile: "wide",
   },
   {
@@ -232,6 +259,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
       "A search field wider than the shot — it comes forward, types across its left half, then pages to its right half",
     category: "ai-input",
     href: "/docs/ai-input/search-typing",
+    added: "2026-07-24",
   },
   {
     name: "Prompt Zoom",
@@ -346,17 +374,39 @@ export function getFilteredSortedItems(
   return filtered;
 }
 
+/**
+ * The changelog: every component grouped by the day it landed, newest first.
+ *
+ * Derived from the same `added` field the "New" shelf ranks on, so there is one
+ * date per component and no second list to keep in step. A component with no
+ * `added` is omitted rather than bucketed under "unknown" — the gap is visible
+ * in the count on the page, which is the pressure to go and date it.
+ */
+export function itemsByReleaseDate(): { date: string; items: GalleryItem[] }[] {
+  const buckets = new Map<string, GalleryItem[]>();
+  for (const item of GALLERY_ITEMS) {
+    if (!item.added) continue;
+    const bucket = buckets.get(item.added);
+    if (bucket) bucket.push(item);
+    else buckets.set(item.added, [item]);
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, items]) => ({ date, items }));
+}
+
 /** slug → item, so a deep-linked ?item= opens even when filtered out. */
 export const ITEM_BY_SLUG = new Map<string, GalleryItem>(
   GALLERY_ITEMS.map((item) => [slugFromHref(item.href), item]),
 );
 
 /**
- * Every component's canonical docs path. Components no longer have standalone
- * pages — their docs render inline in the `/docs/components` overlay — so these
- * paths redirect there (see the docs catch-all route) and are kept out of the
- * sitemap.
+ * The item behind a docs URL, or null for a page that is not a component.
+ *
+ * The docs route uses it to enrich a component's page with the two facts only
+ * this file knows: the day it shipped (`datePublished`) and the demo mp4 that
+ * belongs to it (`VideoObject`).
  */
-export const GALLERY_HREFS = new Set<string>(
-  GALLERY_ITEMS.map((item) => item.href),
-);
+export function galleryItemByHref(href: string): GalleryItem | null {
+  return GALLERY_ITEMS.find((item) => item.href === href) ?? null;
+}

@@ -178,3 +178,40 @@ describe("checkRateLimit — edge cases", () => {
     expect(() => checkRateLimit("unknown")).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Per-purpose buckets — an upload must not spend an export's budget
+// ---------------------------------------------------------------------------
+
+describe("checkRateLimit — buckets are independent per purpose", () => {
+  it("draining the audio bucket leaves the render budget untouched", () => {
+    process.env.AUDIO_RATE_LIMIT = "3";
+    const ip = freshIp();
+
+    // Spend every audio token.
+    for (let i = 0; i < 3; i++) expect(checkRateLimit(ip, "audio")).toBe(true);
+    expect(checkRateLimit(ip, "audio")).toBe(false);
+
+    // The render budget for the same IP is still whole — this is the bug the
+    // split fixes: three soundtracks used to leave two exports for the minute.
+    for (let i = 0; i < 5; i++) expect(checkRateLimit(ip, "render")).toBe(true);
+    expect(checkRateLimit(ip, "render")).toBe(false);
+
+    delete process.env.AUDIO_RATE_LIMIT;
+  });
+
+  it("defaults to the render bucket, so existing callers are unchanged", () => {
+    const ip = freshIp();
+    for (let i = 0; i < 5; i++) expect(checkRateLimit(ip)).toBe(true);
+    expect(checkRateLimit(ip)).toBe(false);
+    expect(checkRateLimit(ip, "render")).toBe(false);
+  });
+
+  it("audio gets a wider default budget than render", () => {
+    // Module defaults, no env override: render 5, audio 20.
+    delete process.env.RENDER_RATE_LIMIT;
+    const ip = freshIp();
+    for (let i = 0; i < 20; i++) expect(checkRateLimit(ip, "audio")).toBe(true);
+    expect(checkRateLimit(ip, "audio")).toBe(false);
+  });
+});

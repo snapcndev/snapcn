@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
 import {
+  DOCS_PAGE_META,
   INSTALL_ALL_NAMES,
   INSTALL_COMMAND,
   installCommand,
@@ -106,9 +107,17 @@ export async function GET(
   const page = slug?.length ? source.getPage(slug) : undefined;
   const data = page?.data as { title?: string; description?: string };
 
-  const title = data?.title ?? "Product demo videos, in React.";
+  // The `(gallery)` routes — Video Editor, Showcase, Changelog, Roadmap — have
+  // no MDX file, so `source.getPage` misses them and every one of them shared
+  // the generic site card. They are the pages most likely to be shared.
+  const bespoke =
+    !page && slug?.length === 1 ? DOCS_PAGE_META[slug[0]] : undefined;
+
+  const title =
+    data?.title ?? bespoke?.title ?? "Product demo videos, in React.";
   const description =
     data?.description ??
+    bespoke?.description ??
     "Copy-paste Remotion components for the shots a software demo is made of — streaming AI answers, terminals, device frames, captions.";
 
   // The category's own index page owns its label, so the card cannot drift from

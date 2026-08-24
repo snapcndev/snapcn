@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseRenderInput,
+  parseVideoTimelineInput,
   RenderInputError,
 } from "@/lib/server/validate-input";
 
@@ -426,5 +427,50 @@ describe("parseRenderInput — totalStars", () => {
     expect(() => parseRenderInput(validBody({ totalStars: NaN }))).toThrow(
       RenderInputError,
     );
+  });
+});
+
+describe("clip background", () => {
+  const clip = (background?: unknown) => ({
+    clips: [
+      {
+        slug: "text-reveal",
+        durationInFrames: 30,
+        props: {},
+        ...(background === undefined ? {} : { background }),
+      },
+    ],
+  });
+
+  it("defaults to black when absent", () => {
+    expect(parseVideoTimelineInput(clip()).clips[0].background).toBe("#000000");
+  });
+
+  it("accepts every hex form the colour input can emit", () => {
+    for (const hex of ["#fff", "#FFFF", "#0a0a0b", "#0A0A0BFF"]) {
+      expect(parseVideoTimelineInput(clip(hex)).clips[0].background).toBe(hex);
+    }
+  });
+
+  it("rejects anything that is not a literal hex colour", () => {
+    // The value lands in a `style` attribute inside a server-side render, so a
+    // CSS function or a url() must not survive the boundary — and must not be
+    // quietly swapped for black either, which would hide the bug.
+    for (const bad of [
+      "red",
+      "rgb(0,0,0)",
+      "url(https://x/y.png)",
+      "#12345",
+      "#gggggg",
+      "expression(alert(1))",
+      "",
+      123,
+      null,
+      {},
+    ]) {
+      expect(() => parseVideoTimelineInput(clip(bad))).toThrow(
+        RenderInputError,
+      );
+    }
   });
 });

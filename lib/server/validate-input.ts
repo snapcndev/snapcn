@@ -1,6 +1,9 @@
 import "server-only";
+import { normalizeFont } from "@/lib/video-editor/fonts";
 import {
   type Clip,
+  DEFAULT_BACKGROUND,
+  isHexColor,
   MAX_CLIP_FRAMES,
   MAX_CLIPS,
   MAX_TOTAL_FRAMES,
@@ -200,6 +203,10 @@ export function parseRenderInput(body: unknown): RenderInput {
 
 const MAX_SLUG_LEN = 100;
 const MAX_CLIP_ID_LEN = 64;
+/** Upload ids are `crypto.randomUUID()`s — accept only that exact shape. */
+const AUDIO_ID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Component ids are kebab-case registry keys — reject anything else so a slug
 // can only ever be a plain registry lookup / React key, never a path or script.
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -214,7 +221,12 @@ const MAX_CLIP_PROPS_BYTES = 4_000_000;
  * + total duration, and props size, and enforces the slug shape. Props are
  * passed through as-is (they're only ever React props inside the render).
  */
-export function parseVideoTimelineInput(body: unknown): { clips: Clip[] } {
+export function parseVideoTimelineInput(body: unknown): {
+  clips: Clip[];
+  removeWatermark: boolean;
+  font: string;
+  audio: { id: string; volume: number; trimStart: number } | null;
+} {
   if (!isPlainObject(body)) {
     throw new RenderInputError("request body must be a JSON object");
   }
@@ -265,12 +277,62 @@ export function parseVideoTimelineInput(body: unknown): { clips: Clip[] } {
         ? raw.id
         : `clip-${index}`;
 
-    return { id, slug, props, durationInFrames };
+    // Rejected rather than defaulted: `background` reaches a `style` attribute
+    // inside the render, and a body that carries a colour we do not recognise
+    // is a client bug or an attempt — either way, silently swapping in black
+    // would hide it. Absent is fine; present-and-wrong is not.
+    if (raw.background !== undefined && !isHexColor(raw.background)) {
+      throw new RenderInputError(
+        `clips[${index}].background must be a hex colour`,
+      );
+    }
+    const background = isHexColor(raw.background)
+      ? raw.background
+      : DEFAULT_BACKGROUND;
+
+    return { id, slug, props, durationInFrames, background };
   });
+
+  // A *request* to drop the watermark, honoured only if the caller turns out to
+  // be signed in — see `/api/render`. Anything other than an explicit `true` is
+  // read as "no", so a malformed or missing value keeps the mark.
+  const removeWatermark = isPlainObject(body) && body.removeWatermark === true;
+
+  // Allow-list, not a free string: the value reaches both a `font-family` and a
+  // fonts.googleapis.com URL inside a server-side render. `normalizeFont`
+  // checks it against the 1821 families shipped in `@remotion/google-fonts`
+  // plus the built-in stacks, and returns the default for anything else.
+  const font = normalizeFont(isPlainObject(body) ? body.font : undefined);
+
+  // An upload id and a volume — never a URL. Whatever lands here becomes the
+  // `src` of an <Audio> that our own renderer fetches, so accepting a caller's
+  // URL would let anyone aim that request at any host they liked. The render
+  // route turns this id into a URL on its own origin.
+  const rawAudio = isPlainObject(body) ? body.audio : undefined;
+  const audio =
+    isPlainObject(rawAudio) &&
+    typeof rawAudio.id === "string" &&
+    AUDIO_ID_RE.test(rawAudio.id)
+      ? {
+          id: rawAudio.id,
+          volume:
+            typeof rawAudio.volume === "number" &&
+            Number.isFinite(rawAudio.volume)
+              ? Math.min(1, Math.max(0, rawAudio.volume))
+              : 1,
+          // Clamped and finite: this becomes a frame offset, and a NaN or a
+          // negative there is a render that never produces a frame.
+          trimStart:
+            typeof rawAudio.trimStart === "number" &&
+            Number.isFinite(rawAudio.trimStart)
+              ? Math.max(0, Math.min(rawAudio.trimStart, 3600))
+              : 0,
+        }
+      : null;
 
   if (totalFrames > MAX_TOTAL_FRAMES) {
     throw new RenderInputError("timeline exceeds the maximum total duration");
   }
 
-  return { clips };
+  return { clips, removeWatermark, font, audio };
 }

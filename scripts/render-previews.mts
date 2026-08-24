@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  copyFileSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -165,8 +166,23 @@ async function main() {
  * was already re-encoding, so it is free.
  *
  * If a demo ever gets shown full-bleed, this is the line that has to move.
+ *
+ * ## The full-size render is kept, not thrown away
+ *
+ * That reasoning is about the *site*, and it holds. It does not hold for X,
+ * where the same clip plays full-bleed in the feed on a 3x phone — 960 wide is
+ * below the 1280 X itself asks for, and it reads as a cheap export. The file
+ * that satisfies both already exists for one moment: what Remotion just wrote,
+ * at the composition's real size and CRF 18, before this pass shrinks it. So it
+ * is copied to `social-exports/` first rather than being overwritten. No extra
+ * render, no change to a single byte the site serves.
  */
 function retimeTo60(file: string, tag: string) {
+  // Keep the full-size render before the downscale pass replaces it in place.
+  const social = path.join(root, "social-exports", path.basename(file));
+  mkdirSync(path.dirname(social), { recursive: true });
+  copyFileSync(file, social);
+
   const tmp = `${file}.60.mp4`;
   const done = spawnSync(
     "ffmpeg",
@@ -216,6 +232,7 @@ function retimeTo60(file: string, tag: string) {
 
   if (done.status === 0) {
     renameSync(tmp, file);
+    writePoster(file, tag);
     process.stdout.write(`\r${tag} done → ${path.relative(root, file)} @60\n`);
     return;
   }
@@ -227,6 +244,73 @@ function retimeTo60(file: string, tag: string) {
       `  work, and the showcase wall will animate at 30fps instead of 60. Install\n` +
       `  ffmpeg and re-run to fix it; see the note on retimeTo60.\n`,
   );
+}
+
+/**
+ * A still frame for the demo, written beside it.
+ *
+ * `/docs/components` renders one card per component, and the grid is short
+ * enough that every card is on screen at once — so there is nothing below the
+ * fold to lazily defer, and autoplaying the lot cost 16.6MB and twenty-two
+ * decoders that never stopped. The cards show this instead, and play the real
+ * file on hover. All 22 posters together are ~164KB.
+ *
+ * Taken 60% of the way in, not at frame 0: most of these scenes animate *in*,
+ * so their first frame is an empty stage.
+ *
+ * webp via `cwebp` — the ffmpeg here has no libwebp encoder, and a PNG of the
+ * same frame is roughly 6x the bytes. A missing `cwebp` is not fatal: the
+ * poster is simply absent and the card is a blank box until hover, which is
+ * exactly how it behaved before posters existed.
+ */
+function writePoster(file: string, tag: string) {
+  const slug = path.basename(file, ".mp4");
+  const dir = path.join(path.dirname(file), "posters");
+  mkdirSync(dir, { recursive: true });
+
+  const probe = spawnSync("ffprobe", [
+    "-v",
+    "error",
+    "-show_entries",
+    "format=duration",
+    "-of",
+    "csv=p=0",
+    file,
+  ]);
+  const seconds = Number(String(probe.stdout ?? "").trim());
+  const at =
+    Number.isFinite(seconds) && seconds > 0 ? (seconds * 0.6).toFixed(2) : "0";
+
+  const png = path.join(dir, `${slug}.png`);
+  const frame = spawnSync("ffmpeg", [
+    "-nostdin",
+    "-y",
+    "-v",
+    "error",
+    "-ss",
+    at,
+    "-i",
+    file,
+    "-frames:v",
+    "1",
+    "-vf",
+    "scale=640:-2",
+    png,
+  ]);
+  if (frame.status !== 0) return;
+
+  const webp = spawnSync("cwebp", [
+    "-quiet",
+    "-q",
+    "76",
+    png,
+    "-o",
+    path.join(dir, `${slug}.webp`),
+  ]);
+  rmSync(png, { force: true });
+  if (webp.status !== 0) {
+    process.stdout.write(`\r${tag} — no poster (cwebp not on PATH)\n`);
+  }
 }
 
 /**

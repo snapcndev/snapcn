@@ -34,13 +34,61 @@ export function useEditorExport() {
     }
   }, []);
 
-  useEffect(() => stop, [stop]);
+  /**
+   * Unmount cancels the export, not just its timer.
+   *
+   * `stop` clears a *pending* timeout, which is enough only while the loop is
+   * asleep. A fetch already in flight resolves after cleanup has run, and the
+   * continuation then calls `setProgress` on a dead component and schedules a
+   * fresh timeout — so the poll loop resurrects itself and runs forever. The
+   * flag is what that continuation checks, and nothing was ever setting it.
+   *
+   * `download` resets it to false at the start of each export, so a remount can
+   * still export.
+   */
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true;
+      stop();
+    };
+  }, [stop]);
 
   const download = useCallback(
-    async (clips: Clip[]) => {
+    async (
+      clips: Clip[],
+      {
+        removeWatermark = false,
+        font = "Geist",
+        audio = null,
+        onDone,
+      }: {
+        removeWatermark?: boolean;
+        font?: string;
+        audio?: {
+          uploadId: string | null;
+          volume: number;
+          trimStart: number;
+        } | null;
+        /**
+         * Take the finished render instead of downloading it. Given the jobId,
+         * which names the MP4 still sitting in the server's work dir — see the
+         * done branch below.
+         */
+        onDone?: (jobId: string) => Promise<void> | void;
+      } = {},
+    ) => {
       if (clips.length === 0) {
         toast.error("Add at least one clip before exporting.");
         return;
+      }
+
+      // Only when the upload genuinely failed. A soundtrack that uploaded fine
+      // is in the export, so warning unconditionally — which is what this used
+      // to do — was telling people their audio was missing when it was not.
+      if (audio && !audio.uploadId) {
+        toast.warning("Your soundtrack won't be in this export.", {
+          description: "The upload didn't finish. Re-add the file and retry.",
+        });
       }
       cancelledRef.current = false;
       setExporting(true);
@@ -56,7 +104,21 @@ export function useEditorExport() {
         const res = await fetch("/api/render", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "video-timeline", clips }),
+          // A request, not an instruction: `/api/render` only honours it for a
+          // signed-in caller. Sent regardless so the server owns the decision.
+          body: JSON.stringify({
+            type: "video-timeline",
+            clips,
+            removeWatermark,
+            font,
+            audio: audio?.uploadId
+              ? {
+                  id: audio.uploadId,
+                  volume: audio.volume,
+                  trimStart: audio.trimStart,
+                }
+              : null,
+          }),
         });
         if (!res.ok) throw new Error(await readError(res));
         const { jobId } = (await res.json()) as { jobId: string };
@@ -71,7 +133,13 @@ export function useEditorExport() {
               if (cancelledRef.current) return resolve();
               setProgress(job.progress ?? 0);
               if (job.status === "done" && job.downloadUrl) {
-                triggerDownload(job.downloadUrl);
+                // `onDone` takes the render *instead of* downloading it: the
+                // download route deletes the MP4 as it streams, so a showcase
+                // submission has to claim the file rather than consume it.
+                // It owns its own errors — a failed submit must not be
+                // reported as a failed render.
+                if (onDone) await onDone(jobId);
+                else triggerDownload(job.downloadUrl);
                 trackEvent("editor_export_succeeded", {
                   clip_count: clips.length,
                   duration_ms: Date.now() - startedAt,

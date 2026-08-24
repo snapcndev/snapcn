@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { ThemeToggle } from "@/app/(home)/components/theme-toggle";
+import { ChromeControls } from "./chrome-controls";
+import { GallerySidebarMobile } from "./gallery-sidebar";
 import { DocsSectionNav } from "./section-nav";
 
 /**
@@ -20,9 +21,10 @@ export function DocsTopBar({ children }: { children?: ReactNode }) {
   return (
     <div className="pt-6">
       <DocsSectionNav className="mb-4" />
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <GallerySidebarMobile />
         {children}
-        <ThemeToggle className="ml-auto" />
+        <ChromeControls className="ml-auto" />
       </div>
     </div>
   );

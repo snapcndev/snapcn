@@ -55,7 +55,15 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // Session replay. For a product whose entire pitch is "look at how this
       // moves", watching one person fail to find the Customize panel is worth
       // more than a month of aggregate counts. Inputs are masked by default.
-      disable_session_recording: false,
+      //
+      // Off in development, and not for tidiness: `before_send` drops every dev
+      // event anyway, so the recorder has nothing to record — but it still
+      // fetches its own 60KB bundle through the `/ingest` rewrite on every page
+      // load. That is a server-side proxy hop to PostHog on a dev box, and when
+      // it resets it surfaces as a bare `TypeError: fetch failed` with
+      // ECONNRESET and no application frames, next to four "could not load
+      // recorder" lines. Both disappear when nothing asks for the recorder.
+      disable_session_recording: process.env.NODE_ENV === "development",
 
       // `pnpm dev` would otherwise post local clicking-around into the same
       // project the conversion numbers are read from. Events are still built and

@@ -115,7 +115,11 @@ type AnalyticsEvents = {
     source: string;
   };
 
-  showcase_submitted: Record<string, never>;
+  /**
+   * Answers whether the editor produces submissions the paste-a-link form
+   * never would — the two surfaces ask for very different amounts of work.
+   */
+  showcase_submitted: { source: "gallery" | "editor" };
   /**
    * Fired once per browser per account, at the moment `identifyUser` promotes
    * an anonymous visitor. No `provider` property: which OAuth button they used
@@ -123,6 +127,16 @@ type AnalyticsEvents = {
    * source of truth for a question the database answers exactly.
    */
   signed_in: Record<string, never>;
+  /**
+   * A sign-in prompt was opened. Paired with `signed_in` this is the conversion
+   * of the whole auth gate, and `surface` says which ask does the work — the
+   * header button, or the watermark badge in the editor where the reader has a
+   * concrete reason to care. If one converts and the other does not, the ask
+   * moves.
+   */
+  sign_in_opened: {
+    surface: "header" | "editor_watermark";
+  };
 };
 
 /**

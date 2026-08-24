@@ -48,3 +48,12 @@ next-env.d.ts
 .remotion-bundle/
 
 .omc
+
+# Full-size demo renders, kept for posting to X. Not served by the site —
+# public/demos/ holds the 960-wide copies the site actually paints.
+# Regenerate with: pnpm run render:previews
+social-exports/
+.gstack/
+
+# Local Lighthouse runs (pnpm lighthouse), not a build input.
+.lighthouse/

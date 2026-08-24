@@ -90,7 +90,7 @@ UI in the video doesn't drift from the UI in the product.
 **The motion is measured, not eyeballed.** Scaled text pivots on its baseline instead of its centre,
 and renders with `geometricPrecision`, because glyph rasterisers have no vertical sub-pixel
 positioning and hinting re-snaps stems every frame. Both fixes were verified on rendered frames
-(judder 0.284px → 0.014px). The details are in [`motion-quality`](./.claude/skills/motion-quality/SKILL.md).
+(judder 0.284px → 0.014px). The details are in [`motion-quality`](./skills/motion-quality/SKILL.md).
 
 **You own it.** shadcn philosophy: files are copied into your project. Edit anything, upgrade
 nothing, no black box.

@@ -50,14 +50,31 @@ vi.mock("server-only", () => ({}));
 // ---------------------------------------------------------------------------
 
 /** A valid RenderSpec (the queue is composition-agnostic — content is opaque). */
-function makeSpec(fileName = "owner-repo-stars.mp4"): RenderSpec {
+function makeSpec(
+  fileName = "owner-repo-stars.mp4",
+  durationInFrames = 300,
+): RenderSpec {
   return {
     compositionId: "github-stars",
     inputProps: { repo: "owner/repo", totalStars: 100 },
     width: 1280,
     height: 720,
     fileName,
+    durationInFrames,
   };
+}
+
+/**
+ * A render that never finishes on its own and rejects the moment it's aborted —
+ * i.e. a stuck Chromium that honours the cancel signal.
+ */
+function wedgedRender() {
+  return ({ signal }: { signal?: AbortSignal }) =>
+    new Promise<string>((_, reject) => {
+      signal?.addEventListener("abort", () =>
+        reject(new Error("Render aborted")),
+      );
+    });
 }
 
 /**
@@ -106,6 +123,7 @@ const mockRender = renderComposition as unknown as MockInstance<
 beforeEach(() => {
   vi.useFakeTimers();
   mockRender.mockReset();
+  delete process.env.RENDER_TIMEOUT_MS;
 });
 
 afterEach(() => {
@@ -301,6 +319,67 @@ describe("render-queue — render timeout", () => {
     expect(job!.error).toMatch(/timed out/i);
 
     delete process.env.RENDER_TIMEOUT_MS;
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Timeout scales with length — the guard must not fire on a merely long render,
+// and must still fire promptly on a short one.
+// ---------------------------------------------------------------------------
+
+describe("render-queue — timeout scales with duration", () => {
+  it("does not abort a 60 s render at the old flat 120 s ceiling", async () => {
+    mockRender.mockImplementation(wedgedRender());
+
+    // 1800 frames @30fps = 60 s of video → 60 s startup + 1800 × 200 ms = 420 s.
+    const jobId = enqueueRender(makeSpec("long.mp4", 1800));
+    await tick();
+
+    vi.advanceTimersByTime(130_000); // well past the ceiling that used to kill it
+    await tick();
+    await tick();
+
+    expect(getJob(jobId)!.status).toBe("rendering");
+
+    // Let it abort so the limiter slot doesn't leak into the next test.
+    vi.advanceTimersByTime(400_000);
+    await tick();
+    await tick();
+  });
+
+  it("keeps a short render on a short leash", async () => {
+    mockRender.mockImplementation(wedgedRender());
+
+    // 90 frames = 3 s of video → 60 s + 90 × 200 ms = 78 s, not 420 s.
+    const jobId = enqueueRender(makeSpec("short.mp4", 90));
+    await tick();
+
+    vi.advanceTimersByTime(77_000);
+    await tick();
+    expect(getJob(jobId)!.status).toBe("rendering");
+
+    vi.advanceTimersByTime(2_000);
+    await tick();
+    await tick();
+
+    const job = getJob(jobId);
+    expect(job!.status).toBe("error");
+    expect(job!.error).toMatch(/timed out/i);
+  });
+
+  it("RENDER_TIMEOUT_MS still overrides the scaled budget absolutely", async () => {
+    process.env.RENDER_TIMEOUT_MS = "1000";
+    mockRender.mockImplementation(wedgedRender());
+
+    // A three-minute timeline would otherwise get ~19 minutes.
+    const jobId = enqueueRender(makeSpec("max.mp4", 5400));
+    await tick();
+
+    vi.advanceTimersByTime(1_100);
+    await tick();
+    await tick();
+
+    expect(getJob(jobId)!.status).toBe("error");
   });
 });
 

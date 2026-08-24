@@ -16,16 +16,50 @@ interface Bucket {
   updatedAt: number;
 }
 
+/**
+ * What is being limited. Each name gets its own bucket per IP and its own
+ * budget: uploading a soundtrack and exporting a video are different actions
+ * with different costs, and sharing one bucket meant three uploads left you
+ * two exports for the minute.
+ */
+export type RateLimitBucket = "render" | "audio" | "showcase" | "project";
+
+/** Env prefix per bucket. `render` keeps `RENDER_*` so existing config still applies. */
+const ENV_PREFIX: Record<RateLimitBucket, string> = {
+  render: "RENDER",
+  audio: "AUDIO",
+  showcase: "SHOWCASE",
+  project: "PROJECT",
+};
+
+/**
+ * Fallbacks: an upload is cheap next to a render, so it gets a wider budget —
+ * and a project save is cheaper still. Autosave fires on a debounce while
+ * someone is actively editing, so its budget has to cover a working minute of
+ * that, not a click.
+ */
+const DEFAULT_LIMIT: Record<RateLimitBucket, number> = {
+  render: 5,
+  audio: 20,
+  showcase: 5,
+  project: 60,
+};
+
+function envInt(name: string, fallback: number, min = 1): number {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed >= min
+    ? Math.floor(parsed)
+    : fallback;
+}
+
 /** Max requests per window before throttling (bucket capacity). */
-function limit(): number {
-  const parsed = Number(process.env.RENDER_RATE_LIMIT);
-  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 5;
+function limit(bucket: RateLimitBucket): number {
+  return envInt(`${ENV_PREFIX[bucket]}_RATE_LIMIT`, DEFAULT_LIMIT[bucket]);
 }
 
 /** Window over which a full bucket refills. */
-function windowMs(): number {
-  const parsed = Number(process.env.RENDER_RATE_WINDOW_MS);
-  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 60_000;
+function windowMs(bucket: RateLimitBucket): number {
+  return envInt(`${ENV_PREFIX[bucket]}_RATE_WINDOW_MS`, 60_000);
 }
 
 const buckets = new Map<string, Bucket>();
@@ -34,19 +68,24 @@ const buckets = new Map<string, Bucket>();
 const IDLE_EVICT_MS = 60 * 60 * 1000;
 
 /**
- * Consume one token for `ip`. Returns true if allowed, false if the bucket is
- * empty (caller should respond 429).
+ * Consume one token for `ip` in `purpose`'s bucket. Returns true if allowed,
+ * false if the bucket is empty (caller should respond 429).
  */
-export function checkRateLimit(ip: string): boolean {
-  const cap = limit();
+export function checkRateLimit(
+  ip: string,
+  purpose: RateLimitBucket = "render",
+): boolean {
+  const cap = limit(purpose);
   // Tokens refilled per ms so a full window restores the whole capacity.
-  const ratePerMs = cap / windowMs();
+  const ratePerMs = cap / windowMs(purpose);
   const now = Date.now();
 
-  let bucket = buckets.get(ip);
+  // Namespaced key: one IP holds an independent budget per purpose.
+  const key = `${purpose}:${ip}`;
+  let bucket = buckets.get(key);
   if (!bucket) {
     bucket = { tokens: cap, updatedAt: now };
-    buckets.set(ip, bucket);
+    buckets.set(key, bucket);
   } else {
     const elapsed = now - bucket.updatedAt;
     bucket.tokens = Math.min(cap, bucket.tokens + elapsed * ratePerMs);

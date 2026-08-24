@@ -11,8 +11,10 @@ import type { ControlConfig, ControlType } from "@/lib/customizer-config";
 import { cn } from "@/lib/utils";
 
 /** Shared pill surface so every non-slider control matches the elastic slider. */
+// `min-w-0` so a row can never be wider than the column it sits in — without
+// it a long label pushes the row out and the whole panel scrolls sideways.
 const PILL =
-  "flex h-11 items-center gap-3 rounded-xl bg-control px-3 text-sm transition-colors";
+  "flex h-11 min-w-0 items-center gap-3 rounded-xl bg-control px-3 text-sm transition-colors";
 
 /** Strip trailing zeros so the value reads like the reference (1, 0.8, 0.1). */
 function formatNumber(v: number) {
@@ -46,7 +48,9 @@ function SelectPill({
           "w-full justify-between outline-none hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/40",
         )}
       >
-        <span className="font-medium text-muted-foreground">{ctrl.label}</span>
+        <span className="min-w-0 truncate font-medium text-muted-foreground">
+          {ctrl.label}
+        </span>
         <span className="flex items-center gap-1 font-medium text-foreground">
           <SelectPrimitive.Value />
           {/* Raw primitive instead of the SelectTrigger wrapper so the chevron
@@ -103,7 +107,7 @@ function NumberInputPill({
     <div className={PILL}>
       <Label
         htmlFor={id}
-        className="shrink-0 font-medium text-muted-foreground"
+        className="min-w-0 truncate font-medium text-muted-foreground"
       >
         {ctrl.label}
       </Label>
@@ -152,7 +156,7 @@ function ImagePill({
     <div className={PILL}>
       <Label
         htmlFor={`${id}-url`}
-        className="shrink-0 font-medium text-muted-foreground"
+        className="min-w-0 truncate font-medium text-muted-foreground"
       >
         {ctrl.label}
       </Label>
@@ -240,7 +244,10 @@ function Control({
     case "boolean":
       return (
         <div className={cn(PILL, "justify-between")}>
-          <Label htmlFor={id} className="font-medium text-muted-foreground">
+          <Label
+            htmlFor={id}
+            className="min-w-0 truncate font-medium text-muted-foreground"
+          >
             {ctrl.label}
           </Label>
           <Switch
@@ -254,7 +261,10 @@ function Control({
     case "color":
       return (
         <div className={cn(PILL, "justify-between")}>
-          <Label htmlFor={id} className="font-medium text-muted-foreground">
+          <Label
+            htmlFor={id}
+            className="min-w-0 truncate font-medium text-muted-foreground"
+          >
             {ctrl.label}
           </Label>
           {/* The native input fills the swatch box, so it is directly
@@ -281,7 +291,7 @@ function Control({
         <div className={PILL}>
           <Label
             htmlFor={id}
-            className="shrink-0 font-medium text-muted-foreground"
+            className="min-w-0 truncate font-medium text-muted-foreground"
           >
             {ctrl.label}
           </Label>

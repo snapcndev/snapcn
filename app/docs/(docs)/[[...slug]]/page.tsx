@@ -1,33 +1,31 @@
 import { DocsBody, DocsDescription, DocsTitle } from "fumadocs-ui/page";
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import { GALLERY_HREFS } from "@/lib/gallery-data";
+import { notFound } from "next/navigation";
+import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
+import { galleryItemByHref } from "@/lib/gallery-data";
+import { collectDocsPages } from "@/lib/llms";
 import { getMDXComponents } from "@/mdx-components";
 import { source } from "@/source";
 
 const SITE_URL = "https://snapcn.dev";
 
 /**
- * Components no longer have standalone docs pages — their MDX renders inline in
- * the components gallery overlay. Any hit on a component's old route (bookmarks,
- * in-doc cross-links, search results) bounces to that overlay. Non-component
- * docs (getting-started, UI concepts/installation) are untouched.
+ * Every component has its own page again.
+ *
+ * These routes used to 307 into `/docs/components?item=<slug>`, which put 22
+ * documents — one per component, each answering a different query — on a single
+ * URL whose title was "Components" whatever you had asked for. A query
+ * parameter is not a page: it cannot carry its own title, description, canonical
+ * or schema, so twenty-two long-tail intents competed for one result.
+ *
+ * The gallery overlay is unchanged and is still how the gallery is browsed. It
+ * simply is no longer the *only* place a component's documentation exists.
  */
-function componentOverlayRedirect(slug: string[] | undefined): string | null {
-  if (!slug?.length) return null;
-  const path = `/docs/${slug.join("/")}`;
-  if (GALLERY_HREFS.has(path)) {
-    return `/docs/components?item=${slug[slug.length - 1]}`;
-  }
-  return null;
-}
 
 export default async function Page(props: {
   params: Promise<{ slug?: string[] }>;
 }) {
   const params = await props.params;
-  const overlay = componentOverlayRedirect(params.slug);
-  if (overlay) redirect(overlay);
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
@@ -44,6 +42,15 @@ export default async function Page(props: {
     })),
   ];
 
+  // The two facts a component page can state that a prose page cannot: the day
+  // it shipped, and the mp4 of it. Both are real — `added` is the date of the
+  // commit that introduced the component, and the video is the file the page
+  // itself plays. Neither is emitted for a page that has no component behind it.
+  const item = galleryItemByHref(page.url);
+  const slug = page.slugs[page.slugs.length - 1] ?? "";
+  const demoSrc = renderedDemoSrc(slug);
+  const demoPoster = renderedDemoPoster(slug);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -59,7 +66,27 @@ export default async function Page(props: {
           url: "https://x.com/SriNath693",
         },
         publisher: { "@type": "Organization", name: "snapcn", url: SITE_URL },
+        ...(item?.added
+          ? { datePublished: item.added, dateModified: item.added }
+          : {}),
       },
+      ...(item && demoSrc
+        ? [
+            {
+              "@type": "VideoObject",
+              name: `${item.name} — snapcn component demo`,
+              description: item.description,
+              contentUrl: `${SITE_URL}${demoSrc}`,
+              thumbnailUrl: `${SITE_URL}${demoPoster}`,
+              // `contentUrl` only. `embedUrl` names a *player* page, and there
+              // is none — the demo is an inert <video> inside the docs.
+              ...(item.added ? { uploadDate: item.added } : {}),
+              isFamilyFriendly: true,
+              license: "https://opensource.org/license/mit",
+            },
+          ]
+        : []),
+      ...howToGraph(page.url, data),
       {
         "@type": "BreadcrumbList",
         itemListElement: crumbs.map((c, i) => ({
@@ -103,15 +130,18 @@ export function generateStaticParams() {
   // The `components` and `showcase` slugs are served by bespoke `(gallery)`
   // routes, not this catch-all. Neither has an MDX file, so the loader doesn't
   // yield them — this filter is belt-and-braces against any future re-add.
-  const RESERVED = new Set(["components", "showcase", "video-editor"]);
-  return (
-    source
-      .generateParams()
-      .filter((p) => !(p.slug?.length === 1 && RESERVED.has(p.slug[0])))
-      // Component docs live in the gallery overlay now; their routes only
-      // redirect, so there's nothing to prerender.
-      .filter((p) => !componentOverlayRedirect(p.slug))
-  );
+  const RESERVED = new Set([
+    "components",
+    "showcase",
+    "video-editor",
+    "templates",
+    "marketplace",
+    "roadmap",
+    "changelog",
+  ]);
+  return source
+    .generateParams()
+    .filter((p) => !(p.slug?.length === 1 && RESERVED.has(p.slug[0])));
 }
 
 export async function generateMetadata(props: {
@@ -142,4 +172,50 @@ export async function generateMetadata(props: {
       images: [ogImage],
     },
   };
+}
+
+/**
+ * `HowTo` for the one page that is genuinely a procedure.
+ *
+ * Steps are the page's own numbered `##` headings, read from the same plain
+ * markdown `/llms-full.txt` is built from — so a step can only exist in the
+ * schema if it exists on the page, and editing the MDX rewrites both. Google
+ * retired HowTo rich results in 2023; this is here for the answer engines that
+ * still parse schema, on the one page an agent actually needs to follow.
+ *
+ * No step URLs: fumadocs slugs its own heading anchors, and a guessed `#anchor`
+ * that misses is worse than an omitted optional field.
+ */
+const INSTALL_URL = "/docs/getting-started/installation";
+
+function howToGraph(
+  url: string,
+  data: { title: string; description?: string },
+): Record<string, unknown>[] {
+  if (url !== INSTALL_URL) return [];
+
+  const body = collectDocsPages().find((p) => p.url === INSTALL_URL)?.body;
+  if (!body) return [];
+
+  // "## 1. Teach your project the `@/` alias" — the number is the reader's step
+  // counter and `position` carries it in schema, so it is stripped from `name`
+  // rather than read twice. Backticks are markdown, not part of the step.
+  const steps = [...body.matchAll(/^##\s+\d+\.\s+(.+)$/gm)].map(
+    (match, index) => ({
+      "@type": "HowToStep",
+      position: index + 1,
+      name: match[1].replace(/`/g, "").trim(),
+    }),
+  );
+
+  if (steps.length === 0) return [];
+
+  return [
+    {
+      "@type": "HowTo",
+      name: data.title,
+      description: data.description,
+      step: steps,
+    },
+  ];
 }

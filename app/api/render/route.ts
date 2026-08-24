@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { ensureCleanupSweep } from "@/lib/server/cleanup";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 import { enqueueRender, type RenderSpec } from "@/lib/server/render-queue";
@@ -6,7 +7,7 @@ import {
   parseVideoTimelineInput,
   RenderInputError,
 } from "@/lib/server/validate-input";
-import { CANVAS } from "@/lib/video-editor/types";
+import { CANVAS, totalDuration } from "@/lib/video-editor/types";
 
 // Node runtime: native Remotion render (Chromium) needs full Node, not edge.
 export const runtime = "nodejs";
@@ -46,9 +47,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Two halves, and the split is the point: the *body* may request a clean
+  // export, the *session* is what grants it. A crafted POST asking for one
+  // while signed out still gets the mark, because the grant never comes from
+  // the payload.
+  //
+  // Signing in no longer removes the mark on its own — it only makes the
+  // choice available, which is why this is `signedIn && requested` rather than
+  // just `signedIn`. Failing closed is the only correct direction here: no
+  // session, an unreadable session, or no explicit request all mean marked.
+  let signedIn = false;
+  try {
+    signedIn = Boolean((await auth())?.user);
+  } catch {
+    // A session lookup that throws (DB down, adapter unconfigured) must not
+    // hand out a clean export, and must not fail the render either.
+    signedIn = false;
+  }
+
   let spec: RenderSpec;
   try {
-    spec = buildSpec(body);
+    spec = buildSpec(body, { signedIn, origin: new URL(request.url).origin });
   } catch (err) {
     if (err instanceof RenderInputError) {
       return NextResponse.json(
@@ -63,15 +82,49 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ jobId }, { status: 202 });
 }
 
-/** Validate an untrusted body into the video-timeline render request. */
-function buildSpec(body: unknown): RenderSpec {
-  const { clips } = parseVideoTimelineInput(body);
+/**
+ * Validate an untrusted body into the video-timeline render request.
+ *
+ * `signedIn` is a second argument rather than a field on `body` so the type
+ * system enforces what the comment at the call site asks for: the payload can
+ * carry the *request*, never the *authority*, and a future caller cannot forget
+ * to supply the session.
+ *
+ * Exported for test — this is the one function where getting the argument
+ * wrong gives away the paid feature.
+ */
+export function buildSpec(
+  body: unknown,
+  { signedIn, origin = "" }: { signedIn: boolean; origin?: string },
+): RenderSpec {
+  const { clips, removeWatermark, font, audio } = parseVideoTimelineInput(body);
+  // The one line that decides who gets a clean file.
+  const watermark = !(signedIn && removeWatermark);
   return {
     compositionId: "video-timeline",
-    inputProps: { clips },
+    inputProps: {
+      clips,
+      watermark,
+      font,
+      // Built here from *our* origin and a validated id, so the only URL the
+      // renderer can be pointed at is one of our own files.
+      audio: audio
+        ? {
+            src: `${origin}/api/audio/${audio.id}`,
+            name: "soundtrack",
+            volume: audio.volume,
+            trimStart: audio.trimStart,
+            uploadId: audio.id,
+            durationSeconds: 0,
+          }
+        : null,
+    },
     width: CANVAS.width,
     height: CANVAS.height,
     fileName: "snapcn-video.mp4",
+    // Same sum `calculateMetadata` uses in `src/remotion/Root.tsx`, computed
+    // here so the queue can size the timeout before the render starts.
+    durationInFrames: totalDuration(clips),
   };
 }
 
