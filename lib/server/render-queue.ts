@@ -1,8 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { mkdir } from "node:fs/promises";
+import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 import pLimit from "p-limit";
+import { captureServer } from "@/lib/analytics-server";
 import { RENDER_WORK_DIR } from "./paths";
 import { renderComposition } from "./render";
 
@@ -57,6 +58,16 @@ export interface RenderSpec {
    * agnostic). The per-account quota will want the same number.
    */
   durationInFrames: number;
+  /**
+   * Who asked, for analytics only.
+   *
+   * Carried on the spec because the render runs detached from the request that
+   * created it — by the time it starts there is no cookie left to read. Without
+   * it the render events still count, but they cannot be joined to the person
+   * who opened the editor, and "did the people who exported come back" stops
+   * being answerable.
+   */
+  distinctId?: string;
 }
 
 /** Max simultaneous renders; the rest queue. Sized for the 8-vCPU box. */
@@ -155,6 +166,29 @@ async function runRender(
 
   job.status = "rendering";
 
+  // Time spent waiting for a concurrency slot, which is the number that says
+  // whether the box is big enough. Measured from enqueue, not from here.
+  const queuedMs = Date.now() - job.createdAt;
+  const startedAt = Date.now();
+  const who = spec.distinctId ?? "server:render";
+  const shared = {
+    composition: spec.compositionId,
+    frames: spec.durationInFrames,
+    has_audio: Boolean(
+      (spec.inputProps as { audio?: unknown } | undefined)?.audio,
+    ),
+    concurrency_limit: maxConcurrent(),
+  };
+  // Fire-and-forget, never awaited. `captureServer` swallows its own errors,
+  // but awaiting it would put a network round-trip between the job flipping to
+  // "rendering" and the render starting — and would let a slow analytics host
+  // hold a concurrency slot. Analytics must not be able to slow a render down,
+  // let alone fail one.
+  void captureServer("render_started", who, {
+    ...shared,
+    queued_ms: queuedMs,
+  });
+
   await mkdir(RENDER_WORK_DIR, { recursive: true });
 
   // Per-render timeout: abort stuck Chromium so a wedged render can't hold a
@@ -182,6 +216,23 @@ async function runRender(
     job.status = "done";
     job.progress = 1;
     job.outputPath = outputPath;
+
+    const renderMs = Date.now() - startedAt;
+    const bytes = await stat(outputPath)
+      .then((s) => s.size)
+      .catch(() => 0);
+    void captureServer("render_succeeded", who, {
+      ...shared,
+      queued_ms: queuedMs,
+      render_ms: renderMs,
+      bytes,
+      // Frames per second on this hardware. The figure that says whether the
+      // editor's length cap is still honest.
+      fps:
+        renderMs > 0
+          ? Math.round((spec.durationInFrames / renderMs) * 1000)
+          : 0,
+    });
   } catch (err) {
     job.status = "error";
     job.error = controller.signal.aborted
@@ -189,6 +240,13 @@ async function runRender(
       : err instanceof Error
         ? err.message
         : "Render failed";
+    void captureServer("render_failed", who, {
+      ...shared,
+      queued_ms: queuedMs,
+      render_ms: Date.now() - startedAt,
+      timed_out: controller.signal.aborted,
+      reason: job.error,
+    });
   } finally {
     clearTimeout(timeout);
   }

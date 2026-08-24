@@ -4,7 +4,7 @@
  * Run with:  pnpm vitest run lib/server/__tests__/render-queue.test.ts
  *
  * renderComposition (real Chromium) is mocked via vi.mock so nothing real runs.
- * node:fs/promises (mkdir) is also mocked — no real filesystem side-effects.
+  * node:fs/promises (mkdir, stat) is also mocked — no real filesystem side-effects.
  *
  * --- Seam note ---
  * render-queue.ts imports renderComposition from "./render" at module load time,
@@ -40,6 +40,9 @@ vi.mock("@/lib/server/render", () => ({
 // Mock mkdir so no real fs ops happen.
 vi.mock("node:fs/promises", () => ({
   mkdir: vi.fn().mockResolvedValue(undefined),
+  // Read on the success path for the finished file's size, which rides on the
+  // render_succeeded event.
+  stat: vi.fn().mockResolvedValue({ size: 0 }),
 }));
 
 // Mock server-only so it doesn't blow up in vitest.
