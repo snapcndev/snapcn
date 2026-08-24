@@ -1,61 +1,52 @@
-# Coolify builds this image. Debian (bookworm) — NOT Alpine — because Remotion's
-# headless Chromium needs glibc. Single stage; the Chrome Headless Shell and the
-# pre-bundled Remotion serveUrl are baked in so renders start fast at boot.
+# snapcn on a container host (Coolify, Fly, Railway).
+#
+# The whole app, not a render-only service. The render pipeline keeps its job
+# registry in-process and its MP4s on local disk, so the routes that touch them
+# (/api/render, /api/audio, /api/showcase) have to be the same process that
+# serves the editor. Splitting them would mean cross-origin auth and a second
+# deployment to keep in step, for nothing.
+#
+# See SHOWCASE_SETUP.md §5 for the volume and the one-replica rule.
+
 FROM node:22-bookworm-slim
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    NODE_ENV=production \
-    PORT=3000
-
-# Chromium runtime libraries + base fonts needed by @remotion/renderer.
+# Shared libraries Chrome Headless Shell links against. Without them a render
+# dies with "Failed to launch Chrome" and no other clue. fonts-liberation is
+# here so text with no webfont renders as glyphs rather than tofu.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates \
-      fonts-liberation \
-      libasound2 \
-      libatk-bridge2.0-0 \
-      libatk1.0-0 \
-      libcups2 \
-      libdbus-1-3 \
-      libdrm2 \
-      libgbm1 \
-      libgtk-3-0 \
-      libnss3 \
-      libpango-1.0-0 \
-      libxcomposite1 \
-      libxdamage1 \
-      libxfixes3 \
-      libxkbcommon0 \
-      libxrandr2 \
+      libnss3 libdbus-1-3 libatk1.0-0 libgbm-dev libasound2 libxrandr2 \
+      libxkbcommon-dev libxfixes3 libxcomposite1 libxdamage1 \
+      libatk-bridge2.0-0 libpango-1.0-0 libcairo2 libcups2 \
+      fonts-liberation ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# pnpm (the repo's package manager) — activated via corepack, which ships with Node.
-RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
-
 WORKDIR /app
+ENV NODE_ENV=production
 
-# Install deps first for better layer caching. Requires pnpm-lock.yaml to match
-# package.json — run `pnpm install` locally after dependency changes and commit
-# the updated lockfile before building.
-# --prod=false: NODE_ENV=production is set above, but the build needs devDeps.
-# --ignore-scripts: source isn't copied yet; dep build scripts run in `pnpm rebuild`
-# below and the root postinstall (fumadocs-mdx) needs source.config.ts.
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod=false --ignore-scripts
-
-# App source + build.
+# Everything is copied before install because `postinstall` runs fumadocs-mdx,
+# which reads content/. A package.json-only layer would fail there.
 COPY . .
-RUN pnpm rebuild && pnpm run postinstall
-RUN pnpm run build
 
-# Bake the Chrome Headless Shell into the image (no slow runtime download).
-# Uses @remotion/renderer's ensureBrowser() — the `remotion` pkg has no CLI bin
-# (that's @remotion/cli, which we don't install), so `npx remotion ...` fails.
-RUN pnpm run remotion:browser
+RUN corepack enable && pnpm install --frozen-lockfile
 
-# Pre-bundle the Remotion entry → .remotion-bundle/ (serveUrl ready at boot).
-RUN pnpm run bundle:remotion
+# Three build steps, and the order is load-bearing:
+#  1. next build      — the site.
+#  2. bundle:remotion — writes .remotion-bundle/, which getServeUrl() prefers.
+#     Skip it and the first export of every deploy pays for a webpack bundle
+#     inside the request.
+#  3. remotion:browser — downloads Chrome Headless Shell now rather than on the
+#     first render. `npx remotion browser ensure` does NOT work here: that CLI
+#     lives in @remotion/cli, which this project does not install.
+RUN pnpm run build \
+ && pnpm run bundle:remotion \
+ && pnpm run remotion:browser
+
+# Where the render pipeline keeps its files. Mount ONE volume at /data so
+# promoting a render to the showcase stays a rename instead of a copy.
+ENV RENDER_WORK_DIR=/data/renders \
+    AUDIO_WORK_DIR=/data/audio \
+    SHOWCASE_WORK_DIR=/data/showcase
+VOLUME ["/data"]
 
 EXPOSE 3000
-
-# next start (matches `pnpm run start` in package.json).
-CMD ["pnpm", "run", "start"]
+CMD ["pnpm", "start"]
