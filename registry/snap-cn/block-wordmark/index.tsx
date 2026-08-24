@@ -1,6 +1,6 @@
 "use client";
 
-import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
+import { loadFont as loadUltra } from "@remotion/google-fonts/Ultra";
 import { useEffect, useRef, useState } from "react";
 import {
   AbsoluteFill,
@@ -14,15 +14,22 @@ import {
   useCurrentScale,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
 
 // Loaded through @remotion/google-fonts, never a CSS variable — a Remotion
 // bundle has none of the app's CSS, so `var(--font-…)` gets you the right face
 // in the Player and a fallback in the mp4 (design-system rule 4). It also has to
 // be resident *before* the measurement below, or every block is sized off a
 // fallback metric.
-const { fontFamily: INTER, waitUntilDone: interReady } = loadInter("normal", {
-  weights: ["400", "600", "700", "800"],
+//
+// Ultra ships a **single** weight (400). That is not a detail to work around: ask
+// for a weight Google does not serve and the browser synthesises it, which on a
+// slab this heavy smears the serifs and thickens the stems unevenly — and the
+// canvas measurement below would then be taken off that fake face and size every
+// block wrong. So the weight prop, its customizer control and this call all say
+// 400, and none of them offer anything else.
+const { fontFamily: ULTRA, waitUntilDone: ultraReady } = loadUltra("normal", {
+  weights: ["400"],
   subsets: ["latin"],
 });
 
@@ -182,7 +189,8 @@ export interface BlockWordmarkProps {
   text?: string;
   /** Size the finished wordmark is set at, in px. */
   fontSize?: number;
-  /** Defaults to Inter, loaded through `@remotion/google-fonts`. */
+  /** Defaults to Ultra, loaded through `@remotion/google-fonts`. Ultra has one
+   *  weight (400) — see the loader note above before offering another. */
   fontFamily?: string;
   fontWeight?: number | string;
   /** The wordmark's ink. Overrides the design system's `foreground`. */
@@ -259,17 +267,36 @@ export interface BlockWordmarkProps {
 }
 
 /**
- * The accent palette, ours.
+ * The accent palette, ours: **one hue, five shades**.
+ *
+ * Every card is `primary` walked toward pure white or pure black in OKLCH, so
+ * the deck is a tonal ramp of the installer's own accent rather than five
+ * unrelated hues — override `theme.primary` and the whole deck moves with it,
+ * which a hardcoded set could never do.
+ *
+ * **Pure `#fff`/`#000`, deliberately, not `t.background`/`t.foreground`.** Those
+ * are warm neutrals, and OKLCH interpolation carries their hue: mixing this blue
+ * 28% toward the warm off-white background measures out at `rgb(0,172,196)` —
+ * cyan — and 52% lands on `rgb(124,203,178)`, a green. Pure endpoints have no
+ * hue to contribute, so all five stay on h≈260 and only lightness moves, which
+ * is what "shades of one blue" has to mean.
+ *
+ * Alternating darker/lighter rather than a straight ramp: the cards fan out
+ * overlapping, so neighbours need contrast against *each other*, not just
+ * against the stage.
  *
  * The reference's own six colours are its **brand** (design-system rule 5), so
  * they are not the default — they are one prop away:
- * `colors="#ABF25B,#FA361A,#FCCA28,#337DFE,#F99BCA" color="#0000FF"`. The first
- * card follows the user's `primary` token so the deck is anchored in whatever
- * palette the component was installed into; the rest are a decorative set, which
- * is the one thing rule 3c allows a component to name for itself.
+ * `colors="#ABF25B,#FA361A,#FCCA28,#337DFE,#F99BCA" color="#0000FF"`.
  */
 function defaultColors(t: SnapCnTheme): string[] {
-  return [t.primary, "#6f5cf0", "#d8574e", "#e8a83c", "#35a37b"];
+  return [
+    t.primary,
+    mixOklch(t.primary, "#000000", 0.3),
+    mixOklch(t.primary, "#ffffff", 0.28),
+    mixOklch(t.primary, "#000000", 0.55),
+    mixOklch(t.primary, "#ffffff", 0.52),
+  ];
 }
 
 /**
@@ -293,13 +320,13 @@ function defaultColors(t: SnapCnTheme): string[] {
 export function BlockWordmark({
   text = "base",
   fontSize = 160,
-  fontFamily = INTER,
-  fontWeight = 700,
+  fontFamily = ULTRA,
+  fontWeight = 400,
   color,
   colors,
   background,
   blockGap = 0.093,
-  cornerRadius = 0.07,
+  cornerRadius = 0.18,
   ascenderRatio,
   ascenderStemRatio,
   blockSizing = "square",
@@ -401,7 +428,7 @@ export function BlockWordmark({
     // away whenever no load happens to be pending when this effect runs, so wait
     // on the loader's own promise too.
     Promise.all([
-      interReady(),
+      ultraReady(),
       typeof document !== "undefined" && document.fonts
         ? document.fonts.ready
         : null,

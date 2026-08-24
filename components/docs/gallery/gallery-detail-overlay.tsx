@@ -22,6 +22,11 @@ import {
   slugFromHref,
 } from "@/lib/gallery-data";
 import { resolvePreview } from "@/lib/gallery-preview";
+import {
+  RenderedDemo,
+  renderedDemoPoster,
+  renderedDemoSrc,
+} from "@/lib/rendered-demos";
 import { PreviewStage } from "@/lib/ui-preview-internals";
 import { morphToCard, SHARED_MEDIA } from "./shared-media-transition";
 
@@ -144,6 +149,24 @@ function OverlayBody({
 }) {
   const slug = slugFromHref(item.href);
   const preview = useMemo(() => resolvePreview(slug), [slug]);
+  /**
+   * The overlay shows the default scene, exactly like the card does — the
+   * customizer is the only surface that varies the props — so a slug with a
+   * rendered demo has to play the mp4 here too.
+   *
+   * The card already did this and the overlay did not, which put a live Player
+   * on precisely the components that are in RENDERED_DEMOS *because* a live
+   * Player misrepresents them. Opening logo-flicker — listed there because its
+   * images swap nearly every frame and the Player flashes through them before
+   * the pool is cached — showed the one thing the rendered file exists to
+   * avoid, at full overlay size.
+   *
+   * Not fixed inside PreviewStage: the docs page hands that customized values,
+   * and a fixed mp4 cannot show those. This is a default-props surface; that
+   * one is not.
+   */
+  const demoSrc = renderedDemoSrc(slug);
+  const demoPoster = renderedDemoPoster(slug);
   const category = CATEGORY_LABEL.get(item.category) ?? item.category;
   // One string for both the label and the clipboard. They used to be written out
   // separately, so the row showed a bare `@snapcn/text-reveal` — which is not a
@@ -259,7 +282,9 @@ function OverlayBody({
                 viewTransitionName: holdsSharedName ? SHARED_MEDIA : undefined,
               }}
             >
-              {preview ? (
+              {demoSrc ? (
+                <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
+              ) : preview ? (
                 <PreviewStage
                   name={item.name}
                   Component={preview.Component}
@@ -291,7 +316,9 @@ function OverlayBody({
               viewTransitionName: holdsSharedName ? SHARED_MEDIA : undefined,
             }}
           >
-            {preview ? (
+            {demoSrc ? (
+              <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
+            ) : preview ? (
               <PreviewStage
                 name={item.name}
                 Component={preview.Component}

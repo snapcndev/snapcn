@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import { galleryItemByHref } from "@/lib/gallery-data";
 import { collectDocsPages } from "@/lib/llms";
+import { componentFaq } from "@/lib/structured-data";
 import { getMDXComponents } from "@/mdx-components";
 import { source } from "@/source";
 
@@ -85,6 +86,12 @@ export default async function Page(props: {
               license: "https://opensource.org/license/mit",
             },
           ]
+        : []),
+      // Only for a page with a component behind it: a prose page has no install
+      // command to answer with, and a FAQ invented for one would be the drift
+      // this helper exists to avoid.
+      ...(item && slug
+        ? [componentFaq(slug, item.name, item.description, page.url)]
         : []),
       ...howToGraph(page.url, data),
       {

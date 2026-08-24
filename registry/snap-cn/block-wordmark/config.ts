@@ -23,8 +23,14 @@ import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
  */
 const INK = "#0000FF";
 const BACKGROUND = "#faf9f6";
-/** `primary`, then the four decorative accents the component ships. */
-const PALETTE = "#3072db, #6f5cf0, #d8574e, #e8a83c, #35a37b";
+/**
+ * `primary` and four shades of it — the same ramp `defaultColors()` builds, but
+ * frozen to hex because a control value is a plain string. Keep the two in step.
+ *
+ * Written as hex, not `rgb(...)`: this control is comma-separated and an
+ * `rgb(26, 68, 135)` would be split into three broken colours.
+ */
+const PALETTE = "#3072db, #1a4487, #6b9be8, #092148, #9cbdf2";
 
 export const blockWordmarkConfig: ComponentConfig = {
   componentName: "BlockWordmark",
@@ -46,12 +52,15 @@ export const blockWordmarkConfig: ComponentConfig = {
       step: 4,
       label: "Font size",
     },
-    // Only the weights `@remotion/google-fonts` is asked to fetch for Inter —
-    // offering one it did not load gets you a synthesised bold in the render.
+    // Ultra serves exactly one weight. Offering another gets a browser-
+    // synthesised bold in the render — which on a slab this heavy thickens the
+    // stems unevenly and smears the serifs — and the canvas measurement is then
+    // taken off that fake face, so every block is sized wrong. One option, on
+    // purpose.
     fontWeight: {
       type: "select",
-      default: "700",
-      options: ["400", "600", "700", "800"],
+      default: "400",
+      options: ["400"],
       label: "Font weight",
     },
     blockSizing: {
@@ -76,7 +85,7 @@ export const blockWordmarkConfig: ComponentConfig = {
     // the swap. It stays a prop for a display face that needs it (see the docs).
     cornerRadius: {
       type: "number",
-      default: 0.07,
+      default: 0.18,
       min: 0,
       max: 0.5,
       step: 0.01,
