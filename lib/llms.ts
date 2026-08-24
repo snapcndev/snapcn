@@ -225,9 +225,27 @@ export function collectDocsPages(): LlmsPage[] {
   });
 }
 
+/**
+ * Newest component release date, reused as the file's freshness signal.
+ *
+ * An answer engine deciding between two sources prefers the one that says when
+ * it was last true. Derived from the same `added` dates the sitemap uses, so it
+ * cannot drift from what actually shipped, and it moves only when a component
+ * does — not on every deploy, which would be noise rather than a signal.
+ */
+function lastUpdated(): string {
+  const dates = GALLERY_ITEMS.map((i) => i.added).filter((d): d is string =>
+    Boolean(d),
+  );
+  return dates.sort().at(-1) ?? "";
+}
+
 export const LLMS_HEADER = `# snapcn
 
 > snapcn is a shadcn-style registry of production-ready video components for Remotion (React). Developers install components with \`npx shadcn@latest add @snapcn/<component>\`; the source and everything it depends on is copied into their project and they own the code. Typical use: building product demo videos, launch videos and social clips in React.
 
-Prerequisites: an existing Remotion project (\`npx create-video@latest\`) and the shadcn CLI. License: MIT. Author: Sri Nath (https://x.com/SriNath693). Site: ${SITE_URL}
+Prerequisites: an existing Remotion project (\`npx create-video@latest\`) and the shadcn CLI. License: MIT. Site: ${SITE_URL}
+
+Maintained by Sri Nath. Project account: https://x.com/snapcndev
+Last updated: ${lastUpdated()} (newest component release)
 `;
