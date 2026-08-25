@@ -1,6 +1,5 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
 import {
   parseAsString,
   parseAsStringLiteral,
@@ -8,21 +7,13 @@ import {
   useQueryStates,
 } from "nuqs";
 import { type ReactNode, useCallback, useEffect, useMemo } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useTrackEvent } from "@/lib/analytics";
 import {
   GALLERY_CATEGORIES,
   GALLERY_ITEMS,
   type GalleryFilter,
-  getFilteredSortedItems,
+  getFilteredItems,
   ITEM_BY_SLUG,
-  type SortMode,
   slugFromHref,
 } from "@/lib/gallery-data";
 import { cn } from "@/lib/utils";
@@ -36,12 +27,6 @@ const FILTER_IDS: GalleryFilter[] = [
   "new",
   ...GALLERY_CATEGORIES.map((c) => c.id),
 ];
-const SORT_ORDER: SortMode[] = ["curated", "az", "category"];
-const SORT_LABELS: Record<SortMode, string> = {
-  curated: "Curated",
-  az: "A–Z",
-  category: "Category",
-};
 
 /**
  * The double chevron on the "New" pill.
@@ -94,8 +79,8 @@ function pillClassName(active: boolean) {
 
 /**
  * The gallery's client toolbar + masonry + detail overlay. Category pills
- * genuinely filter the grid and a sort dropdown reorders it (both in the URL via
- * nuqs `?category=`/`?sort=`, `history: "replace"`). Clicking a card opens the
+ * genuinely filter the grid (in the URL via nuqs `?category=`,
+ * `history: "replace"`). Clicking a card opens the
  * in-place detail overlay via `?item=<slug>` (`history: "push"`, so Back closes
  * it); prev/next walk the on-screen list.
  */
@@ -105,11 +90,8 @@ export function GalleryExplorer({
   /** Server-rendered doc bodies for every component, keyed by slug (see doc-bodies). */
   docBodies?: Record<string, ReactNode>;
 }) {
-  const [{ category, sort }, setState] = useQueryStates(
-    {
-      category: parseAsStringLiteral(FILTER_IDS),
-      sort: parseAsStringLiteral(SORT_ORDER).withDefault("curated"),
-    },
+  const [{ category }, setState] = useQueryStates(
+    { category: parseAsStringLiteral(FILTER_IDS) },
     { history: "replace" },
   );
 
@@ -122,14 +104,13 @@ export function GalleryExplorer({
   // Which shelf people shop. A category nobody ever filters to is either badly
   // named or badly stocked, and this is the only way to tell which.
   const setFilter = useCallback(
-    (next: { category?: GalleryFilter | null; sort?: SortMode }) => {
+    (next: { category?: GalleryFilter | null }) => {
       void setState(next);
       trackEvent("gallery_filtered", {
         category: next.category !== undefined ? next.category : category,
-        sort: next.sort ?? sort,
       });
     },
-    [setState, trackEvent, category, sort],
+    [setState, trackEvent, category],
   );
 
   // Legacy deep links used a `#<category>` hash (the old scroll-anchor pills).
@@ -147,10 +128,7 @@ export function GalleryExplorer({
     }
   }, [setState]);
 
-  const items = useMemo(
-    () => getFilteredSortedItems(category, sort),
-    [category, sort],
-  );
+  const items = useMemo(() => getFilteredItems(category), [category]);
 
   const activeItem = activeSlug ? (ITEM_BY_SLUG.get(activeSlug) ?? null) : null;
 
@@ -218,27 +196,6 @@ export function GalleryExplorer({
               </button>
             ))}
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex shrink-0 cursor-default items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted">
-              {SORT_LABELS[sort]}
-              <ChevronDown className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-40 rounded-none">
-              <DropdownMenuRadioGroup
-                value={sort}
-                onValueChange={(value) =>
-                  setFilter({ sort: value as SortMode })
-                }
-              >
-                {SORT_ORDER.map((mode) => (
-                  <DropdownMenuRadioItem key={mode} value={mode}>
-                    {SORT_LABELS[mode]}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 

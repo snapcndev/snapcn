@@ -338,40 +338,22 @@ export function slugFromHref(href: string): string {
   return href.split("/").filter(Boolean).pop() ?? "";
 }
 
-export type SortMode = "curated" | "az" | "category";
-
 /** What the pill bar can select: a real category, the "New" shelf, or nothing. */
 export type GalleryFilter = CategoryId | "new";
-
-const CATEGORY_RANK = new Map(GALLERY_CATEGORIES.map((c, i) => [c.id, i]));
 
 /**
  * The single source of truth for the on-screen ordered list — shared by the
  * grid (which cards to render) and the detail overlay (what prev/next walks),
- * so the two never disagree. A stable JS sort keeps curated order within groups.
+ * so the two never disagree. Order is always the curated one: a sort control
+ * shipped alongside this and 2,546 of 2,593 uses left it on "curated", so the
+ * two alternatives were deleted rather than kept as a setting nobody moved.
  */
-export function getFilteredSortedItems(
-  filter: GalleryFilter | null,
-  sort: SortMode,
-): GalleryItem[] {
-  const filtered =
-    filter === "new"
-      ? NEW_ITEMS
-      : filter
-        ? GALLERY_ITEMS.filter((item) => item.category === filter)
-        : GALLERY_ITEMS;
-
-  if (sort === "az") {
-    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-  }
-  if (sort === "category") {
-    return [...filtered].sort(
-      (a, b) =>
-        (CATEGORY_RANK.get(a.category) ?? 0) -
-        (CATEGORY_RANK.get(b.category) ?? 0),
-    );
-  }
-  return filtered;
+export function getFilteredItems(filter: GalleryFilter | null): GalleryItem[] {
+  return filter === "new"
+    ? NEW_ITEMS
+    : filter
+      ? GALLERY_ITEMS.filter((item) => item.category === filter)
+      : GALLERY_ITEMS;
 }
 
 /**
