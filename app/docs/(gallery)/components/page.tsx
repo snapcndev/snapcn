@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getDocBodies } from "@/components/docs/gallery/doc-bodies";
@@ -116,9 +115,9 @@ export default async function ComponentsGalleryPage() {
 }
 
 /**
- * Server-rendered default view (All · Curated) shown while the interactive
- * explorer hydrates. Its pills/sort are static, non-interactive placeholders;
- * the grid is the full component set in curated order so the initial HTML
+ * Server-rendered default view (All) shown while the interactive explorer
+ * hydrates. Its pills are static, non-interactive placeholders; the grid is
+ * the full component set in curated order so the initial HTML
  * carries all {@link GALLERY_ITEMS.length} card links. Structure mirrors the
  * explorer's sticky toolbar so hydration causes no layout shift.
  */
@@ -142,10 +141,6 @@ function GalleryGridFallback() {
               </span>
             ))}
           </div>
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3.5 py-1.5 text-sm font-medium text-foreground/80">
-            Curated
-            <ChevronDown className="size-4" />
-          </span>
         </div>
       </div>
       {/* Keep in step with GalleryExplorer's grid. */}

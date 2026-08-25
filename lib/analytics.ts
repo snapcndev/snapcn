@@ -83,7 +83,6 @@ type AnalyticsEvents = {
   /** Category pill on /docs/components. Tells us which shelf people shop. */
   gallery_filtered: {
     category: string | null;
-    sort: string;
   };
 
   /** Video editor. Opened, built, exported — the whole funnel of the one part

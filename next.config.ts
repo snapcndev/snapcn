@@ -44,6 +44,21 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // One canonical host. `www.` and the apex both served a 200, so Google saw two
+  // copies of every page and split the ranking signal between them — while the
+  // sitemap, the `<link rel=canonical>` and `SITE_URL` in lib/llms.ts +
+  // lib/structured-data.tsx all name the apex. This makes the server agree with
+  // what those three already claim, rather than the other way round.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.snapcn.dev" }],
+        destination: "https://snapcn.dev/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       // The SDK bundle + recorder script. Separate host from ingestion.
