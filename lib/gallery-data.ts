@@ -87,6 +87,14 @@ export interface GalleryItem {
 
 export const GALLERY_ITEMS: GalleryItem[] = [
   {
+    name: "Type Morph",
+    description:
+      "A headline that types itself under a glowing caret, sheds its lead, morphs letter by letter, and ends under a colour flood",
+    category: "text",
+    href: "/docs/text/type-morph",
+    added: "2026-08-25",
+  },
+  {
     name: "Text Reveal",
     description:
       "A cinematic zoom-out title reveal — the lead word appears large, then scales down and slides into place as the sentence sweeps in and settles",
