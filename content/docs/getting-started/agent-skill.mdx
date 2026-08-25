@@ -19,15 +19,8 @@ the snapcn repo. Install it with the [`skills`](https://skills.sh) CLI:
 npx skills add snapcndev/snapcn
 ```
 
-The CLI is interactive — it lists every skill in the repo, and you pick the one you want plus the
-target agent. `snapcn` is the one you want; the rest are the design and motion skills we build the
-library with. It installs into your agent's skills folder (for Claude Code: `.claude/skills/snapcn/`).
-
-To skip the picker, name the skill directly — that is the copy-paste line:
-
-```bash
-npx skills add snapcndev/snapcn --skill snapcn --yes
-```
+`snapcn` is the only skill the repo publishes, so the CLI just asks which agent to install it into
+(for Claude Code that is `.claude/skills/snapcn/`).
 
 ### Common flags
 
@@ -38,7 +31,7 @@ npx skills add snapcndev/snapcn --skill snapcn -g
 # Target a specific agent
 npx skills add snapcndev/snapcn -a claude-code
 
-# Just list what's available in the repo
+# Confirm what the repo publishes
 npx skills add snapcndev/snapcn --list
 ```
 
