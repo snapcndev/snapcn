@@ -13,6 +13,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { installCommand as buildInstallCommand } from "@/config/site";
@@ -28,6 +29,7 @@ import {
   renderedDemoSrc,
 } from "@/lib/rendered-demos";
 import { PreviewStage } from "@/lib/ui-preview-internals";
+import { loadDocBody } from "./doc-body-action";
 import { morphToCard, SHARED_MEDIA } from "./shared-media-transition";
 
 const CATEGORY_LABEL = new Map(GALLERY_CATEGORIES.map((c) => [c.id, c.label]));
@@ -51,18 +53,19 @@ function typeLabel(href: string) {
  * gallery — the grid behind is dimmed + blurred, the left panel slides in and
  * the large live preview scales up. Base UI gives focus-trap, scroll-lock,
  * Escape, and ARIA for free. Prev/next walk the on-screen list. Every
- * component's full docs render inline here — there are no standalone docs pages.
+ * component's full docs render inline here, fetched for the open component
+ * rather than shipped for all of them (see `doc-bodies.tsx`).
  */
 export function GalleryDetailOverlay({
   item,
-  docBodies,
+  docSlugs,
   onClose,
   onPrev,
   onNext,
 }: {
   item: GalleryItem | null;
-  /** Server-rendered docs for every component, keyed by slug. */
-  docBodies?: Record<string, ReactNode>;
+  /** Slugs that have documentation — the layout choice, without the documents. */
+  docSlugs?: string[];
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -84,6 +87,35 @@ export function GalleryDetailOverlay({
   // link still lands on the overlay.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  /**
+   * Documentation for the components opened so far, by slug.
+   *
+   * Kept in a ref *and* mirrored into state: the ref is what a second open of
+   * the same component reads (so arrowing back and forth re-renders instead of
+   * re-fetching), the state is what makes React paint the body when the first
+   * fetch lands. A ref alone would never re-render; state alone would refetch a
+   * document already on the client.
+   */
+  const cache = useRef<Map<string, ReactNode>>(new Map());
+  const [, setLoaded] = useState(0);
+  const shownSlug = shown ? slugFromHref(shown.href) : null;
+  const hasDoc = shownSlug ? (docSlugs?.includes(shownSlug) ?? false) : false;
+
+  useEffect(() => {
+    if (!shownSlug || !hasDoc || cache.current.has(shownSlug)) return;
+    let cancelled = false;
+    loadDocBody(shownSlug).then((body) => {
+      // The overlay may have moved on (arrow keys step fast); dropping a late
+      // response is right, and the next open of that slug refetches it.
+      if (cancelled || !body) return;
+      cache.current.set(shownSlug, body);
+      setLoaded((n) => n + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [shownSlug, hasDoc]);
 
   // Fly back into the card instead of fading out over it. Wrapped here rather
   // than at each call site so every close path — ×, Escape, backdrop — goes
@@ -117,7 +149,8 @@ export function GalleryDetailOverlay({
               // would still be holding it when the card reclaims it on the way
               // back — two holders, and the browser skips the morph entirely.
               holdsSharedName={item !== null}
-              docBody={docBodies?.[slugFromHref(shown.href)]}
+              hasDoc={hasDoc}
+              docBody={shownSlug ? cache.current.get(shownSlug) : undefined}
               onClose={closeWithMorph}
               onPrev={onPrev}
               onNext={onNext}
@@ -132,6 +165,7 @@ export function GalleryDetailOverlay({
 function OverlayBody({
   item,
   holdsSharedName,
+  hasDoc,
   docBody,
   onClose,
   onPrev,
@@ -140,8 +174,14 @@ function OverlayBody({
   item: GalleryItem;
   /** Whether this preview currently owns the shared view-transition name. */
   holdsSharedName: boolean;
-  /** The component's full documentation, rendered inline (the overlay is the
-   *  docs — there is no standalone page). */
+  /**
+   * Whether this component has documentation — known from the slug list, so the
+   * two-column docs layout is chosen on the first frame. Deriving it from
+   * `docBody` instead would open every component in the centred preview layout
+   * and then reflow it into two columns when the fetch landed.
+   */
+  hasDoc: boolean;
+  /** The documentation itself, once fetched. */
   docBody?: ReactNode;
   onClose: () => void;
   onPrev: () => void;
@@ -174,7 +214,7 @@ function OverlayBody({
   // handed over the real thing. What it says is now what you get.
   const installCommand = buildInstallCommand(slug);
   const [copied, setCopied] = useState(false);
-  const hasDocs = Boolean(docBody);
+  const hasDocs = hasDoc;
 
   const copyInstall = () => {
     navigator.clipboard.writeText(installCommand);
@@ -299,7 +339,23 @@ function OverlayBody({
                 <div className="aspect-video w-full bg-gallery-card" />
               )}
             </div>
-            <div className="mt-10">{docBody}</div>
+            <div className="mt-10">
+              {docBody ?? (
+                // One in-flight fetch's worth of placeholder. Sized off the
+                // shortest real doc, so the column does not collapse and then
+                // jump when the body lands.
+                <div className="space-y-3" aria-busy="true">
+                  <span className="sr-only">Loading documentation</span>
+                  {[80, 100, 92, 64].map((w) => (
+                    <span
+                      key={w}
+                      style={{ width: `${w}%` }}
+                      className="block h-4 animate-pulse rounded bg-gallery-card"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (
