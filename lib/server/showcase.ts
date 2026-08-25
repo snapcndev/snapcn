@@ -2,6 +2,7 @@ import "server-only";
 import { copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { desc, eq } from "drizzle-orm";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { showcaseSubmissions, users } from "@/lib/db/schema";
 import { getDb, isDbConfigured } from "@/lib/server/db";
 import { RENDER_WORK_DIR, SHOWCASE_WORK_DIR } from "@/lib/server/paths";
@@ -80,10 +81,15 @@ const selectFields = {
   authorImage: users.image,
 };
 
-export async function getApprovedSubmissions(): Promise<ShowcaseItem[]> {
-  if (!isDbConfigured) return [];
-  try {
-    return await getDb()
+/**
+ * Tag for the public showcase list. `moderateSubmission` is the only thing that
+ * can change what is in it, so that is the only place that drops it.
+ */
+const APPROVED_TAG = "showcase-approved";
+
+const approvedSubmissions = unstable_cache(
+  async (): Promise<ShowcaseItem[]> =>
+    getDb()
       .select(selectFields)
       .from(showcaseSubmissions)
       .leftJoin(users, eq(showcaseSubmissions.userId, users.id))
@@ -91,7 +97,26 @@ export async function getApprovedSubmissions(): Promise<ShowcaseItem[]> {
       .orderBy(
         desc(showcaseSubmissions.featured),
         desc(showcaseSubmissions.createdAt),
-      );
+      ),
+  ["showcase-approved"],
+  // The tag is the real invalidation; the interval is only a backstop for a
+  // moderation that happened somewhere this process never saw (a second
+  // container, a row edited by hand).
+  { tags: [APPROVED_TAG], revalidate: 300 },
+);
+
+/**
+ * The public showcase list, cached.
+ *
+ * `/docs/showcase` is `force-dynamic` because it reads the session, so every
+ * visit was also paying for this join across the Supabase transaction pooler —
+ * about 350ms of the page's ~0.80s TTFB in production, spent re-fetching rows
+ * that change only when a maintainer approves a submission.
+ */
+export async function getApprovedSubmissions(): Promise<ShowcaseItem[]> {
+  if (!isDbConfigured) return [];
+  try {
+    return await approvedSubmissions();
   } catch (err) {
     console.error("[showcase] getApprovedSubmissions failed:", err);
     return [];
@@ -151,6 +176,11 @@ export async function moderateSubmission(
       updatedAt: new Date(),
     })
     .where(eq(showcaseSubmissions.id, id));
+  // Either action changes the public list: approve adds a row to it, reject
+  // removes one that approve may have already put there. `expire: 0` rather
+  // than `updateTag`, which Next only allows inside a Server Action — this runs
+  // in the moderation route handler.
+  revalidateTag(APPROVED_TAG, { expire: 0 });
 }
 
 /**

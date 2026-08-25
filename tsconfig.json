@@ -72,6 +72,9 @@
       "@/components/snap-cn/tracking-in": [
         "./registry/snap-cn/tracking-in/index.tsx"
       ],
+      "@/components/snap-cn/text-reveal": [
+        "./registry/snap-cn/text-reveal/index.tsx"
+      ],
       "@/components/snap-cn/*": [
         "./registry/snap-cn-ui/*/index.tsx"
       ],

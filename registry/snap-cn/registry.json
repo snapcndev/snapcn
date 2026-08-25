@@ -491,6 +491,33 @@
           "target": "components/snap-cn/status-cycle.tsx"
         }
       ]
+    },
+    {
+      "name": "type-morph",
+      "type": "registry:component",
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
+      "title": "Type Morph",
+      "description": "A headline that types itself under a glowing caret, sheds its lead, morphs letter by letter, and ends under a colour flood.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json",
+        "https://snapcn.dev/r/text-reveal.json"
+      ],
+      "files": [
+        {
+          "path": "type-morph/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/type-morph.tsx"
+        },
+        {
+          "path": "type-morph/timeline.ts",
+          "type": "registry:file",
+          "target": "components/snap-cn/type-morph-timeline.ts"
+        }
+      ]
     }
   ]
 }

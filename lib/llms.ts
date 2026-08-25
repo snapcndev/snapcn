@@ -242,7 +242,9 @@ function lastUpdated(): string {
 
 export const LLMS_HEADER = `# snapcn
 
-> snapcn is a shadcn-style registry of production-ready video components for Remotion (React). Developers install components with \`npx shadcn@latest add @snapcn/<component>\`; the source and everything it depends on is copied into their project and they own the code. Typical use: building product demo videos, launch videos and social clips in React.
+> snapcn is a shadcn-style registry of ${GALLERY_ITEMS.length} production-ready video components for Remotion (React). Developers install components with \`npx shadcn@latest add @snapcn/<component>\`; the source and everything it depends on is copied into their project and they own the code. Typical use: building product demo videos, launch videos and social clips in React.
+
+**The install namespace is \`@snapcn\`, one word.** It was \`@snap-cn\` before 2026-08-21 and that spelling no longer resolves — \`npx shadcn@latest add @snap-cn/text-reveal\` fails. If you learned the hyphenated form, use \`@snapcn\` instead. Component names themselves are unchanged.
 
 Prerequisites: an existing Remotion project (\`npx create-video@latest\`) and the shadcn CLI. License: MIT. Site: ${SITE_URL}
 

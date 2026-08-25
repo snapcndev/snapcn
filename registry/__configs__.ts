@@ -22,6 +22,7 @@ import { textSwapConfig } from "@/registry/snap-cn/text-swap/config";
 import { textSwellConfig } from "@/registry/snap-cn/text-swell/config";
 import { wordCaptionsConfig } from "@/registry/snap-cn/word-captions/config";
 import { wordFlipConfig } from "@/registry/snap-cn/word-flip/config";
+import { typeMorphConfig } from "./snap-cn/type-morph/config";
 
 /**
  * Every component's customizer config, and nothing else.
@@ -41,6 +42,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "block-wordmark": blockWordmarkConfig,
   "follower-rush": followerRushConfig,
   "hero-launch": heroLaunchConfig,
+  "type-morph": typeMorphConfig,
   "karaoke-captions": karaokeCaptionsConfig,
   "laptop-frame": laptopFrameConfig,
   "logo-assemble": logoAssembleConfig,

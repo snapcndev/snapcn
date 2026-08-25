@@ -85,10 +85,10 @@ function pillClassName(active: boolean) {
  * it); prev/next walk the on-screen list.
  */
 export function GalleryExplorer({
-  docBodies,
+  docSlugs,
 }: {
-  /** Server-rendered doc bodies for every component, keyed by slug (see doc-bodies). */
-  docBodies?: Record<string, ReactNode>;
+  /** Slugs that have documentation; the bodies load when the overlay opens. */
+  docSlugs?: string[];
 }) {
   const [{ category }, setState] = useQueryStates(
     { category: parseAsStringLiteral(FILTER_IDS) },
@@ -219,7 +219,7 @@ export function GalleryExplorer({
 
       <GalleryDetailOverlay
         item={activeItem}
-        docBodies={docBodies}
+        docSlugs={docSlugs}
         onClose={() => void setActiveSlug(null)}
         onPrev={() => step(-1)}
         onNext={() => step(1)}

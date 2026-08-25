@@ -24,6 +24,7 @@ import { TextSwap } from "@/registry/snap-cn/text-swap";
 import { TextSwell } from "@/registry/snap-cn/text-swell";
 import { WordCaptions } from "@/registry/snap-cn/word-captions";
 import { WordFlip } from "@/registry/snap-cn/word-flip";
+import { TypeMorph } from "./snap-cn/type-morph";
 
 /**
  * Scene component + customizer config, per slug.
@@ -56,6 +57,7 @@ const registry: Record<string, RegistryEntry> = {
     config: CONFIGS["follower-rush"],
   },
   "hero-launch": { Component: HeroLaunch, config: CONFIGS["hero-launch"] },
+  "type-morph": { Component: TypeMorph, config: CONFIGS["type-morph"] },
   "karaoke-captions": {
     Component: KaraokeCaptions,
     config: CONFIGS["karaoke-captions"],

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { getDocBodies } from "@/components/docs/gallery/doc-bodies";
+import { slugsWithDocs } from "@/components/docs/gallery/doc-bodies";
 import { GalleryCard } from "@/components/docs/gallery/gallery-card";
 import { GalleryExplorer } from "@/components/docs/gallery/gallery-explorer";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
@@ -85,10 +85,10 @@ export default async function ComponentsGalleryPage() {
     formatUpdatedAt(await getGitHubUpdatedAt()) ??
     "MIT licensed · own your code";
 
-  // Full documentation for every component, rendered on the server and handed to
-  // the client overlay — no component has a standalone docs page anymore; the
-  // docs are read inline here.
-  const docBodies = getDocBodies();
+  // Which components have docs, not the docs themselves. The overlay fetches
+  // the one it opens (see components/docs/gallery/doc-bodies.tsx) — handing it
+  // all 23 rendered bodies was 800KB of this page's payload.
+  const docSlugs = slugsWithDocs();
 
   return (
     <>
@@ -106,7 +106,7 @@ export default async function ComponentsGalleryPage() {
               masonry, so every card anchor is present in the prerendered HTML
               (SEO) and there's no flash before hydration. */}
           <Suspense fallback={<GalleryGridFallback />}>
-            <GalleryExplorer docBodies={docBodies} />
+            <GalleryExplorer docSlugs={docSlugs} />
           </Suspense>
         </div>
       </GalleryFrame>

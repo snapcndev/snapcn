@@ -1,0 +1,46 @@
+---
+title: Type Morph
+description: A headline that types itself under a glowing caret, sheds its lead, morphs letter by letter, and ends under a colour flood
+---
+
+<ComponentPreview name="type-morph" />
+
+## Overview
+
+Four mechanics on one timeline.
+
+**Typing.** The line is centre-anchored, so it grows in both directions rather
+than running to the right. A glyph lands in the accent colour and cools to ink
+over the next two glyphs — that moving warm edge is what reads as typing, more
+than the caret does.
+
+**The cut.** The lead is removed in a single frame. It is not animated out;
+what *is* animated is the slide back to centre that follows it.
+
+**The morph.** Glyphs shared between the two phrases travel from where they were
+to where they belong, and the rest cross-fade in place. Every position is
+measured in the real face at the real size behind a hidden probe, because a
+morph built on estimated advance widths lands each letter a pixel or two off and
+reads as a wobble.
+
+**The exit and the flood.** The line does not hold still and then cut — it
+slides left for six frames first, accelerating, and the cut lands on a line that
+was already leaving. Then two flat colours, four frames each, not a ramp: fading
+a full-frame rectangle up leaves a half-transparent wash over the type for
+several frames, and there is no reading of that except the screen dimming.
+`wordOnFlood` is off by default, so the flood ends clean.
+
+## Notes
+
+`accent` defaults to the theme's accent, and `flood` to a violet pair. Both take
+your own colours; `flood={false}` ends the beat on paper instead.
+
+`background` defaults to the theme's page. The reference's is a plain near-white
+rather than the warm off-white the token carries, so the preview passes its own.
+
+There is no glow behind the caret — just the bar. An earlier version had one, and
+it is worth recording why it was hard to get right: it was built with `mixOklch`
+toward the page, and `mixOklch` walks the *hue* path. From a violet accent to a
+warm off-white that path goes through pink, so the halo rendered salmon. If you
+add a glow back, composite it with `withAlpha` over the page — alpha has no hue
+path.

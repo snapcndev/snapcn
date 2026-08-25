@@ -57,6 +57,14 @@ export const RENDERED_DEMOS: readonly string[] = [
   // this list exists to avoid.
   "block-wordmark",
   "text-reveal",
+  // The opening is `text-reveal` itself, so it inherits that entry's reason —
+  // and then adds its own: after the reveal, a whole line is carried across the
+  // frame on a 16-frame bezier, morphed letter by letter, and pulled out on an
+  // exponential. Slow smooth travel over half a second is precisely what a live
+  // Player mispaces on a high-refresh display, and every curve in this one was
+  // fitted to sub-pixel error against a reference — none of which survives being
+  // shown a frame late.
+  "type-morph",
   "text-swell",
   "hero-launch",
   // Type is under a moving scale for most of the run — a receding 3D plane, a
