@@ -43,6 +43,7 @@ export function EditorPlayer({
   font,
   playerRef,
   onFrame,
+  onPlay: onPlayed,
 }: {
   clips: Clip[];
   /** Preview only — the exported file's mark is decided by the server. */
@@ -52,6 +53,8 @@ export function EditorPlayer({
   font: string;
   playerRef: React.RefObject<EditorPlayerHandle | null>;
   onFrame: (frame: number) => void;
+  /** Fired the first time playback starts — see `editor_abandoned`. */
+  onPlay?: () => void;
 }) {
   const [player, setPlayer] = useState<PlayerRef | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -79,7 +82,10 @@ export function EditorPlayer({
   // effect is null on the pass that matters. State forces the re-subscribe.
   useEffect(() => {
     if (!player) return;
-    const onPlay = () => setPlaying(true);
+    const onPlay = () => {
+      setPlaying(true);
+      onPlayed?.();
+    };
     const onPause = () => setPlaying(false);
     const onFrameUpdate = (e: { detail: { frame: number } }) => {
       setFrame(e.detail.frame);
