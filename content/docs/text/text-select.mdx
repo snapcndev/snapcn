@@ -1,0 +1,352 @@
+---
+title: Text Select
+description: A line that writes itself a word at a time, pushes forward to full size, and gets selected under a gradient with a glint travelling across it — the beat before somebody copies it
+---
+
+<ComponentPreview name="text-select" />
+
+## Installation
+
+<InstallBlock name="text-select" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="text-select" />
+
+## Usage
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { TextSelect } from "@/components/snap-cn/text-select";
+
+const Claim = () => <TextSelect headline="One command into your project." />;
+
+export const RemotionRoot = () => (
+  <Composition
+    id="TextSelect"
+    component={Claim}
+    durationInFrames={72}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+Any line, any length — the stagger, the push and the drag all follow from it:
+
+```tsx
+<TextSelect
+  headline="Copy the command. Paste it. Ship the video."
+  accentColor="#7c3aed"
+  cutAt={1.6}
+  selectAt={1.9}
+/>
+```
+
+## The newest word is the accent
+
+Every word arrives in the accent colour, holds it for **exactly one beat — 208ms, the same as the stagger** — and cools to the foreground over the next. So there is always exactly one coloured word on the line, and it walks left to right ahead of the reader. Measured on the reference: the first word is still fully blue when the second lands, and fully dark by the time the third does.
+
+The last word has no next word to hand off to. On the reference it cools **as the selection is dragged over it**, in half the time the drag takes, so by the time the line is selected it is all one colour. That is the rule here too.
+
+## The line comes forward, smoothly
+
+The reference gets to 2.39× between two adjacent frames — the ink is 215px wide on one and 516px on the next, with the single dropped frame between them the only place an in-between could have hidden. Set `zoomDuration={0}` and you get exactly that.
+
+It is **not** the default, because at 30fps a step does not read as *coming forward*; it reads as an edit. The default is a 420ms ramp on `cubic-bezier(0.2, 0.6, 0.35, 1)`, and three things make it a move rather than a shimmer:
+
+- **The scale is pivoted on the baseline**, and the baseline is *measured* — a zero-sized inline-block sitting on it, read back through `delayRender`. The rasteriser gives glyph origins no vertical sub-pixel precision at all, so any pivot that moves the baseline makes the type climb the pixel grid in whole-pixel jumps: sit still, jump, sit still.
+- **`text-rendering: geometricPrecision`**, because hinting bends each glyph so its stems land on whole pixels — and as the size slides, every stem re-snaps and the letterforms boil.
+- **`will-change` only while the push is running, and only in the Player.** In a render it hands the scale to the compositor, which resamples a bitmap instead of re-rasterising real type.
+
+Measured on the rendered frames: the ink width moves 91, 76, 61, 45, 34, 24, 19, 14, 11, 9, 5, 8 px per frame and then stops. One frame under a pixel, which is a settle. No direction reversals.
+
+## The selection is a drag, and it shines
+
+It is **31% of the way across on its first frame** and spends the back half of its time covering the last 5% — `easeOutQuint` over 260ms. The right edge is a hard vertical line with no rounding, because that is what a caret dragging through text leaves behind.
+
+The fill is a **gradient**, not a flat wash, and that is measurable: read the reference's selection column by column, taking a value per column that no glyph can reach, and it runs 211 → **178 at 0.33** → **222 at 0.59** → 190. A **2.8× swing in strength** between its deepest point and its bright band. `selectionSheen` is that curve, twelve stops of `[position, multiple of selectionOpacity]`.
+
+The band is anchored to the **box**, not to the page: across the drag it sits at 0.58 of whatever width the box has reached that frame (0.584, 0.571, 0.580, 0.603, 0.585, 0.576, 0.589 …). A CSS gradient painted on a growing element does that for free — and it is why the shine appears to travel while the selection is being pulled across.
+
+## …and then a glint crosses it
+
+The sheen above stops the instant the drag lands, and a highlight that stops moving stops shining. So a second, narrow band is swept across the finished box on its own clock — linearly, because a specular is a light source passing a surface, not something that settles. At the defaults it covers **78px a frame** from its first frame to its last, so there is no frame of it you cannot see.
+
+It is **not** just a light band, and this is the part worth knowing before you build one yourself. White over a light page has almost no room to work in: measured on the render, white at 0.34 over a fill sitting at R 230 lifts it *eight levels* — quieter than the static gradient it was supposed to be shining on. Going brighter does not fix it; there is only 25 levels of headroom above the fill in the first place.
+
+So the glint is shaped like a real specular on a coloured gel — a bright core with **deepened shoulders** either side, painted in the selection's own colour, where the light compresses the film. There is plenty of room downward. Measured on the rendered frames, isolated by differencing against a frame with the band off the edge:
+
+| | measured |
+| --- | --- |
+| travel | `78px` a frame, constant across the pass |
+| core | `+13` to `+26` levels |
+| shoulders | `−23` to `−41` levels |
+| against | the static sheen's `±15` |
+
+A 40-to-60 level band, moving. `shineOpacity={0}` turns it off and leaves you the reference's plain sheen.
+
+
+| | measured |
+| --- | --- |
+| word stagger | `208ms` |
+| word lands in | `130ms`, easeOutQuart — a fade, not a scale |
+| line arrives from | `0.475em` right, on **every** word |
+| accent holds / cools | `208ms` / `208ms` |
+| push forward | from `1.13s`, to `2.39×`, over `420ms` |
+| drag | from `1.4s`, `260ms`, easeOutQuint |
+| sheen | trough at `0.33`, band at `0.59`, `2.8×` swing |
+| glint | one pass from the drag landing, `620ms`, `78px` a frame |
+| selection box | `0.941em` tall, `0.12em` below the baseline |
+
+Every one of those is a prop.
+
+## The line arrives from the right — all of it
+
+This is the measurement that took longest to see. When the second word lands, the first one moves — but so does the second, **by the same ten pixels**. A line that had merely grown a word would not do that: the old word would shift left by half the new word's width and the new word would not shift at all.
+
+So it is not the layout re-centring and it is not the new word widening into place. The entire line arrives half an em to the right on every word and settles back, which reads as the line being nudged along rather than stretched. `lineShift` is that, and it re-triggers on each word rather than only the first.
+
+## It fits any line
+
+The selection is sized off a hidden copy of the line's `offsetWidth`, measured once behind `delayRender()`. Not `measureText` — a canvas ruler knows nothing about CSS tracking or word-spacing, and a box drawn to a width the line does not actually have is a visible five percent out. The words are laid out in normal flow rather than flex for a related reason: **a flex container drops whitespace-only text nodes**, so the spaces between words vanish and the line renders narrower than it measures.
+
+## Colour and wording
+
+The proportions and the timing are measured. The **colours and the wording are not** — the reference is a specific product with a specific blue, and neither belongs in a component that ships to strangers. The paint is the shadcn token set, the accent and the selection both come from `theme.primary` unless you say otherwise, and the line is a prop.
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "headline",
+      type: "string",
+      default: "\"One command into your project.\"",
+      description: "The line that writes itself. Split on whitespace; each word lands on its own beat and the line re-centres as it grows",
+    },
+    {
+      name: "wordAt",
+      type: "number",
+      default: "0.066",
+      description: "Seconds at which the first word lands",
+    },
+    {
+      name: "wordStagger",
+      type: "number",
+      default: "0.208",
+      description: "Seconds between words. Also how long a word holds the accent, which is what keeps exactly one word coloured",
+    },
+    {
+      name: "wordDuration",
+      type: "number",
+      default: "0.13",
+      description: "How long a word takes to fade up, on an easeOutQuart",
+    },
+    {
+      name: "shiftX",
+      type: "number",
+      default: "0.475",
+      description: "How far right the whole line arrives on each word, in em",
+    },
+    {
+      name: "shiftY",
+      type: "number",
+      default: "0.085",
+      description: "And how far down, in em",
+    },
+    {
+      name: "wordBlur",
+      type: "number",
+      default: "1",
+      description: "How soft a word arrives, in px at fontSize. Barely a blur — it softens the landing, nothing more",
+    },
+    {
+      name: "coolDelay",
+      type: "number",
+      default: "0.208",
+      description: "How long a word holds the accent before it starts cooling",
+    },
+    {
+      name: "coolDuration",
+      type: "number",
+      default: "0.208",
+      description: "How long the accent takes to become the foreground",
+    },
+    {
+      name: "cutAt",
+      type: "number",
+      default: "1.13",
+      description: "Seconds at which the line starts coming forward",
+    },
+    {
+      name: "zoomDuration",
+      type: "number",
+      default: "0.42",
+      description: "How long the push takes, on a moderate decelerate. Set it to 0 for the reference's single-frame cut",
+    },
+    {
+      name: "zoom",
+      type: "number",
+      default: "2.39",
+      description: "How far forward it goes. A transform pivoted on the measured baseline, never an animated font-size",
+    },
+    {
+      name: "selectAt",
+      type: "number",
+      default: "1.4",
+      description: "Seconds at which the selection starts being dragged across. It overlaps the push, which is what makes the two read as one beat",
+    },
+    {
+      name: "selectDuration",
+      type: "number",
+      default: "0.26",
+      description: "How long the drag takes. The last word also cools over half of it",
+    },
+    {
+      name: "fontSize",
+      type: "number",
+      default: "20",
+      description: "Type size before the push, in stage px. The stage is 810×458 and is scaled to fill the composition",
+    },
+    {
+      name: "fontWeight",
+      type: "number",
+      default: "500",
+      description: "Weight of the line. Inter ships 400/500/600 here",
+    },
+    {
+      name: "centerY",
+      type: "number",
+      default: "0.5116",
+      description: "Where the line's box sits down the frame, as a fraction — the selection follows it",
+    },
+    {
+      name: "tracking",
+      type: "number",
+      default: "-0.012",
+      description: "Letter-spacing in em. The selection is measured off the rendered line, so it follows this on its own",
+    },
+    {
+      name: "wordGap",
+      type: "number",
+      default: "-0.07",
+      description: "Word-spacing in em, measured the same way",
+    },
+    {
+      name: "selectionOpacity",
+      type: "number",
+      default: "0.207",
+      description: "Base strength of the selection. Every sheen stop is a multiple of this",
+    },
+    {
+      name: "selectionSheen",
+      type: "readonly (readonly [number, number])[]",
+      default: "the measured curve",
+      description: "The shine, as [position, multiple of selectionOpacity] stops. Two stops of [0,1] and [1,1] give you a flat fill",
+    },
+    {
+      name: "selectionAngle",
+      type: "number",
+      default: "90",
+      description: "Which way the sheen runs, in deg. 90 is left to right, across the drag",
+    },
+    {
+      name: "shineColor",
+      type: "string",
+      default: "\"#ffffff\"",
+      description: "The light itself, at the centre of the travelling band. A specular adds, so it is light rather than accent — in either mode",
+    },
+    {
+      name: "shineOpacity",
+      type: "number",
+      default: "0.5",
+      description: "Strength of the glint's core. 0 turns the whole glint off and leaves the plain sheen",
+    },
+    {
+      name: "shineDepth",
+      type: "number",
+      default: "0.55",
+      description: "How hard the shoulders either side deepen, as a fraction of the core. They are painted in the selection's own colour, and they are most of what makes the band visible on a light page",
+    },
+    {
+      name: "shineWidth",
+      type: "number",
+      default: "0.3",
+      description: "How wide the band is, as a fraction of the selection. It enters from off the left edge and leaves off the right, rather than being born inside the box",
+    },
+    {
+      name: "shineAt",
+      type: "number",
+      default: "selectAt + selectDuration",
+      description: "Seconds at which the first pass starts. It defaults to the drag landing, because the sheen is already travelling during the drag and two moving highlights at once is a busy frame",
+    },
+    {
+      name: "shineDuration",
+      type: "number",
+      default: "0.62",
+      description: "How long one pass takes to cross. Linear — a constant velocity is also the only curve that cannot spend frames on travel too small to rasterise",
+    },
+    {
+      name: "shineEvery",
+      type: "number",
+      default: "1.1",
+      description: "Seconds between passes. 0 shines once and stops",
+    },
+    {
+      name: "selectionPad",
+      type: "number",
+      default: "0.063",
+      description: "How far the selection reaches past the type on each side, in em",
+    },
+    {
+      name: "glow",
+      type: "boolean",
+      default: "true",
+      description: "The soft wash behind the line. Static, as the reference's is",
+    },
+    {
+      name: "glowColor",
+      type: "string",
+      default: "accentColor",
+      description: "Colour of the wash, if it should differ from the accent",
+    },
+    {
+      name: "glowOpacity",
+      type: "number",
+      default: "0.075",
+      description: "Strength of the wash. On the reference its peak is nine luminance levels off the page — a tint, not a shape",
+    },
+    {
+      name: "accentColor",
+      type: "string",
+      default: "theme.primary",
+      description: "The colour a word arrives in, and the colour the sheen is painted from",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      description: "Token overrides — the page colour and the line's settled ink come from here",
+    },
+    {
+      name: "mode",
+      type: '"light" | "dark"',
+      default: "\"light\"",
+      description: "Which token set to resolve against",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Multiplies the frame clock. Every beat above scales with it",
+    },
+  ]}
+/>
+
+<Note>
+The recording is 1.88s. The push is a ramp here rather than a cut, which moves the drag later — 72 frames is that clip plus a beat, so the selection lands and sits long enough to read before the composition ends.
+</Note>

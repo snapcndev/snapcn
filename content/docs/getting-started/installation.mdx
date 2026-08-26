@@ -12,11 +12,16 @@ Components are copied in importing `@/components/snap-cn/…` and `@/lib/snap-cn
 ```json title="tsconfig.json"
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }
   }
 }
 ```
+
+<Note>
+On TypeScript 5 you also need `"baseUrl": "."` alongside it. **TypeScript 7 removed
+`baseUrl`** and errors on it — `paths` are resolved relative to the `tsconfig.json`
+now, so leave it out. `create-video` scaffolds neither.
+</Note>
 
 ```ts title="remotion.config.ts"
 import path from "node:path";

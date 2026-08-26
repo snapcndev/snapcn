@@ -111,6 +111,18 @@ export const RENDERED_DEMOS: readonly string[] = [
   // its budget is shown for the wrong length of time; the eye reads that as the
   // answer sticking as it arrives. The file pulls back smoothly.
   "answer-stream",
+  // The whole line is pushed forward 2.39x over 420ms, on type, while a
+  // selection is dragged across it. Slow smooth scale on type is the one thing a
+  // live Player is worst at — a frame shown for the wrong length of time reads
+  // as the line sticking mid-push — and the scale here is pivoted on a measured
+  // baseline precisely so it does not stick. The render keeps that.
+  "text-select",
+  // Half of this one is a vertical clip edge crossing a line of type on an
+  // ease-in-out — it creeps for four frames, crosses in twelve and settles for
+  // twelve more, and every frame of that is a letter being cut at a different
+  // sub-pixel offset. A live Player that shows one of those frames for the
+  // wrong length of time reads as the edge stuttering through the word.
+  "text-rewrite",
 
   // ── Rendered for coverage, not because the Player misrepresents them ───────
   // Everything above earned its place by failing in a live Player. The eight
@@ -136,6 +148,15 @@ export const RENDERED_DEMOS: readonly string[] = [
   "terminal-simulator",
   "orbit-gallery",
   "prompt-zoom",
+  // Ten tiles, every one of them scaling and translating by a fraction of a
+  // pixel per frame for three seconds straight. Smooth sub-pixel motion on
+  // solid edges is the other thing a live Player mispaces, and here there are
+  // forty edges doing it at once.
+  "logo-drift",
+  // A 2.3× camera riding a sentence horizontally for two seconds. The type
+  // moves at ~500px/s at that scale, which is the exact motion a live Player
+  // mispaces on a high-refresh display — every frame of it is sub-pixel.
+  "prompt-send",
 ];
 
 /**

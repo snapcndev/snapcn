@@ -8,6 +8,8 @@
     "text-highlight",
     "text-swap",
     "text-build",
+    "text-rewrite",
+    "text-select",
     "word-flip",
     "type-morph"
   ]

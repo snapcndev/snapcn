@@ -313,8 +313,7 @@ export function TextSwap({
     (_, sample) => frame - (sample / trail) * SHUTTER,
   );
 
-  const fontStack =
-    "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif";
+  const fontStack = "-apple-system, BlinkMacSystemFont, sans-serif";
   const lineStyle: React.CSSProperties = {
     fontSize,
     fontWeight,

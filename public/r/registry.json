@@ -83,6 +83,48 @@
       "type": "registry:component"
     },
     {
+      "name": "text-rewrite",
+      "title": "Text Rewrite",
+      "description": "A line that writes itself a word at a time, comes forward and gets selected — then its opening is swept away by a clip that cuts letters in half as it passes, and a new ending is written on while the line slides to its new centre. The mark rides the sweeping edge throughout.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/text-rewrite/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/text-rewrite.tsx"
+        }
+      ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
+      "type": "registry:component"
+    },
+    {
+      "name": "text-select",
+      "title": "Text Select",
+      "description": "A line that writes itself a word at a time — each one arriving in the accent and cooling to the foreground a beat later, so exactly one word is ever coloured — then pushes forward to full size on a baseline-pivoted scale and gets selected, the drag sweeping across under a gradient sheen with a hard caret edge.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/text-select/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/text-select.tsx"
+        }
+      ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
+      "type": "registry:component"
+    },
+    {
       "name": "text-swap",
       "title": "Text Swap",
       "description": "Replaces one line of text with another using exit-then-enter scheduling, with five transition presets: fade-through, crossfade, shared-axis-y, shared-axis-z, and cut.",
@@ -199,6 +241,27 @@
           "path": "registry/snap-cn/karaoke-captions/index.tsx",
           "type": "registry:component",
           "target": "components/snap-cn/karaoke-captions.tsx"
+        }
+      ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
+      "type": "registry:component"
+    },
+    {
+      "name": "logo-drift",
+      "title": "Logo Drift",
+      "description": "A field of tiles drifting past a headline while the camera pulls steadily back, so the wall of things-it-works-with keeps arriving from every edge. The pull-back is one linear scale measured at 0.176 per second across every tile; the words do not fade in, they arrive 1.216× large and 4.3px soft and land in 140ms.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/logo-drift/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/logo-drift.tsx"
         }
       ],
       "docs": "New components every week → https://snapcn.dev/#newsletter",
@@ -330,6 +393,7 @@
       "title": "Pulsing Border",
       "description": "Glowing 'AI is working' frame — a soft pulsing border overlay that breathes around the scene edges while a response streams.",
       "dependencies": [
+        "remotion",
         "@paper-design/shaders-react"
       ],
       "registryDependencies": [
@@ -361,6 +425,28 @@
           "path": "registry/snap-cn/follower-rush/index.tsx",
           "type": "registry:component",
           "target": "components/snap-cn/follower-rush.tsx"
+        }
+      ],
+      "docs": "New components every week → https://snapcn.dev/#newsletter",
+      "type": "registry:component"
+    },
+    {
+      "name": "prompt-send",
+      "title": "Prompt Send",
+      "description": "A composer that unrolls from a hairline, writes a brief into itself while the camera cuts in and rides the caret, then cuts back out to the send button as a pointer arrives and clicks it. The typing is eased, not constant — 17 chars/sec on the first word, 33 in the middle, a settle on the last three. Long copy scrolls the field under its own caret and extra suggestions wrap, so the panel fits whatever you put in it.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json",
+        "https://snapcn.dev/r/input.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/prompt-send/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/prompt-send.tsx"
         }
       ],
       "docs": "New components every week → https://snapcn.dev/#newsletter",
@@ -511,7 +597,7 @@
           "target": "components/snap-cn/type-morph.tsx"
         },
         {
-          "path": "registry/snap-cn/type-morph/timeline.ts",
+          "path": "registry/snap-cn/type-morph/type-morph-timeline.ts",
           "type": "registry:file",
           "target": "components/snap-cn/type-morph-timeline.ts"
         }

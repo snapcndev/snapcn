@@ -4,6 +4,7 @@
   "title": "Pulsing Border",
   "description": "Glowing 'AI is working' frame — a soft pulsing border overlay that breathes around the scene edges while a response streams.",
   "dependencies": [
+    "remotion",
     "@paper-design/shaders-react"
   ],
   "registryDependencies": [

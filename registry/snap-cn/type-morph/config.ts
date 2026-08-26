@@ -1,5 +1,5 @@
 import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
-import { totalFrames } from "./timeline";
+import { totalFrames } from "./type-morph-timeline";
 
 export const typeMorphConfig: ComponentConfig = {
   componentName: "TypeMorph",

@@ -84,8 +84,7 @@ export const PLACEHOLDER_FILLS = [
   "linear-gradient(135deg, #d9d2c5, #a09684)",
 ];
 
-const FONT_STACK =
-  "var(--font-geist-sans), Inter, -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT_STACK = "Inter, -apple-system, BlinkMacSystemFont, sans-serif";
 
 /**
  * Archimedean spiral point at parameter `n` in [0, 1]: n=0 is the outer edge

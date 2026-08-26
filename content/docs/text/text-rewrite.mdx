@@ -1,0 +1,366 @@
+---
+title: Text Rewrite
+description: A line writes itself, is selected, then has its opening swept away by a clip that cuts letters in half — and a new ending written on while it slides to its new centre
+---
+
+<ComponentPreview name="text-rewrite" />
+
+## Installation
+
+<InstallBlock name="text-rewrite" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="text-rewrite" />
+
+## Usage
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { TextRewrite } from "@/components/snap-cn/text-rewrite";
+
+const Claim = () => (
+  <TextRewrite headline="Or just add snapcn" keep={1} append="registry" />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="TextRewrite"
+    component={Claim}
+    durationInFrames={102}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+The whole gesture is three props. `keep` counts words off the **end** — everything before them is what gets swept away:
+
+```tsx
+<TextRewrite
+  headline="Ship it by hand or ship it with snapcn"
+  keep={1}
+  append="in an afternoon"
+  accentColor="#7c3aed"
+/>
+```
+
+## The erase is a clip, not a deletion
+
+This is the measurement everything else follows from. As the opening of the line is taken away, **letters are cut in half by a vertical edge** — "Or" becomes ")r" becomes "r" — and the words that survive never move a pixel. A word-by-word delete would have re-laid the line out on every step, and across 183 frames the recording plainly does not.
+
+So there is no deletion here at all. There is a window with `overflow: hidden` whose left edge sweeps right over text that is standing still.
+
+## The rewrite is that same edge, run the other way
+
+The window's **right** edge then sweeps right, revealing the new ending a fraction of a letter at a time, while the line slides to where its new content belongs.
+
+Those are two independent measurements — the clip edge, and the line's centre — and they land on one shared progress to within 0.001 of the travel. Fitted separately:
+
+| | fitted | rms |
+| --- | --- | --- |
+| erase (the clip edge, 29 frames) | `cubic-bezier(0.419, −0.050, 0.184, 1.044)` | `0.0086` |
+| rewrite (the line's centre, 31 frames) | `cubic-bezier(0.427, 0.021, 0.193, 0.999)` | `0.0059` |
+
+Two different signals, two different halves of the gesture, the same curve. It is `cubic-bezier(0.42, 0, 0.19, 1)`, and it is an **ease-in-out** — which is the whole character of the move. The edge creeps for four frames, crosses the sentence in twelve, and settles for twelve more. An ease-out would have read as a deletion. This reads as something being read, and then taken away.
+
+<Note>
+Every curve here was fitted on the recording's **timestamps**, not its frame numbers. It is a 60fps capture with eight dropped frames, so a frame index is not a clock — fitting on frame index makes the erase 0.467s when it is really 0.517s, and everything downstream lands early.
+</Note>
+
+## The mark rides the edge
+
+The trailing mark sits `0.4em` clear of the last **visible** letter, not of the end of the line — through the typing, through the erase, and through the rewrite, where the last visible letter is often only half a letter. Measured, it is a constant 54px from the window's right edge on every frame of the gesture.
+
+That is what keeps the whole thing reading as one object rather than as a line with a decoration next to it. The default is the snapcn mark; `markPath` takes any path drawn in a `0 0 100 100` box, and `markSize={0}` leaves the line bare.
+
+## The line opens, it does not reflow
+
+When a word lands, both ends of the line move outward by the same amount over the same five frames — **+18, +8, +4, +2, +1 px** on the right and the mirror of that on the left — while the centre never leaves 404 of 810. The word itself is drawn at full width from its first frame and *fades*: on the reference it lands whole and pale, overlapping the mark, and the mark slides clear over the next four frames.
+
+So the line's **width** is tweened around a fixed centre. Nothing is clipped while the line is being written, and nothing jumps.
+
+## The size change is a cut
+
+188px of ink on one frame and 453px on the next — **2.41×, with no intermediate frame anywhere in the recording.** `zoomDuration={0}` is that, and it is the default here because it is what the reference does.
+
+Give it a duration and it becomes a smooth push, and the pivot moves with it: a cut has no in-between frame to judder on, so it pivots on the line's optical centre (which is what the reference does — its small line and its full-size line share a centre at y 224 of 458, not a baseline). A ramp *does* have in-between frames, and there the pivot has to be the measured baseline, because the rasteriser gives glyph origins no vertical sub-pixel precision and any pivot that moves the baseline makes the type climb the grid in whole-pixel jumps.
+
+```tsx
+<TextRewrite zoomDuration={0.2} />  // a push instead of a cut, pivot follows
+```
+
+## The selection, and its sheen
+
+The drag is **28% across by 17ms, 54% by 33ms, 71% by 50ms** — an `easeOut` of degree 3.5 over 200ms, and it starts on the same frame the line comes forward. That was measured without touching the gradient at all: take nineteen fixed columns across the line and find the frame the warmth arrives in each. A quint, the obvious guess, is far too fast off the mark and misses the first two points by twenty points of travel.
+
+The fill is a **gradient**, and it is measurably the same one on every frame it appears: read column by column across eight frames spanning three box widths and two phases — 402px selected, 272px after the rewrite, 193px mid-erase — and it lands in the same place every time. **Deepest at 0.36, palest at 0.575, a 3.2× swing.** It is painted on the box rather than on the page, which is why it appears to travel as the box is dragged and then eaten.
+
+The deselect is nine frames and **linear to within 6% of the travel**. Nothing about it eases; the selection is simply dropped.
+
+| | measured |
+| --- | --- |
+| mark appears | `0.117s` |
+| word stagger | `189ms` |
+| line opens in | `85ms` |
+| forward move | `1.033s`, `2.41×`, one frame |
+| drag | `1.033s`, `200ms`, easeOut³·⁵ |
+| erase | `1.45s`, `517ms`, ease-in-out |
+| rewrite | `2.0s`, `533ms`, the same ease |
+| deselect | `2.85s`, `150ms`, linear |
+| selection box | `0.954em` tall, `0.083em` below the baseline |
+| sheen | deepest `0.36`, palest `0.575`, `3.2×` |
+
+Every one of those is a prop.
+
+## Colour and wording
+
+The proportions and the timing are measured. The **colours and the wording are not** — the reference is a specific product with a specific terracotta and a specific claim, and neither belongs in a component that ships to strangers. The paint is the shadcn token set, the accent and the sheen both come from `theme.primary` unless you say otherwise, the mark is ours, and the line is a prop.
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "headline",
+      type: "string",
+      default: "\"Or just add snapcn\"",
+      description: "The line that writes itself. Split on whitespace; each word lands on its own beat and opens the line around a fixed centre",
+    },
+    {
+      name: "keep",
+      type: "number",
+      default: "1",
+      description: "How many words off the end survive the erase. Everything before them is swept away from the left",
+    },
+    {
+      name: "append",
+      type: "string",
+      default: "\"registry\"",
+      description: "What gets written onto the surviving words. An empty string leaves them alone and the gesture ends at the erase",
+    },
+    {
+      name: "markAt",
+      type: "number",
+      default: "0.117",
+      description: "Seconds at which the mark appears. It leads the first word by a tenth of a second on the reference",
+    },
+    {
+      name: "wordAt",
+      type: "number",
+      default: "0.217",
+      description: "Seconds at which the first word lands",
+    },
+    {
+      name: "wordStagger",
+      type: "number",
+      default: "0.189",
+      description: "Seconds between words. Also how long a word holds the accent, which is what keeps exactly one word coloured",
+    },
+    {
+      name: "wordDuration",
+      type: "number",
+      default: "0.085",
+      description: "How long a word takes to fade up and open the line, on an easeOutCubic",
+    },
+    {
+      name: "coolDelay",
+      type: "number",
+      default: "0.189",
+      description: "How long a word holds the accent before it starts cooling",
+    },
+    {
+      name: "coolDuration",
+      type: "number",
+      default: "0.189",
+      description: "How long the accent takes to become the foreground",
+    },
+    {
+      name: "cutAt",
+      type: "number",
+      default: "1.033",
+      description: "Seconds at which the line comes forward",
+    },
+    {
+      name: "zoomDuration",
+      type: "number",
+      default: "0",
+      description: "How long the forward move takes. 0 is the reference's single-frame cut, and pivots on the line's optical centre; any duration makes it a push and moves the pivot to the measured baseline",
+    },
+    {
+      name: "zoom",
+      type: "number",
+      default: "2.41",
+      description: "How far forward it goes. 188px of ink became 453px",
+    },
+    {
+      name: "dragAt",
+      type: "number",
+      default: "1.033",
+      description: "Seconds at which the selection starts being dragged across — the same frame the line comes forward",
+    },
+    {
+      name: "dragDuration",
+      type: "number",
+      default: "0.2",
+      description: "How long the drag takes. The last word also cools over half of it, since it has no next word to hand the accent to",
+    },
+    {
+      name: "eraseAt",
+      type: "number",
+      default: "1.45",
+      description: "Seconds at which the clip starts eating the line from the left",
+    },
+    {
+      name: "eraseDuration",
+      type: "number",
+      default: "0.517",
+      description: "How long the erase takes",
+    },
+    {
+      name: "rewriteAt",
+      type: "number",
+      default: "2",
+      description: "Seconds at which append starts being written on",
+    },
+    {
+      name: "rewriteDuration",
+      type: "number",
+      default: "0.533",
+      description: "How long the rewrite takes. The slide and the reveal share it",
+    },
+    {
+      name: "deselectAt",
+      type: "number",
+      default: "2.85",
+      description: "Seconds at which the selection is dropped",
+    },
+    {
+      name: "deselectDuration",
+      type: "number",
+      default: "0.15",
+      description: "How long the deselect takes",
+    },
+    {
+      name: "fontSize",
+      type: "number",
+      default: "20",
+      description: "Type size before the forward move, in stage px. The stage is 810×458 and is scaled to fill the composition",
+    },
+    {
+      name: "fontWeight",
+      type: "number",
+      default: "500",
+      description: "Weight of the line. Inter ships 400/500/600 here",
+    },
+    {
+      name: "centerY",
+      type: "number",
+      default: "0.4902",
+      description: "Where the line's optical centre sits down the frame, as a fraction",
+    },
+    {
+      name: "tracking",
+      type: "number",
+      default: "-0.012",
+      description: "Letter-spacing in em. Every position is measured off the rendered line, so the geometry follows this on its own",
+    },
+    {
+      name: "wordGap",
+      type: "number",
+      default: "-0.05",
+      description: "Word-spacing in em, measured the same way",
+    },
+    {
+      name: "selectionOpacity",
+      type: "number",
+      default: "0.21",
+      description: "Base strength of the selection. Every sheen stop is a multiple of this",
+    },
+    {
+      name: "selectionSheen",
+      type: "readonly (readonly [number, number])[]",
+      default: "the measured curve",
+      description: "The gradient, as [position, multiple of selectionOpacity] stops. Two stops of [0,1] and [1,1] give a flat fill",
+    },
+    {
+      name: "selectionAngle",
+      type: "number",
+      default: "90",
+      description: "Which way the sheen runs, in deg. 90 is the reference's — straight across",
+    },
+    {
+      name: "selectionPad",
+      type: "number",
+      default: "0.11",
+      description: "How far the selection reaches past the type on an unclipped end, in em. A clipped end has nothing to pad — a clip is a cut through a glyph",
+    },
+    {
+      name: "markPath",
+      type: "string",
+      default: "MARK_PATH",
+      description: "The trailing mark, as a path in a 0 0 100 100 box. The snapcn mark by default, and exported so you can spread it",
+    },
+    {
+      name: "markColor",
+      type: "string",
+      default: "accentColor",
+      description: "Its colour, if it should differ from the accent",
+    },
+    {
+      name: "markSize",
+      type: "number",
+      default: "1.15",
+      description: "The mark's box, in em — not its ink, which fills about 70% of it. 0 leaves the line bare",
+    },
+    {
+      name: "glow",
+      type: "boolean",
+      default: "true",
+      description: "The soft wash behind the line. Static, as the reference's is",
+    },
+    {
+      name: "glowColor",
+      type: "string",
+      default: "accentColor",
+      description: "Colour of the wash, if it should differ from the accent",
+    },
+    {
+      name: "glowOpacity",
+      type: "number",
+      default: "0.075",
+      description: "Strength of the wash. On the reference its peak is sixteen luminance levels off the page — a tint, not a shape",
+    },
+    {
+      name: "accentColor",
+      type: "string",
+      default: "theme.primary",
+      description: "The colour a word arrives in, and the colour the sheen is painted from",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      description: "Token overrides — the page colour and the line's settled ink come from here",
+    },
+    {
+      name: "mode",
+      type: '"light" | "dark"',
+      default: "\"light\"",
+      description: "Which token set to resolve against",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Multiplies the frame clock. Every beat above scales with it",
+    },
+  ]}
+/>
+
+<Note>
+The recording is 3.2s and holds the rewritten line for its last fifth of a second. 102 frames is that plus a beat, so the deselect lands and the new claim sits long enough to read before the composition ends.
+</Note>
