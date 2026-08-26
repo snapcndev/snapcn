@@ -7,10 +7,12 @@ import { heroLaunchConfig } from "@/registry/snap-cn/hero-launch/config";
 import { karaokeCaptionsConfig } from "@/registry/snap-cn/karaoke-captions/config";
 import { laptopFrameConfig } from "@/registry/snap-cn/laptop-frame/config";
 import { logoAssembleConfig } from "@/registry/snap-cn/logo-assemble/config";
+import { logoDriftConfig } from "@/registry/snap-cn/logo-drift/config";
 import { logoFlickerConfig } from "@/registry/snap-cn/logo-flicker/config";
 import { moodboardRevealConfig } from "@/registry/snap-cn/moodboard-reveal/config";
 import { orbitGalleryConfig } from "@/registry/snap-cn/orbit-gallery/config";
 import { phoneFrameConfig } from "@/registry/snap-cn/phone-frame/config";
+import { promptSendConfig } from "@/registry/snap-cn/prompt-send/config";
 import { promptZoomConfig } from "@/registry/snap-cn/prompt-zoom/config";
 import { searchTypingConfig } from "@/registry/snap-cn/search-typing/config";
 import { statusCycleConfig } from "@/registry/snap-cn/status-cycle/config";
@@ -18,6 +20,8 @@ import { terminalSimulatorConfig } from "@/registry/snap-cn/terminal-simulator/c
 import { textBuildConfig } from "@/registry/snap-cn/text-build/config";
 import { textHighlightConfig } from "@/registry/snap-cn/text-highlight/config";
 import { textRevealConfig } from "@/registry/snap-cn/text-reveal/config";
+import { textRewriteConfig } from "@/registry/snap-cn/text-rewrite/config";
+import { textSelectConfig } from "@/registry/snap-cn/text-select/config";
 import { textSwapConfig } from "@/registry/snap-cn/text-swap/config";
 import { textSwellConfig } from "@/registry/snap-cn/text-swell/config";
 import { wordCaptionsConfig } from "@/registry/snap-cn/word-captions/config";
@@ -46,10 +50,12 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "karaoke-captions": karaokeCaptionsConfig,
   "laptop-frame": laptopFrameConfig,
   "logo-assemble": logoAssembleConfig,
+  "logo-drift": logoDriftConfig,
   "logo-flicker": logoFlickerConfig,
   "moodboard-reveal": moodboardRevealConfig,
   "orbit-gallery": orbitGalleryConfig,
   "phone-frame": phoneFrameConfig,
+  "prompt-send": promptSendConfig,
   "prompt-zoom": promptZoomConfig,
   "search-typing": searchTypingConfig,
   "status-cycle": statusCycleConfig,
@@ -57,6 +63,8 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "text-build": textBuildConfig,
   "text-highlight": textHighlightConfig,
   "text-reveal": textRevealConfig,
+  "text-rewrite": textRewriteConfig,
+  "text-select": textSelectConfig,
   "text-swap": textSwapConfig,
   "text-swell": textSwellConfig,
   "word-captions": wordCaptionsConfig,

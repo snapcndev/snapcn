@@ -9,10 +9,12 @@ import { HeroLaunch } from "@/registry/snap-cn/hero-launch";
 import { KaraokeCaptions } from "@/registry/snap-cn/karaoke-captions";
 import { LaptopFrame } from "@/registry/snap-cn/laptop-frame";
 import { LogoAssemble } from "@/registry/snap-cn/logo-assemble";
+import { LogoDrift } from "@/registry/snap-cn/logo-drift";
 import { LogoFlicker } from "@/registry/snap-cn/logo-flicker";
 import { MoodboardReveal } from "@/registry/snap-cn/moodboard-reveal";
 import { OrbitGallery } from "@/registry/snap-cn/orbit-gallery";
 import { PhoneFrame } from "@/registry/snap-cn/phone-frame";
+import { PromptSend } from "@/registry/snap-cn/prompt-send";
 import { PromptZoom } from "@/registry/snap-cn/prompt-zoom";
 import { SearchTyping } from "@/registry/snap-cn/search-typing";
 import { StatusCycle } from "@/registry/snap-cn/status-cycle";
@@ -20,6 +22,8 @@ import { TerminalSimulator } from "@/registry/snap-cn/terminal-simulator";
 import { TextBuild } from "@/registry/snap-cn/text-build";
 import { TextHighlight } from "@/registry/snap-cn/text-highlight";
 import { TextReveal } from "@/registry/snap-cn/text-reveal";
+import { TextRewrite } from "@/registry/snap-cn/text-rewrite";
+import { TextSelect } from "@/registry/snap-cn/text-select";
 import { TextSwap } from "@/registry/snap-cn/text-swap";
 import { TextSwell } from "@/registry/snap-cn/text-swell";
 import { WordCaptions } from "@/registry/snap-cn/word-captions";
@@ -67,6 +71,7 @@ const registry: Record<string, RegistryEntry> = {
     Component: LogoAssemble,
     config: CONFIGS["logo-assemble"],
   },
+  "logo-drift": { Component: LogoDrift, config: CONFIGS["logo-drift"] },
   "logo-flicker": { Component: LogoFlicker, config: CONFIGS["logo-flicker"] },
   "moodboard-reveal": {
     Component: MoodboardReveal,
@@ -77,6 +82,7 @@ const registry: Record<string, RegistryEntry> = {
     config: CONFIGS["orbit-gallery"],
   },
   "phone-frame": { Component: PhoneFrame, config: CONFIGS["phone-frame"] },
+  "prompt-send": { Component: PromptSend, config: CONFIGS["prompt-send"] },
   "prompt-zoom": { Component: PromptZoom, config: CONFIGS["prompt-zoom"] },
   "search-typing": {
     Component: SearchTyping,
@@ -93,6 +99,8 @@ const registry: Record<string, RegistryEntry> = {
     config: CONFIGS["text-highlight"],
   },
   "text-reveal": { Component: TextReveal, config: CONFIGS["text-reveal"] },
+  "text-rewrite": { Component: TextRewrite, config: CONFIGS["text-rewrite"] },
+  "text-select": { Component: TextSelect, config: CONFIGS["text-select"] },
   "text-swap": { Component: TextSwap, config: CONFIGS["text-swap"] },
   "text-swell": { Component: TextSwell, config: CONFIGS["text-swell"] },
   "word-captions": {

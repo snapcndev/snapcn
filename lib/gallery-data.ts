@@ -119,6 +119,22 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     added: "2026-07-24",
   },
   {
+    name: "Text Rewrite",
+    description:
+      "A line writes itself, is selected, then has its opening swept away by a clip that cuts letters in half — and a new ending written on while it slides to its new centre",
+    category: "text",
+    href: "/docs/text/text-rewrite",
+    added: "2026-08-26",
+  },
+  {
+    name: "Text Select",
+    description:
+      "A line that writes itself a word at a time — each arriving in the accent and cooling a beat later, so one word is ever coloured — then pushes forward to full size and gets selected under a shining gradient",
+    category: "text",
+    href: "/docs/text/text-select",
+    added: "2026-08-26",
+  },
+  {
     name: "Text Swap",
     description:
       "Replace one line of text with another using exit-then-enter scheduling and five transition presets",
@@ -158,6 +174,15 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     category: "captions",
     href: "/docs/captions/karaoke-captions",
     added: "2026-07-24",
+  },
+  {
+    name: "Logo Drift",
+    description:
+      "A field of stack tiles drifting past a headline while the camera pulls steadily back, so the wall of things-it-works-with keeps arriving from every edge",
+    category: "logos",
+    href: "/docs/logos/logo-drift",
+    added: "2026-08-26",
+    tile: "wide",
   },
   {
     name: "Logo Assemble",
@@ -268,6 +293,15 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     category: "ai-input",
     href: "/docs/ai-input/search-typing",
     added: "2026-07-24",
+  },
+  {
+    name: "Prompt Send",
+    description:
+      "A composer that unrolls from a hairline, writes a brief while the camera cuts in and rides the caret, then cuts back out as a pointer arrives and sends it — with typing that eases in and out instead of ticking",
+    category: "ai-input",
+    href: "/docs/ai-input/prompt-send",
+    added: "2026-08-26",
+    tile: "wide",
   },
   {
     name: "Prompt Zoom",

@@ -1,0 +1,327 @@
+---
+title: Prompt Send
+description: A composer that unrolls from a hairline, writes a brief while the camera rides the caret, then cuts back out as a pointer arrives and sends it
+---
+
+<ComponentPreview name="prompt-send" />
+
+## Installation
+
+<InstallBlock name="prompt-send" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="prompt-send" />
+
+## Usage
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { PromptSend } from "@/components/snap-cn/prompt-send";
+
+const BriefScene = () => (
+  <PromptSend
+    text="Add a text reveal, a soft blur transition, and a gradient background"
+    placeholder="Describe the scene you want…"
+    chips={["Add a text reveal", "Try a blur transition", "Pick a background"]}
+  />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="PromptSend"
+    component={BriefScene}
+    durationInFrames={165}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+Give it a longer sentence, more chips, a shorter field — it all still lands:
+
+```tsx
+<PromptSend
+  width={420}
+  fieldHeight={52}
+  radius={12}
+  chips={[]}
+  text="A one-line control, and copy long enough that the field has to scroll under its own caret"
+/>
+```
+
+## The typing is eased, and that is the whole shot
+
+The surprise in the reference recording is that it does **not** type at a constant rate. It accelerates in and decelerates out: about 17 characters a second over the first word, 33 through the middle, and a visible settle on the last three. Fitting an **ease-in-out sine** to the character count read off twenty-four frames lands within **0.30 characters rms** across all 69 — no constant rate comes close.
+
+That matters beyond the typing, because the camera rides the same curve. Pin a camera to a character *count* and it lurches once per keystroke; pin it to the continuous curve underneath and it glides, while the caret hops forward and back onto its mark — which is exactly the ±8px wobble the reference shows.
+
+`typeStart` and `typeDuration` are the two props. Everything about the rate falls out of them, and any length of copy finishes in the same window.
+
+## Two cuts, not two zooms
+
+At **1.975s** the view cuts to **2.327×** in a single frame, landing with the caret 57% across the frame, and then tracks left with the sentence. At **4.008s** it cuts again, out to **1.44×**, centred on the send button — which is where the pointer is already heading.
+
+Both are **steps**. `cameraFor` returns one of exactly three states and there is a test asserting that no frame of the clip sits anywhere else. Ramping a cut, even across two frames, turns it into a zoom and loses the snap.
+
+Both marks are *fractions of the frame*, never pixel offsets, so a wider panel or a bigger type size reframes instead of drifting off the edge.
+
+## The unroll
+
+The panel does not fade in and it does not scale up from nothing. A 2px hairline appears at its top edge and the box grows **downward** out of it — top edge pinned, bottom edge travelling its full height in 445ms — while the width goes 0.93 → 1. The writing surface and the chip strip are two heights on the same curve with different durations, which is why the strip surfaces from under the field late instead of being there from the first frame.
+
+| | measured |
+| --- | --- |
+| unroll | `445ms`, `cubic-bezier(0.3, 0, 0.35, 1)` |
+| placeholder + button | `417ms`, over `300ms`, linear |
+| chips | one every `100ms`, each rising `11.4px` |
+| typing | `0.915s` → `3.94s`, ease-in-out sine |
+| cut in | `1.975s`, `2.327×`, caret at `(0.573, 0.488)` |
+| cut out | `4.008s`, `1.44×`, button at `(0.531, 0.526)` |
+| pointer | enters `4.04s`, halves its distance every `44ms` |
+| click | `4.658s` |
+
+## Nothing is a constant tuned to one sentence
+
+Every offset above is either a fixed inset — a padding, which should not change when the type does — or a **ratio of a font size**, which must. `layoutFor` turns four numbers into the whole geometry, and the defaults are the recording's own measurements, so the shipped shot is pixel-identical to the one that was measured:
+
+- **Longer copy scrolls the field under the caret**, the way a real single-line input does, instead of running past its edge. It scrolls on the continuous curve, so the line glides while the caret hops.
+- **More chips wrap**, and the panel grows by exactly the rows they needed. The stagger keeps running in label order across them.
+- **No chips at all** and the panel hugs the field.
+- **A short `fieldHeight`** puts the text and the send button on the same row, and the line yields the button's gutter — but only then, so the reference's tall field still gets its full width.
+
+## The pointer belongs to the screen
+
+It is drawn **outside** the camera. A pointer is a property of the display, not of the thing on it, so it must not grow when the shot pushes in — and the reference's does not. Set `cursor={false}` to drop it, and the click and the send bloom go with it.
+
+## The caret blinks off the last keystroke
+
+Not off a wall clock. A real caret stays solid while you type and starts blinking a fixed interval after you stop, and anchoring it that way is what gets the reference's two measured blinks — dark at 4.267s, back at 4.741s — without a single extra number.
+
+## Colour and wording
+
+The proportions and the timing are measured. The **colours and the labels are not** — the reference is a specific product, and its blue and its copy are its brand. The paint is the shadcn token set, the field takes its surface from the `Input` primitive's own style context so the two cannot drift, and the backdrop wash is layered from `accentColor` (which defaults to `theme.primary`), so it is the installer's accent.
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "text",
+      type: "string",
+      default: "\"Add a text reveal, a soft blur transition, and a gradient background\"",
+      description: "The brief that types itself. Any length — the field scrolls under the caret rather than clipping",
+    },
+    {
+      name: "placeholder",
+      type: "string",
+      default: "\"Describe the scene you want…\"",
+      description: "Shown until the first character lands, and set one caret width right of the text origin, as the reference has it",
+    },
+    {
+      name: "chips",
+      type: "string[] | string",
+      default: "four snapcn suggestions",
+      description: "The suggestion row. Accepts an array or the comma-separated string the customizer sends. They wrap and the panel grows; pass [] for a bare field",
+    },
+    {
+      name: "sendIcon",
+      type: "ReactNode",
+      default: "an up arrow",
+      description: "Replaces the glyph inside the send button",
+    },
+    {
+      name: "width",
+      type: "number",
+      default: "636.2",
+      description: "Panel width in stage px. The stage is 890×486 and is scaled to fill the composition",
+    },
+    {
+      name: "fieldHeight",
+      type: "number",
+      default: "121.2",
+      description: "Height of the writing surface. The panel's height is derived from it, the chips and its own padding",
+    },
+    {
+      name: "fontSize",
+      type: "number",
+      default: "14",
+      description: "Prompt type size. Line box, caret width and the field's text inset are all ratios of it",
+    },
+    {
+      name: "chipFontSize",
+      type: "number",
+      default: "12.3",
+      description: "Chip label size. Chip height, padding and the row gap are all ratios of it",
+    },
+    {
+      name: "radius",
+      type: "number",
+      default: "22",
+      description: "Panel corner radius. The field's is this less 2, as the reference's is",
+    },
+    {
+      name: "sendSize",
+      type: "number",
+      default: "27.4",
+      description: "Diameter of the send button",
+    },
+    {
+      name: "fontFamily",
+      type: "string",
+      default: "Inter",
+      description: "Only useful if you have already loaded a face — a Remotion bundle has no CSS variables to fall back on",
+    },
+    {
+      name: "revealAt",
+      type: "number",
+      default: "0.025",
+      description: "Seconds at which the panel starts to unroll",
+    },
+    {
+      name: "revealDuration",
+      type: "number",
+      default: "0.445",
+      description: "How long the unroll takes. The writing surface finishes at 0.83 of it",
+    },
+    {
+      name: "fieldAt",
+      type: "number",
+      default: "0.417",
+      description: "Seconds at which the placeholder and the send button fade up, over 300ms",
+    },
+    {
+      name: "caretAt",
+      type: "number",
+      default: "0.742",
+      description: "Seconds at which the caret arrives. It does not fade — it is whole on one frame",
+    },
+    {
+      name: "chipsAt",
+      type: "number",
+      default: "0.545",
+      description: "Seconds at which the first chip starts to rise",
+    },
+    {
+      name: "chipStagger",
+      type: "number",
+      default: "0.1",
+      description: "Seconds between chips, in label order across however many rows there are",
+    },
+    {
+      name: "typeStart",
+      type: "number",
+      default: "0.915",
+      description: "Seconds at which typing begins",
+    },
+    {
+      name: "typeDuration",
+      type: "number",
+      default: "3.025",
+      description: "Seconds the whole sentence takes, on an ease-in-out sine",
+    },
+    {
+      name: "cutInAt",
+      type: "number",
+      default: "1.975",
+      description: "Seconds at which the view cuts in to the caret. A step, never a ramp",
+    },
+    {
+      name: "cutOutAt",
+      type: "number",
+      default: "4.008",
+      description: "Seconds at which it cuts back out to the send button",
+    },
+    {
+      name: "zoomIn",
+      type: "number",
+      default: "2.327",
+      description: "Scale of the first cut, measured off the reference",
+    },
+    {
+      name: "zoomOut",
+      type: "number",
+      default: "1.44",
+      description: "Scale of the second cut",
+    },
+    {
+      name: "focusX",
+      type: "number",
+      default: "0.573",
+      description: "Where the caret sits across the frame while the camera rides it, as a fraction",
+    },
+    {
+      name: "focusY",
+      type: "number",
+      default: "0.4881",
+      description: "Where the caret sits down the frame, as a fraction",
+    },
+    {
+      name: "outX",
+      type: "number",
+      default: "0.5305",
+      description: "Where the send button sits across the frame after the second cut",
+    },
+    {
+      name: "outY",
+      type: "number",
+      default: "0.5261",
+      description: "Where the send button sits down the frame after the second cut",
+    },
+    {
+      name: "cursorAt",
+      type: "number",
+      default: "4.042",
+      description: "Seconds at which the pointer enters from the bottom-right corner",
+    },
+    {
+      name: "cursorDuration",
+      type: "number",
+      default: "0.42",
+      description: "How long its approach takes. It halves its distance every 44ms, not a constant glide",
+    },
+    {
+      name: "clickAt",
+      type: "number",
+      default: "4.658",
+      description: "Seconds at which it presses the button. The send bloom opens 220ms later",
+    },
+    {
+      name: "cursor",
+      type: "boolean",
+      default: "true",
+      description: "Show the pointer at all. Off drops the click and the send bloom with it",
+    },
+    {
+      name: "accentColor",
+      type: "string",
+      default: "theme.primary",
+      description: "The wash behind the panel and the send bloom, layered as alpha over theme.background",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      description: "Token overrides. The field's surface comes from the Input primitive's own style context, so the two cannot drift",
+    },
+    {
+      name: "mode",
+      type: '"light" | "dark"',
+      default: "\"light\"",
+      description: "Which token set to resolve against",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Multiplies the frame clock. Every beat above scales with it",
+    },
+  ]}
+/>
+
+<Note>
+The recording is 5.02s and ends 140ms into the send bloom. The opening of that bloom is measured; the sweep that follows it is the component's own, which is why the default duration is 165 frames rather than 151.
+</Note>
