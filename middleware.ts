@@ -6,6 +6,7 @@ import {
   classifyClient,
   distinctIdFromCookie,
 } from "@/lib/analytics-server";
+import { suggestComponents } from "@/lib/registry-suggest";
 
 /**
  * Every component that actually exists, from the same manifests the registry is
@@ -67,8 +68,15 @@ function componentFromPath(pathname: string): string | null {
 }
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
   const { pathname } = request.nextUrl;
+  const requested = componentFromPath(pathname);
+  // Answer the miss here rather than letting it fall through to the HTML 404.
+  // The analytics below still runs either way — `after()` is attached to
+  // whichever response we return.
+  const response =
+    requested && !KNOWN_COMPONENTS.has(requested)
+      ? unknownComponent(requested, request.nextUrl.origin)
+      : NextResponse.next();
 
   after(async () => {
     const ua = request.headers.get("user-agent");
@@ -113,6 +121,52 @@ export async function middleware(request: NextRequest) {
   });
 
   return response;
+}
+
+/**
+ * What a request for a component we do not have gets back.
+ *
+ * It used to get the site's HTML 404 — twenty-seven kilobytes of React shell
+ * sent to a terminal, saying nothing a CLI or an agent could act on. That is
+ * the wrong answer to what turned out to be a common question: thirty days of
+ * traffic contained **208 requests for names that do not exist**, one for every
+ * eight that worked, and they arrive from the most committed person in the
+ * funnel — someone who has already typed `npx shadcn add`.
+ *
+ * So it answers in the language it was asked in. JSON, a few hundred bytes, and
+ * the two things the caller actually needs: that the name is wrong, and where
+ * the real ones are. `suggestComponents` offers alternatives only when it has a
+ * genuine one; most invented names get none, which is the truthful reply.
+ *
+ * The agents inventing these names read response bodies, and this is the only
+ * place we can talk to them at the moment it matters.
+ *
+ * `origin` comes off the request rather than a constant so a preview deployment
+ * points at itself — and so this file imports nothing that would drag `node:fs`
+ * into the Edge bundle.
+ */
+function unknownComponent(component: string, origin: string): NextResponse {
+  const suggestions = suggestComponents(component, INSTALL_ALL_NAMES);
+  return NextResponse.json(
+    {
+      error: `\`@snapcn/${component}\` does not exist.`,
+      component,
+      suggestions,
+      message: suggestions.length
+        ? `Did you mean ${suggestions.map((s) => `@snapcn/${s}`).join(", ")}?`
+        : `snapcn has no component by that name. It has ${INSTALL_ALL_NAMES.length}; do not guess another spelling.`,
+      components: INSTALL_ALL_NAMES,
+      docs: `${origin}/docs/components`,
+      llms: `${origin}/llms.txt`,
+    },
+    {
+      status: 404,
+      headers: {
+        // Wrong names are stable and get retried; let the edge absorb them.
+        "cache-control": "public, max-age=300, s-maxage=3600",
+      },
+    },
+  );
 }
 
 export const config = {
