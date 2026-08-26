@@ -5,6 +5,7 @@ import {
   type Dispatch,
   type SetStateAction,
   useCallback,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -52,6 +53,45 @@ export function AudioTrackRow({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [drag, setDrag] = useState<{ x: number; from: number } | null>(null);
+
+  /**
+   * A restored track has to prove the file is still there.
+   *
+   * `src` is an object URL while the tab that uploaded it is alive, and on
+   * reload the draft rebuilds it as `/api/audio/<uploadId>` instead. If that
+   * upload has since been reclaimed the row comes back looking completely
+   * normal — name, volume, trim, the block on the timeline — with a 404 behind
+   * it, and the first anyone hears of it is silence during playback or a
+   * finished export with no sound.
+   *
+   * So: probe once, and if it is gone say so and clear the row. Losing the trim
+   * they set is worse than nothing, but not nearly as bad as keeping a control
+   * that lies about what it is going to do.
+   */
+  const probed = useRef<string | null>(null);
+  useEffect(() => {
+    const src = audio?.src;
+    if (!src || src.startsWith("blob:") || probed.current === src) return;
+    probed.current = src;
+
+    let cancelled = false;
+    void fetch(src, { method: "HEAD" })
+      .then((res) => {
+        if (cancelled || res.ok) return;
+        onChange((cur) => (cur?.src === src ? null : cur));
+        toast.error("That soundtrack is no longer available.", {
+          description:
+            "Uploads are cleared once nothing is using them. Add it again to keep it.",
+        });
+      })
+      .catch(() => {
+        // Offline or a blocked request is not proof the file is gone. Leave the
+        // row alone; the export checks again server-side before it runs.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [audio?.src, onChange]);
 
   /** How far the head can move before the file runs out under the video. */
   const maxTrim = Math.max(0, (audio?.durationSeconds ?? 0) - videoSeconds);
