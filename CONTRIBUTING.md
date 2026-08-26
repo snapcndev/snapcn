@@ -30,6 +30,122 @@ reflow the whole file and bury your one entry in three hundred lines of noise.
 
 ---
 
+## The install is the product
+
+Everything below is a bug that shipped. Each one type-checked, built, rendered,
+passed every test, and was **broken the moment somebody installed it** — because
+the thing we ship is not the thing we wrote. `pnpm test` now enforces all of it
+(`lib/__tests__/registry-install.test.ts`), so you will find out here rather than
+in someone's terminal.
+
+### The file you ship is not the file you wrote
+
+A registry item gives each file a `target`, and `shadcn add` writes it *there*.
+That usually flattens `registry/snap-cn/<slug>/foo.ts` down to
+`components/snap-cn/<slug>-foo.ts` — so a relative import that is correct in this
+repo can be wrong in every install.
+
+`type-morph` shipped that way. `index.tsx` imported `./timeline`; the manifest
+landed the file as `type-morph-timeline.ts`; **every install of it 404'd on the
+first import.** Nothing here caught it, because `tsc` checks the source tree,
+where `./timeline` is right there.
+
+> Name the source file whatever the `target` will be called. Do not make the
+> manifest rename it.
+
+### Declare everything you import
+
+- an npm package → `dependencies`
+- another snapcn component → `registryDependencies` (the full `https://snapcn.dev/r/<name>.json`)
+- shadcn's `cn()` → `registryDependencies: ["utils"]`, which resolves against shadcn's own registry
+- `@/lib/snap-cn-ui` → `https://snapcn.dev/r/snap-cn-ui.json`
+
+`pulsing-border` imported `remotion` and never declared it. It happened to work
+because Remotion is a prerequisite — right up until it isn't.
+
+`@/lib/snap-cn-ui`, `@/lib/utils` and `@/components/snap-cn/*` are the **only**
+`@/` roots an install creates. `@/hooks`, `@/config`, `@/registry` exist here and
+nowhere else on earth.
+
+### A render has none of your app
+
+A Remotion bundle loads no stylesheet of ours, no CSS variable, no Tailwind
+unless the user wired `@remotion/tailwind-v4` themselves, and no `public/` path
+unless you passed it through `staticFile`.
+
+**`var(--…)` is the sharp one, because it fails silently in the direction you
+will not look.** Our render entries import `app/globals.css`, so the token
+palette *is* in the bundle — but the font variables are not. `--font-geist-sans`
+is declared by `next/font` in `app/layout.tsx`, and a Remotion bundle never runs
+the layout. So this:
+
+```ts
+fontFamily: "var(--font-geist-sans), -apple-system, sans-serif"  // ✗
+```
+
+resolves in the Player, resolves in a user's app if they happen to define the
+same variable, and resolves to nothing in the mp4. **Measured:** stripping it out
+of all thirteen components that had it produced byte-identical mp4s — it had
+never been contributing anything to a render. What it *was* doing is letting the
+same component come out in two different faces depending on where it was drawn,
+which is the one thing a component that ships as both a preview and a video
+cannot do.
+
+Load the face you mean —
+
+```ts
+import { loadFont } from "@remotion/google-fonts/Inter";
+const { fontFamily } = loadFont("normal", { weights: ["400", "500"] });  // ✓
+```
+
+— or write a stack of real, concrete families and no variables at all. Same rule
+for colour: animated colours must be concrete hex/oklch and interpolated with
+`mixOklch`.
+
+### A render must be reproducible frame for frame
+
+Everything comes from `useCurrentFrame()`. No `Math.random()`, no `Date.now()`,
+no `setTimeout`, no CSS keyframes, no `useEffect` that animates. Frame 40 must be
+identical whether you render it alone or as part of the file — Remotion renders
+frames out of order across parallel tabs, and anything that reads a clock other
+than the frame clock will disagree with itself.
+
+If you must measure the DOM, do it once behind `delayRender()` and
+`continueRender()` only after the measurement has re-rendered, or frame 0 is
+captured with the wrong geometry.
+
+### Compose the design system; do not re-invent it
+
+Take `theme?: Partial<SnapCnTheme>` and `mode?: "light" | "dark"`, resolve with
+`useSnapCnTheme(theme, mode)`, and paint from what comes back. A component lands
+next to somebody's `Button` and has to belong there. Two documented exceptions,
+and they are exceptions because the file says why: `moodboard-reveal` spans light
+and dark at once so it takes no `mode`, and `announce-title` paints a cinematic
+world rather than a surface — every one of its seven colours is still a prop.
+
+### Every visual element is a prop
+
+Colour, size, timing, copy, the mark, the easing. A default is a measurement, not
+a fixture. And the layout has to survive content of any length — if a headline
+twice as long overruns the stage, the component is not finished.
+
+### Measure the reference; do not eyeball it
+
+When a reference recording is the spec, extract its frames and fit the curves.
+Every choreography detail worth having has been invisible to the naked eye.
+
+**Fit on the recording's timestamps, not its frame numbers.** A screen capture is
+usually variable-rate — the `text-rewrite` reference is nominally 60fps with
+eight dropped frames — so a frame index is not a clock. Fitting `text-rewrite`'s
+erase on frame index gave 0.467s for a move that is really 0.517s, and every beat
+downstream landed early.
+
+Two independent signals landing on the same curve is the check that you have
+found the real one: `text-rewrite`'s erase (fitted on a clip edge) and its
+rewrite (fitted on the line's centre) agree to within 0.001 of the travel.
+
+---
+
 ## Previews: the live Player, and when to stop trusting it
 
 Most components preview through a live `@remotion/player`. That is not a video.
@@ -222,10 +338,15 @@ five frames is a freeze.**
 
 ```bash
 pnpm lint
-pnpm test
+pnpm test                                # includes the install-integrity suite
 pnpm run registry:build
 pnpm run render:previews --only <slug>   # only if it is in RENDERED_DEMOS
 ```
+
+`pnpm test` resolves the built manifest the way a user's project will — relative
+imports against `target` paths, declared dependencies, no `var(--…)`, no clock
+but the frame clock, no layer promotion. Run `registry:build` **before** it, or
+you are testing the last build rather than yours.
 
 Say what you changed and how you know it works. "It looks right" is not a claim
 about a frame-accurate animation — render it and look at the frames.
