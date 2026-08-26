@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { NavBadge } from "@/components/nav-badge";
 import { DOCS_NAV } from "@/lib/docs-nav";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,11 @@ export const DOCS_SECTIONS = [
     label: "Video Editor",
     href: "/docs/video-editor",
     match: "/docs/video-editor",
+    // The editor shipped and nothing on the site said so. **Take the flag off
+    // once it stops being news** — a "New" that outlives its release teaches
+    // people to stop reading flags. The header's entry in `NAV_LINKS` carries
+    // the same one and comes off at the same time.
+    badge: "New",
   },
   { label: "Showcase", href: "/docs/showcase", match: "/docs/showcase" },
   {
@@ -53,6 +59,16 @@ export const DOCS_SECTIONS = [
 ] as const;
 
 export type DocsSection = (typeof DOCS_SECTIONS)[number];
+
+/**
+ * The section's flag, if it has one.
+ *
+ * `DOCS_SECTIONS` is `as const`, so each entry has its own literal type and
+ * only the flagged ones have the field at all — hence the probe rather than a
+ * plain `section.badge`.
+ */
+export const sectionBadge = (section: DocsSection): string | undefined =>
+  "badge" in section ? section.badge : undefined;
 
 /**
  * Returns a predicate that reports whether a section is the active one for the
@@ -113,6 +129,9 @@ export function DocsSectionNav({ className }: { className?: string }) {
               )}
             >
               {item.label}
+              {sectionBadge(item) ? (
+                <NavBadge>{sectionBadge(item) as string}</NavBadge>
+              ) : null}
             </Link>
           );
         })}

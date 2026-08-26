@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { NavBadge } from "@/components/nav-badge";
 import { SlidingHighlight } from "@/components/sliding-highlight";
 import { SheetClose } from "@/components/ui/sheet";
 import type { NavLink } from "@/config/site";
@@ -57,9 +58,10 @@ export function NavDesktop({
           href={link.href}
           onMouseEnter={(event) => moveTo(event.currentTarget)}
           onFocus={(event) => moveTo(event.currentTarget)}
-          className="relative rounded-md px-2.5 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground focus-visible:text-foreground focus-visible:outline-none"
+          className="relative inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground focus-visible:text-foreground focus-visible:outline-none"
         >
           {link.label}
+          {link.badge ? <NavBadge>{link.badge}</NavBadge> : null}
         </Link>
       ))}
     </nav>
@@ -80,11 +82,12 @@ export function NavMobile({ links }: { links: NavLink[] }) {
           render={
             <Link
               href={link.href}
-              className="py-3 text-foreground/90 transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none"
+              className="flex items-center gap-1.5 py-3 text-foreground/90 transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none"
             />
           }
         >
           {link.label}
+          {link.badge ? <NavBadge>{link.badge}</NavBadge> : null}
         </SheetClose>
       ))}
     </nav>

@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PanelToggleIcon } from "@/components/icons/panel-toggle";
+import { NavBadge } from "@/components/nav-badge";
 import { SearchButton } from "@/components/search-button";
 import { SnapCnLogo } from "@/components/snapcn-logo";
 import {
@@ -17,7 +18,7 @@ import { GITHUB_URL, X_URL } from "@/config/site";
 import { DOCS_NAV } from "@/lib/docs-nav";
 import { GALLERY_COUNT } from "@/lib/gallery-data";
 import { cn } from "@/lib/utils";
-import { DOCS_SECTIONS, useSectionActive } from "./section-nav";
+import { DOCS_SECTIONS, sectionBadge, useSectionActive } from "./section-nav";
 
 /**
  * The gallery's fixed left rail (desktop only), shared by every `/docs/*`
@@ -131,6 +132,9 @@ function SidebarBody({
               }
             >
               {item.label}
+              {sectionBadge(item) ? (
+                <NavBadge>{sectionBadge(item) as string}</NavBadge>
+              ) : null}
               {active ? (
                 <span
                   className="size-1.5 rounded-full bg-foreground"

@@ -54,6 +54,15 @@ export type NavLink = {
   label: string;
   /** Hidden on mobile (matches the existing `hidden sm:inline` pattern). */
   smOnly?: boolean;
+  /**
+   * A short flag rendered beside the label — "New", "Beta".
+   *
+   * Deliberately a plain string rather than a date the nav can expire on its
+   * own: `NAV_LINKS` is a module const read on both sides of the render, so
+   * anything that reads a clock here is a hydration mismatch waiting to
+   * happen. It comes off by hand. See the note on the entry that carries it.
+   */
+  badge?: string;
 };
 
 // Single source of truth for the landing page's top navigation.
@@ -71,7 +80,11 @@ export type NavLink = {
 // has convinced you.
 export const NAV_LINKS: NavLink[] = [
   { href: "/docs/components", label: "Components" },
-  { href: "/docs/video-editor", label: "Video Editor" },
+  // The editor shipped and nothing on the site said so: it is a nav item that
+  // reads exactly like the four-year-old one next to it. The flag is the whole
+  // announcement. **Take it off once the editor stops being news** — a "New"
+  // that outlives its release teaches people to stop reading flags.
+  { href: "/docs/video-editor", label: "Video Editor", badge: "New" },
   { href: "/docs/showcase", label: "Showcase" },
   { href: "/docs", label: "Docs" },
 ];
