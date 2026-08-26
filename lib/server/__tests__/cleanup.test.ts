@@ -39,6 +39,14 @@ vi.mock("@/lib/server/render-queue", () => ({
   deleteJob: (id: string) => deleteJob(id),
 }));
 
+// What a saved project still points at. Mocked because the real one reaches
+// Postgres, and the behaviour under test is what the sweep does with the
+// answer — including what it does when there isn't one.
+const referencedAudioIds = vi.fn(async () => new Set<string>());
+vi.mock("@/lib/server/audio-refs", () => ({
+  referencedAudioIds: () => referencedAudioIds(),
+}));
+
 import { sweepOnce } from "@/lib/server/cleanup";
 
 const NOW = 1_800_000_000_000;
@@ -64,6 +72,8 @@ beforeEach(() => {
   stat.mockReset();
   rm.mockClear();
   deleteJob.mockReset();
+  referencedAudioIds.mockReset();
+  referencedAudioIds.mockResolvedValue(new Set<string>());
   delete process.env.RENDER_FILE_TTL_MS;
   delete process.env.AUDIO_FILE_TTL_MS;
 });
@@ -147,5 +157,55 @@ describe("cleanup — the audio dir is swept at all", () => {
 
     await expect(sweepOnce()).resolves.toBeUndefined();
     expect(removed()).toEqual(["/work/renders/a.mp4"]);
+  });
+});
+
+describe("cleanup — an upload a project still points at is not scratch", () => {
+  const OLD = 12 * 60 * 60_000;
+
+  it("keeps a referenced soundtrack however old it is", async () => {
+    // The bug this is here for: a project is a Postgres row with no expiry and
+    // the file it names had a six-hour TTL, so every saved project with audio
+    // was guaranteed to lose it. The clock is not the thing that decides any
+    // more — ownership is.
+    referencedAudioIds.mockResolvedValue(new Set(["kept"]));
+    withFiles(
+      { "/work/audio": ["kept.mp3", "orphan.mp3"] },
+      { "kept.mp3": OLD, "orphan.mp3": OLD },
+    );
+
+    await sweepOnce();
+
+    expect(removed()).not.toContain("/work/audio/kept.mp3");
+    expect(removed()).toContain("/work/audio/orphan.mp3");
+  });
+
+  it("still reclaims an orphan that never reached a project", async () => {
+    // `/api/audio` needs no account, so uploads nobody ever used cannot sit on
+    // the disk forever. The TTL is right; it was only ever applied too widely.
+    referencedAudioIds.mockResolvedValue(new Set());
+    withFiles({ "/work/audio": ["nobody.mp3"] }, { "nobody.mp3": OLD });
+
+    await sweepOnce();
+
+    expect(removed()).toContain("/work/audio/nobody.mp3");
+  });
+
+  it("skips the audio sweep entirely when it cannot tell what is referenced", async () => {
+    // The two failure costs are not symmetrical. Skipping leaks disk until the
+    // next pass; deleting anyway destroys a soundtrack nobody can get back. So
+    // a database that is down must never be read as "nothing is referenced".
+    referencedAudioIds.mockRejectedValue(new Error("db down"));
+    withFiles(
+      { "/work/renders": ["a.mp4"], "/work/audio": ["old.mp3"] },
+      { "a.mp4": OLD, "old.mp3": OLD },
+    );
+
+    await sweepOnce();
+
+    expect(removed()).not.toContain("/work/audio/old.mp3");
+    // …and the renders dir, which does not depend on the answer, is untouched
+    // by that decision.
+    expect(removed()).toContain("/work/renders/a.mp4");
   });
 });

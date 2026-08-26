@@ -1,5 +1,5 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { stat, utimes } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { AUDIO_WORK_DIR } from "@/lib/server/paths";
@@ -21,6 +21,31 @@ const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * number of uploads on the box (which now sit for six hours). Six stats is a
  * fixed cost and no larger than the one stat this already had to do.
  */
+/**
+ * Refresh the mtime once a file is more than a tenth of its TTL old.
+ *
+ * The TTL is measured on mtime, and nothing ever moved it — so it counted from
+ * the upload rather than from the last use, and a track in daily use expired on
+ * the same schedule as one nobody touched again. Every read renews the lease
+ * now: the editor rebuilding a `blob:` it lost on reload, and the renderer
+ * pulling the file during an export.
+ *
+ * Guarded on age rather than done unconditionally because Chrome issues a range
+ * request per seek while it decodes audio. The stat is already in hand, so the
+ * common case costs one comparison and no syscall.
+ */
+const REFRESH_AFTER_MS = 30 * 60_000;
+
+async function touch(filePath: string, mtimeMs: number): Promise<void> {
+  if (Date.now() - mtimeMs < REFRESH_AFTER_MS) return;
+  try {
+    const now = new Date();
+    await utimes(filePath, now, now);
+  } catch {
+    // Losing the refresh costs a file its lease, not this request its answer.
+  }
+}
+
 async function findUpload(id: string) {
   const hits = await Promise.all(
     AUDIO_EXTS.map(async (ext) => {
@@ -58,6 +83,8 @@ export async function GET(
 
   const found = await findUpload(id);
   if (!found) return new Response("Not found", { status: 404 });
+
+  await touch(found.filePath, found.info.mtimeMs);
   const { filePath, info, type } = found;
 
   const range = request.headers.get("range");

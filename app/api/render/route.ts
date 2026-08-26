@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { anonymousId, distinctIdFromCookie } from "@/lib/analytics-server";
+import { audioUploadExists } from "@/lib/server/audio-file";
 import { ensureCleanupSweep } from "@/lib/server/cleanup";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 import { enqueueRender, type RenderSpec } from "@/lib/server/render-queue";
@@ -77,6 +78,26 @@ export async function POST(request: NextRequest) {
       );
     }
     throw err;
+  }
+
+  // A soundtrack that is not on disk any more must stop the export, not ride
+  // along in the spec. The renderer fetches `spec.audio.src` and, when it 404s,
+  // carries on and produces a perfectly good video with no sound — which the
+  // person downloading it has no way to know until they play it. An error they
+  // can act on beats a file they have to discover is wrong.
+  // `inputProps` is deliberately `Record<string, unknown>` — the queue does not
+  // know what any composition wants — so the shape is read back here rather
+  // than pretended into the type.
+  const specAudio = spec.inputProps.audio as { uploadId?: string } | null;
+  if (specAudio?.uploadId && !(await audioUploadExists(specAudio.uploadId))) {
+    return NextResponse.json(
+      {
+        error:
+          "That soundtrack is no longer available — re-upload it and try the export again.",
+        code: "audio_missing",
+      },
+      { status: 409 },
+    );
   }
 
   // Read here, not in the queue: the render runs detached and by the time it

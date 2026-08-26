@@ -50,3 +50,16 @@ if (
     `[snapcn] SHOWCASE_WORK_DIR is unset — approved showcase videos are being written to ${SHOWCASE_WORK_DIR} and will be lost on redeploy. Mount a volume and set SHOWCASE_WORK_DIR (see SHOWCASE_SETUP.md).`,
   );
 }
+
+// The same warning the showcase dir got, for the same reason and one it needed
+// just as badly. A saved project keeps a soundtrack by id forever; if the file
+// is on the container's writable layer it is gone at the next deploy, and the
+// only symptom is a project that opens with a track row and plays silence.
+if (
+  process.env.NODE_ENV === "production" &&
+  AUDIO_WORK_DIR.startsWith(os.tmpdir())
+) {
+  console.warn(
+    `[snapcn] AUDIO_WORK_DIR is unset — uploaded soundtracks are being written to ${AUDIO_WORK_DIR} and will be lost on redeploy, silencing every saved project that references one. Mount a volume and set AUDIO_WORK_DIR (see SHOWCASE_SETUP.md).`,
+  );
+}
