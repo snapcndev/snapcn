@@ -26,7 +26,7 @@ import {
   SLIDE_BEZIER,
   SLIDE_FROM,
   SLIDE_TO,
-} from "./timeline";
+} from "./type-morph-timeline";
 
 const { fontFamily: SANS } = loadInter("normal", {
   weights: ["400", "700"],

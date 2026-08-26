@@ -234,8 +234,7 @@ export interface WordFlipProps {
   mode?: "light" | "dark";
 }
 
-const FONT_FAMILY =
-  "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT_FAMILY = "-apple-system, BlinkMacSystemFont, sans-serif";
 
 export function WordFlip({
   prefix = "Looking For A",

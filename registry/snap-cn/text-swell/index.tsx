@@ -395,8 +395,7 @@ export function TextSwell({
           letterSpacing,
           lineHeight: 1.1,
           whiteSpace: "nowrap",
-          fontFamily:
-            "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif",
+          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
           // Pivot on the lead word's left edge, and on the baseline. See above:
           // the baseline is what must not move.
           transformOrigin: `0% ${baseline}px`,

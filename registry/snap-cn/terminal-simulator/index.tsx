@@ -148,9 +148,8 @@ const TERM_COLORS: Record<TerminalLineType, string> = {
 const TYPE_COLORS: Record<TerminalLineType, string> = TERM_COLORS;
 
 const SANS_FAMILY =
-  'var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
-const MONO_FAMILY =
-  "var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace";
+  '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
+const MONO_FAMILY = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
 const DEFAULT_INTRO = "*work* one step at a *time.*";
 

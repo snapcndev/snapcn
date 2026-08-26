@@ -413,8 +413,7 @@ export function TextHighlight({
     color: base,
     letterSpacing: "-0.02em",
     lineHeight: 1.25,
-    fontFamily:
-      "var(--font-geist-sans), Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
     whiteSpace: "pre-wrap",
     textAlign: "center",
     maxWidth: "80%",

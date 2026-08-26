@@ -37,8 +37,7 @@ export interface TextBuildProps {
   mode?: "light" | "dark";
 }
 
-const FONT_FAMILY =
-  "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT_FAMILY = "-apple-system, BlinkMacSystemFont, sans-serif";
 
 const MEASURE_FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -269,8 +268,13 @@ export function TextBuild({
                 left: "50%",
                 top: "50%",
                 whiteSpace: "nowrap",
-                backfaceVisibility: "hidden",
-                transform: `translate(-50%, -50%) translate3d(${tx}px, ${ty}px, 0) scale(${scale})`,
+                // Plain 2D transforms, deliberately. `translate3d(…, 0)` and
+                // `backfaceVisibility: hidden` are the same layer-promotion
+                // trick wearing two hats: they buy smoothness by handing the
+                // scale to the compositor, which resamples a bitmap instead of
+                // re-rasterising real type. On a word that is both scaling and
+                // blurring, that is the whole deliverable.
+                transform: `translate(-50%, -50%) translate(${tx}px, ${ty}px) scale(${scale})`,
                 filter: `blur(${blur}px)`,
                 opacity,
               }}

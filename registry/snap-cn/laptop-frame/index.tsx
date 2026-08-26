@@ -76,7 +76,7 @@ export interface LaptopFrameProps {
 }
 
 const FONT_FAMILY =
-  'Inter, var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 /** Lid (screen panel) size — a 16:10 MacBook-style display. */
 export const LID_WIDTH = 820;

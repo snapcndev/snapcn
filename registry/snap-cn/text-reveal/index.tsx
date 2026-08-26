@@ -666,8 +666,7 @@ export function TextReveal({
           letterSpacing,
           lineHeight: 1.1,
           whiteSpace: "nowrap",
-          fontFamily:
-            "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif",
+          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
           // Pivot on the lead word's centre horizontally — so the line scales out
           // from that word and it stays planted — and on the baseline vertically,
           // which is the point that must not move. See above.
