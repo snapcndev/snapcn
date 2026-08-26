@@ -113,6 +113,16 @@ export async function captureServer(
   event: ServerEvent,
   distinctId: string,
   properties: Props = {},
+  /**
+   * When the thing happened, if that is not now.
+   *
+   * Only the debounced docs search passes this: it holds a query until the
+   * person stops typing, so the flush can be seconds — or, if nobody searches
+   * again, much longer — after the search itself. Without this the event would
+   * land at flush time and a search made last thing at night could be counted
+   * against the next morning.
+   */
+  timestamp: string = new Date().toISOString(),
 ): Promise<void> {
   // Same dev gate as the client provider: a local `pnpm dev` hitting
   // /r/<thing>.json must not land in the install count that decides what gets
@@ -133,7 +143,7 @@ export async function captureServer(
           // event, don't mint a person for every crawler that hits the registry.
           $process_person_profile: false,
         },
-        timestamp: new Date().toISOString(),
+        timestamp,
       }),
     });
   } catch {

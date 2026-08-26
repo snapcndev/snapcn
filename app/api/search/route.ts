@@ -5,6 +5,7 @@ import {
   captureServer,
   distinctIdFromCookie,
 } from "@/lib/analytics-server";
+import { recordSearch } from "@/lib/server/search-log";
 import { source } from "@/source";
 
 /**
@@ -25,6 +26,15 @@ import { source } from "@/source";
  * highest-signal input to what gets built next, and it is invisible in every
  * other event on the site — they search, find nothing, and leave without
  * clicking anything we could have measured.
+ *
+ * ## Why the query is not sent from here
+ *
+ * Because a request per keystroke means an event per keystroke, and the first
+ * thirty days of this collected thirteen events describing five searches — four
+ * of them prefixes of `combobox`. The length guard below removes two characters
+ * of that and no more. {@link recordSearch} holds each query until the person
+ * stops typing and emits only what they settled on; see the note there for why
+ * the rule is last-write-wins rather than longest-prefix.
  */
 const { GET: search } = createFromSource(source);
 
@@ -33,8 +43,8 @@ export async function GET(request: Request) {
 
   const query = new URL(request.url).searchParams.get("query")?.trim();
   // Fumadocs fires a request per keystroke. One- and two-character queries are
-  // that debounce leaking through, not intent, and logging them would bury the
-  // real ones.
+  // never intent, so they are dropped before they can even take a slot in the
+  // buffer; everything longer is debounced by `recordSearch`.
   if (query && query.length >= 3) {
     // `clone()`: the body can only be read once, and the caller needs it.
     const results = await response
@@ -52,12 +62,27 @@ export async function GET(request: Request) {
             "unknown",
           ua ?? "none",
         ));
-      await captureServer("docs_searched", distinctId, {
+      // Returns the *earlier* searches this one has settled, never itself.
+      const settled = recordSearch({
+        distinctId,
         query: query.toLowerCase(),
         results,
-        // The property to build the "what are we missing" insight on.
-        zero_results: results === 0,
+        at: Date.now(),
       });
+
+      for (const s of settled) {
+        await captureServer(
+          "docs_searched",
+          s.distinctId,
+          {
+            query: s.query,
+            results: s.results,
+            // The property to build the "what are we missing" insight on.
+            zero_results: s.results === 0,
+          },
+          new Date(s.at).toISOString(),
+        );
+      }
     });
   }
 

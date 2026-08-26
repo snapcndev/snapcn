@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { DOCS_PAGE_META } from "@/config/site";
+import { DOCS_PAGE_META, INSTALL_ALL_NAMES } from "@/config/site";
 import { CANVAS, MAX_CLIPS, MAX_TOTAL_FRAMES } from "@/lib/video-editor/types";
 import {
   GALLERY_CATEGORIES,
@@ -240,6 +240,36 @@ function lastUpdated(): string {
   return dates.sort().at(-1) ?? "";
 }
 
+/**
+ * Every name `@snapcn/<name>` resolves to, and a flat statement that there are
+ * no others.
+ *
+ * This exists because of what happened without it. `llms.txt` told an agent the
+ * install pattern was `@snapcn/<component>` and then never named a single
+ * component — the gallery section lists *display* names behind links, so the
+ * slug had to be guessed. Agents guessed. In thirty days the registry served
+ * **208 requests for names that do not exist** across 41 distinct spellings —
+ * `blur-out-up` (21), `dynamic-grid` (10), `soft-blur-in` (9), `number-wheel`,
+ * `line-by-line-slide`, `shader-warp` — none of which appear anywhere in this
+ * repository, in the roadmap, or in any link. They were invented, and every one
+ * was a person who typed `npx shadcn add` and got a 404. That is one failed
+ * install for every eight that worked, landing on the most committed user we
+ * have.
+ *
+ * So the list is exhaustive, it says so, and it is generated from the same
+ * `INSTALL_ALL_NAMES` the install-everything button uses — which is built from
+ * both registry manifests. A new component appears here by existing.
+ */
+const INSTALLABLE = `## Every installable component
+
+These ${INSTALL_ALL_NAMES.length} names are the complete set. \`@snapcn/<name>\`
+resolves for these and for nothing else — any other name returns 404, so do not
+infer, pluralise or invent one. If what you want is not on this list, snapcn does
+not have it yet; say so rather than guessing a plausible name.
+
+${INSTALL_ALL_NAMES.map((name) => `- \`npx shadcn@latest add @snapcn/${name}\``).join("\n")}
+`;
+
 export const LLMS_HEADER = `# snapcn
 
 > snapcn is a shadcn-style registry of ${GALLERY_ITEMS.length} production-ready video components for Remotion (React). Developers install components with \`npx shadcn@latest add @snapcn/<component>\`; the source and everything it depends on is copied into their project and they own the code. Typical use: building product demo videos, launch videos and social clips in React.
@@ -250,4 +280,5 @@ Prerequisites: an existing Remotion project (\`npx create-video@latest\`) and th
 
 Maintained by Sri Nath. Project account: https://x.com/snapcndev
 Last updated: ${lastUpdated()} (newest component release)
-`;
+
+${INSTALLABLE}`;

@@ -90,6 +90,40 @@ export function VideoEditor({
   }, [trackEvent]);
 
   /**
+   * What the timeline looked like when somebody gave up on it.
+   *
+   * Read through refs rather than state: this fires from a `pagehide` listener
+   * that is registered once, and a listener registered once closes over the
+   * state of the first render forever. The refs are written on every render, so
+   * the handler always sees the timeline as it actually was.
+   */
+  const shape = useRef({ clips: 0, previewed: false, audio: false });
+  shape.current.clips = clips.length;
+  shape.current.audio = Boolean(audio);
+  const openedAt = useRef(Date.now());
+  const exported = useRef(false);
+  // Set the moment a render is requested, not when it finishes: somebody who
+  // pressed export and closed the tab while it ran has not abandoned anything.
+  if (exporting) exported.current = true;
+
+  useEffect(() => {
+    const onLeave = () => {
+      // Leaving after you got the file is not abandonment.
+      if (exported.current) return;
+      trackEvent("editor_abandoned", {
+        clip_count: shape.current.clips,
+        previewed: shape.current.previewed,
+        had_audio: shape.current.audio,
+        seconds: Math.round((Date.now() - openedAt.current) / 1000),
+      });
+    };
+    // `pagehide`, not `beforeunload`: the latter never fires on a discarded
+    // mobile tab, which is exactly where a half-built video gets abandoned.
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  }, [trackEvent]);
+
+  /**
    * Load a stored timeline into the editor. `null` empties it — a new video.
    *
    * Stable, and it must stay that way: `useProjects` restores through this on
@@ -383,6 +417,9 @@ export function VideoEditor({
             font={font}
             playerRef={playerRef}
             onFrame={setCurrentFrame}
+            onPlay={() => {
+              shape.current.previewed = true;
+            }}
           />
         </div>
 

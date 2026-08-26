@@ -92,6 +92,30 @@ type AnalyticsEvents = {
     component: string;
     clip_count: number;
   };
+  /**
+   * The editor being left, and what was on the timeline when it was.
+   *
+   * The funnel said 54 people opened the editor, 30 added a clip and 7
+   * exported — so 23 built something and walked away, and nothing on the site
+   * could say whether they were tyre-kicking or blocked. This is what tells
+   * those apart: one clip and forty seconds is a look around, five clips and
+   * eight minutes with the preview played twice is somebody who wanted a video
+   * and did not get one.
+   *
+   * Fired on `pagehide`, which — unlike `beforeunload` — is reliable on mobile
+   * and on tab discard. Exports are excluded: leaving after you got what you
+   * came for is not abandonment.
+   */
+  editor_abandoned: {
+    /** How much was on the timeline at the end. */
+    clip_count: number;
+    /** Whether they ever pressed play — an editor nobody previews is not read. */
+    previewed: boolean;
+    /** Whether a soundtrack was added, which is a strong intent signal. */
+    had_audio: boolean;
+    /** Wall-clock in the editor. Forty seconds and eight minutes mean different things. */
+    seconds: number;
+  };
   editor_export_started: {
     clip_count: number;
   };
