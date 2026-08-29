@@ -11,6 +11,7 @@ device frames, captions — as components you install with the shadcn CLI and ow
 
 <p>
 <a href="https://snapcn.dev"><strong>Browse the catalog&nbsp;→</strong></a> &nbsp;·&nbsp;
+<a href="https://snapcn.dev/docs/video-editor">Video editor</a> &nbsp;·&nbsp;
 <a href="https://snapcn.dev/docs">Docs</a> &nbsp;·&nbsp;
 <a href="https://snapcn.dev/docs/components">Components</a>
 </p>
@@ -27,7 +28,12 @@ device frames, captions — as components you install with the shadcn CLI and ow
 
 ## Quickstart
 
-You need a Remotion project. Don't have one? `npx create-video@latest` takes about a minute.
+**No Remotion project? You don't need one to look.** The
+[browser editor](https://snapcn.dev/docs/video-editor) composes a whole video out of these
+components and exports an MP4 — nothing to install.
+
+To use the components in your own project you need Remotion. Don't have it?
+`npx create-video@latest` takes about a minute.
 
 ```bash
 npx shadcn@latest add @snapcn/text-reveal
@@ -120,6 +126,14 @@ full corpus at [`llms-full.txt`](https://snapcn.dev/llms-full.txt).
 Issues and PRs welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md). Missing a component you need?
 [Open an issue](https://github.com/snapcndev/snapcn/issues) — the roadmap is mostly whatever
 people ask for.
+
+## What's next
+
+Pro components and an agent that assembles a whole video for you.
+[Get them first](https://snapcn.dev/#newsletter) — one email a week at most,
+never a sponsored one.
+
+If snapcn saved you an afternoon, a ⭐ is how other people find it.
 
 ## Author
 

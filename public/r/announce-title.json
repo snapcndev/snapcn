@@ -15,5 +15,6 @@
       "target": "components/snap-cn/announce-title.tsx"
     }
   ],
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/announce-title?ref=cli — its colours are explicit props (`paperColor`, `titleColor`, `voidColor`, …) rather than a palette, and it takes no `mode`.",
   "type": "registry:component"
 }

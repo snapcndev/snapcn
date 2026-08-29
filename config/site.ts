@@ -1,3 +1,4 @@
+import builtRegistry from "@/public/r/registry.json";
 import snapCnRegistry from "@/registry/snap-cn/registry.json";
 import snapCnUiRegistry from "@/registry/snap-cn-ui/registry.json";
 
@@ -31,6 +32,35 @@ export const INSTALL_ALL_NAMES: string[] = [
   ...snapCnRegistry.items,
   ...snapCnUiRegistry.items,
 ].map((item) => item.name);
+
+/**
+ * Paid components, by name.
+ *
+ * Read off the *built* index rather than the pro manifest, and that is the
+ * whole point: `registry/snap-cn-pro/` is gitignored, so a public checkout does
+ * not have it and an import of it would not compile. `public/r/registry.json`
+ * is committed, carries a `meta.access` on every pro row, and is produced by the
+ * same `registry:build` — so the list is correct in both checkouts and there is
+ * no second thing to keep in step.
+ */
+export const PRO_NAMES: string[] = builtRegistry.items
+  .filter((i) => (i as { meta?: { access?: string } }).meta?.access === "pro")
+  .map((i) => i.name);
+
+/**
+ * Every name that resolves to something, free or paid.
+ *
+ * Deliberately *not* `INSTALL_ALL_NAMES`. A pro component has to be a name the
+ * site admits exists — the middleware's unknown-name 404 fires before the route
+ * that would answer 402, so without this a paying customer's `shadcn add` is
+ * told the component was never real. But it must stay out of the install-all
+ * command, which would otherwise hand every free reader a line that fails
+ * halfway through.
+ */
+export const ALL_COMPONENT_NAMES: string[] = [
+  ...INSTALL_ALL_NAMES,
+  ...PRO_NAMES,
+];
 
 export const INSTALL_ALL_COMMAND = `npx shadcn@latest add ${INSTALL_ALL_NAMES.map(
   (name) => `@snapcn/${name}`,
@@ -86,6 +116,7 @@ export const NAV_LINKS: NavLink[] = [
   // that outlives its release teaches people to stop reading flags.
   { href: "/docs/video-editor", label: "Video Editor", badge: "New" },
   { href: "/docs/showcase", label: "Showcase" },
+  { href: "/docs/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
 ];
 
@@ -111,6 +142,11 @@ export const DOCS_PAGE_META: Record<string, DocsPageMeta> = {
     title: "Video Editor",
     description:
       "Compose a video from snapcn components — add clips, edit text and images, and export an MP4.",
+  },
+  pricing: {
+    title: "Pricing",
+    description:
+      "The components are free and the editor exports without limit. $19 a month removes the watermark and doubles the resolution to 1080p.",
   },
   showcase: {
     title: "Showcase",

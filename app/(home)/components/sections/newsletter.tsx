@@ -25,6 +25,17 @@ export function Newsletter() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Where the signup came from. The `docs` string every registry component
+   * prints after `shadcn add` links here with `?ref=cli`, so the launch list
+   * can be split by the surface that earned it — otherwise a signup the CLI
+   * won is indistinguishable from someone who just scrolled the page.
+   */
+  function source() {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    return ref && /^[a-z0-9-]{1,32}$/.test(ref) ? ref : "home";
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (status === "sending") return;
@@ -34,7 +45,7 @@ export function Newsletter() {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: "home" }),
+        body: JSON.stringify({ email, source: source() }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as {
@@ -44,7 +55,7 @@ export function Newsletter() {
         setStatus("error");
         return;
       }
-      trackEvent("email_subscribed", { source: "home" });
+      trackEvent("email_subscribed", { source: source() });
       setStatus("done");
       setEmail("");
     } catch {
@@ -58,14 +69,16 @@ export function Newsletter() {
       <div className="section">
         <FadeUp>
           <h2 className="mx-auto max-w-[16ch] text-pretty text-center font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
-            Get the new components
+            Get the pro components first
           </h2>
         </FadeUp>
 
         <FadeUp delay={0.08}>
           <p className="mx-auto mt-4 max-w-[46ch] text-pretty text-center text-muted-foreground">
-            New scenes, transitions and backgrounds as they ship. No more than
-            one email a week, and never a sponsored one.
+            Pro components and an agent that assembles a whole video for you are
+            what comes next — this is the list that gets them first. New free
+            components as they ship, one email a week at most, and never a
+            sponsored one.
           </p>
         </FadeUp>
 

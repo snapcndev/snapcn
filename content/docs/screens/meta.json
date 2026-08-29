@@ -5,6 +5,8 @@
     "index",
     "phone-frame",
     "laptop-frame",
-    "terminal-simulator"
+    "terminal-simulator",
+    "screen-recording",
+    "cursor-track"
   ]
 }

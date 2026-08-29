@@ -13,6 +13,7 @@ export const logoFlickerConfig: ComponentConfig = {
       type: "image",
       default: "/logo/snapcn-white.png",
       label: "Logo (simple, monochrome)",
+      brand: "logo",
     },
     flipInterval: {
       type: "number",

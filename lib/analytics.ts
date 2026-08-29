@@ -42,10 +42,21 @@ import { useCallback } from "react";
  * under a name that reads like intent — worse than not measuring it.
  */
 export type CtaId =
+  | "hero_editor"
   | "hero_browse"
   | "hero_ui_badge"
   | "showcase_card"
-  | "github_header";
+  | "github_header"
+  /**
+   * "Make this with your copy", from a component's detail overlay.
+   *
+   * The gallery is 78% of the site's traffic and its only outbound action was
+   * a copied install command — a conversion that finishes in someone else's
+   * terminal, where nothing here can see it again. This is the same card
+   * pointing at the editor instead, and the gap between the two is the number
+   * worth watching.
+   */
+  | "gallery_make_video";
 
 type AnalyticsEvents = {
   install_command_copied: {
@@ -115,6 +126,19 @@ type AnalyticsEvents = {
     had_audio: boolean;
     /** Wall-clock in the editor. Forty seconds and eight minutes mean different things. */
     seconds: number;
+  };
+  /**
+   * Somebody pressed a button that leads to a Dodo checkout.
+   *
+   * The step the funnel has been missing: `editor_export_succeeded` says a
+   * video was made and a Dodo webhook says money arrived, but nothing until now
+   * recorded the gap between them — how many people reach a wall, decide to
+   * pay, and then do not finish. `from` is which wall they were standing at,
+   * because a person who hits the export quota and a person who just wants a
+   * clean file are two different buyers and they should not be averaged.
+   */
+  upgrade_started: {
+    from: "watermark_badge" | "quota_toast" | "account_menu" | "pricing";
   };
   editor_export_started: {
     clip_count: number;

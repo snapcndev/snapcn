@@ -201,7 +201,12 @@ export const textSelectConfig: ComponentConfig = {
       step: 0.005,
       label: "Wash strength",
     },
-    accentColor: { type: "color", default: "#3072db", label: "Accent" },
+    accentColor: {
+      type: "color",
+      default: "#3072db",
+      label: "Accent",
+      brand: "accent",
+    },
     mode: {
       type: "select",
       default: "light",

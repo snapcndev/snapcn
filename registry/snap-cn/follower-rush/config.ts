@@ -12,7 +12,12 @@ export const followerRushConfig: ComponentConfig = {
       step: 100,
       label: "Total followers",
     },
-    accentColor: { type: "color", default: "#266DF0", label: "Accent" },
+    accentColor: {
+      type: "color",
+      default: "#266DF0",
+      label: "Accent",
+      brand: "accent",
+    },
     theme: {
       type: "select",
       default: "light",

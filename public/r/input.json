@@ -26,5 +26,6 @@
       "target": "components/snap-cn/use-input-transition.ts"
     }
   ],
+  "docs": "Docs and props: https://snapcn.dev/docs?ref=cli — pass `theme` (or wrap the composition in `SnapCnUIProvider`) to repaint it; it takes no `mode`.",
   "type": "registry:component"
 }

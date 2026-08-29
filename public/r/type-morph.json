@@ -25,6 +25,6 @@
       "target": "components/snap-cn/type-morph-timeline.ts"
     }
   ],
-  "docs": "New components every week → https://snapcn.dev/#newsletter",
+  "docs": "Docs and props: https://snapcn.dev/docs/text/type-morph?ref=cli — pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette and a bare Remotion render is black.",
   "type": "registry:component"
 }

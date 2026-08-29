@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { bundle } from "@remotion/bundler";
@@ -24,6 +25,20 @@ const [slug, out] = process.argv.slice(2);
 if (!slug || !out) throw new Error("usage: render-one.mts <slug> <out.mp4>");
 
 const tsAliases = tsconfigWebpackAlias(root);
+
+/**
+ * The pro tier is a private, gitignored directory, so most checkouts do not have
+ * it. Point its barrel at an empty stub when it is missing, and `dev-root` can
+ * import it unconditionally instead of every caller carrying a branch.
+ */
+const proBarrel = path.join(root, "registry", "snap-cn-pro", "__index__.tsx");
+const proAlias = {
+  name: "@/registry/snap-cn-pro/__index__",
+  alias: existsSync(proBarrel)
+    ? proBarrel
+    : path.join(root, "src", "remotion", "no-pro.ts"),
+  onlyModule: true,
+};
 await ensureBrowser();
 
 const serveUrl = await bundle({
@@ -42,7 +57,10 @@ const serveUrl = await bundle({
     );
     return {
       ...config,
-      resolve: { ...config.resolve, alias: [...existing, ...tsAliases] },
+      resolve: {
+        ...config.resolve,
+        alias: [proAlias, ...existing, ...tsAliases],
+      },
     };
   },
 });

@@ -3,6 +3,7 @@ import { readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { AUDIO_EXTS } from "@/lib/video-editor/types";
 import { referencedAudioIds } from "./audio-refs";
+import { pruneUsage } from "./entitlements";
 import { AUDIO_WORK_DIR, RENDER_WORK_DIR } from "./paths";
 import { deleteJob } from "./render-queue";
 
@@ -111,6 +112,11 @@ export async function sweepOnce(): Promise<void> {
   await Promise.all([
     sweepDir(RENDER_WORK_DIR, ttlMs(), ["mp4"], deleteJob),
     sweepAudio(),
+    // The meter's own housekeeping rides the same tick rather than owning a
+    // schedule. It is one DELETE that matches nothing on all but a handful of
+    // passes a month, and a second interval to run it would be a second thing
+    // that can be forgotten to start.
+    pruneUsage(),
   ]);
 }
 
@@ -148,6 +154,19 @@ let sweepStarted = false;
 export function ensureCleanupSweep(): void {
   if (sweepStarted) return;
   sweepStarted = true;
+
+  // One pass now, then on the interval.
+  //
+  // Without this the first sweep is ten minutes after the first request, which
+  // two things make wrong. A process that restarts more often than that — a
+  // deploy, a crash loop, anything scaled to zero between visitors — never
+  // sweeps at all, and inherits every orphaned MP4 the previous process left
+  // behind. And `pruneUsage` only has work to do in the first days of a month;
+  // an interval that never completes a pass in that window prunes nothing,
+  // ever, while looking like it is scheduled.
+  //
+  // Fire-and-forget, so the request that happened to be first pays no latency.
+  void sweepOnce();
 
   const timer = setInterval(() => {
     void sweepOnce();

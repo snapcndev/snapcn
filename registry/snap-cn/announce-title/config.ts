@@ -34,7 +34,12 @@ export const announceTitleConfig: ComponentConfig = {
       step: 0.05,
       label: "Symbol size",
     },
-    fieldColor: { type: "color", default: "#5600f5", label: "Colour field" },
+    fieldColor: {
+      type: "color",
+      default: "#5600f5",
+      label: "Colour field",
+      brand: "accent",
+    },
     titleColor: { type: "color", default: "#4800c9", label: "Title ink" },
     paperColor: { type: "color", default: "#fcfcfa", label: "Title paper" },
     voidColor: { type: "color", default: "#100022", label: "Opening ground" },

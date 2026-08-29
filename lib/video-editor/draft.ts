@@ -1,3 +1,4 @@
+import { isValidFont } from "./fonts";
 import {
   type AudioTrack,
   type Clip,
@@ -161,6 +162,12 @@ function reviveClips(
       props: isObject(props) ? props : {},
       durationInFrames: duration,
       ...(isHexColor(background) ? { background } : {}),
+      // Spread rather than set, so a clip that never had a font does not gain
+      // an explicit `undefined` — the difference is invisible in JS and loud in
+      // the JSON that goes to the server and into a saved project row.
+      ...(typeof entry.font === "string" && isValidFont(entry.font)
+        ? { font: entry.font }
+        : {}),
     });
   }
 

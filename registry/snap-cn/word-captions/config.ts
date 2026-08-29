@@ -72,7 +72,12 @@ export const wordCaptionsConfig: ComponentConfig = {
       default: "rgba(16,24,40,0.55)",
       label: "Pill color (CSS)",
     },
-    accentColor: { type: "color", default: "#FFE81F", label: "Accent" },
+    accentColor: {
+      type: "color",
+      default: "#FFE81F",
+      label: "Accent",
+      brand: "accent",
+    },
     fontWeight: {
       type: "select",
       default: "0",

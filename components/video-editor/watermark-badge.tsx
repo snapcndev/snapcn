@@ -1,6 +1,8 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { SignInButtons } from "@/components/showcase/sign-in-buttons";
 import {
   Popover,
@@ -10,6 +12,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useTrackEvent } from "@/lib/analytics";
 import type { AuthProviderId } from "@/lib/auth-providers";
+import { startCheckout } from "@/lib/upgrade";
 
 /**
  * Says what the export will contain, and offers the one thing that changes it.
@@ -28,23 +31,71 @@ import type { AuthProviderId } from "@/lib/auth-providers";
  */
 export function WatermarkBadge({
   signedIn,
+  canRemoveWatermark,
   providers,
   emailEnabled = false,
   removeWatermark,
   onRemoveWatermarkChange,
 }: {
   signedIn: boolean;
+  canRemoveWatermark: boolean;
   providers: AuthProviderId[];
   emailEnabled?: boolean;
   removeWatermark: boolean;
   onRemoveWatermarkChange: (next: boolean) => void;
 }) {
   const trackEvent = useTrackEvent();
+  const [starting, setStarting] = useState(false);
 
-  // Signed in, the mark stays on until it is switched off. Signing in earns the
-  // *choice*, not the outcome: silently changing what someone's export contains
-  // because they logged in is a change they did not ask for and did not see.
-  if (signedIn) {
+  async function upgrade() {
+    // Guarded because the checkout round trip is a network hop and this is a
+    // button someone will click twice: two sessions is two chances to pay for
+    // the same thing.
+    if (starting) return;
+    setStarting(true);
+    trackEvent("upgrade_started", { from: "watermark_badge" });
+    try {
+      await startCheckout("starter");
+      // No `setStarting(false)` on success — `startCheckout` navigates away,
+      // and clearing the spinner first would flash the old label during the
+      // page teardown.
+    } catch (err) {
+      setStarting(false);
+      toast.error(
+        err instanceof Error ? err.message : "Couldn't start checkout.",
+      );
+    }
+  }
+
+  // Signed in on a free plan: say so, and do not offer a switch. A toggle here
+  // used to flip the preview clean and the server would still mark the file —
+  // the export is decided by the plan in `app/api/render`, never by this
+  // component — so the control was promising something it could not deliver.
+  if (signedIn && !canRemoveWatermark) {
+    return (
+      <button
+        type="button"
+        onClick={upgrade}
+        disabled={starting}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-muted py-1 pr-2.5 pl-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-wait sm:pr-3"
+      >
+        {starting ? (
+          <Loader2 className="size-3 animate-spin" />
+        ) : (
+          <Sparkles className="size-3" />
+        )}
+        <span className="hidden sm:inline">
+          {starting ? "Opening checkout…" : "Watermark — remove for $19/mo"}
+        </span>
+        <span className="sm:hidden">Mark</span>
+      </button>
+    );
+  }
+
+  // On a plan that allows it, the mark stays on until it is switched off. Paying
+  // earns the *choice*, not the outcome: silently changing what someone's export
+  // contains is a change they did not ask for and did not see.
+  if (canRemoveWatermark) {
     return (
       <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-muted py-1 pr-2.5 pl-2 text-xs font-medium text-muted-foreground sm:pr-3 sm:pl-2.5">
         <Switch

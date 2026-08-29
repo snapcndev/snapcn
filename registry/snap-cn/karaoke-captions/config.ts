@@ -26,7 +26,12 @@ export const karaokeCaptionsConfig: ComponentConfig = {
       options: ["light", "dark"],
       label: "Theme",
     },
-    accentColor: { type: "color", default: "#FFE81F", label: "Accent" },
+    accentColor: {
+      type: "color",
+      default: "#FFE81F",
+      label: "Accent",
+      brand: "accent",
+    },
     fontSize: {
       type: "number",
       default: 0,

@@ -3,6 +3,9 @@ import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
 import { AbsoluteFill, Composition, registerRoot } from "remotion";
 import { getDefaults } from "@/lib/customizer-config";
 import registry from "@/registry/__index__";
+// Resolved to `no-pro.ts` when the pro tier is not checked out — see the note in
+// the pro barrel for why it is not merged into the shipped registry map.
+import proRegistry from "@/registry/snap-cn-pro/__index__";
 
 /**
  * Bundle root for `scripts/dev/render-one.mts`: every registry component, at its
@@ -30,14 +33,18 @@ const FONT_VARS = {
   fontFamily: INTER,
 } as const;
 
+const allComponents = { ...registry, ...proRegistry };
+
+// The Stage takes its props instead of closing over the defaults, and the
+// defaults are declared on the `<Composition>` — so `inputProps` can reach a
+// component. Without that, `renderFrames({ inputProps })` is silently ignored
+// and every stress render comes back as the default copy: clean and wrong.
 function stageFor(slug: string) {
-  const { Component, config } = registry[slug];
-  return function Stage() {
+  const { Component } = allComponents[slug];
+  return function Stage(props: Record<string, unknown>) {
     return (
       <AbsoluteFill style={FONT_VARS}>
-        <Component
-          {...(getDefaults(config.controls) as Record<string, unknown>)}
-        />
+        <Component {...props} />
       </AbsoluteFill>
     );
   };
@@ -46,11 +53,12 @@ function stageFor(slug: string) {
 export function DevRoot() {
   return (
     <>
-      {Object.entries(registry).map(([slug, entry]) => (
+      {Object.entries(allComponents).map(([slug, entry]) => (
         <Composition
           key={slug}
           id={slug}
           component={stageFor(slug)}
+          defaultProps={getDefaults(entry.config.controls)}
           durationInFrames={entry.config.durationInFrames}
           fps={entry.config.fps}
           width={entry.config.compositionWidth}

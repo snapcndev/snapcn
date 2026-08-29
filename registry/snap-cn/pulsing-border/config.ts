@@ -44,7 +44,12 @@ export const pulsingBorderConfig: ComponentConfig = {
       step: 0.05,
       label: "Bloom",
     },
-    glowColorA: { type: "color", default: "#266DF0", label: "Glow A" },
+    glowColorA: {
+      type: "color",
+      default: "#266DF0",
+      label: "Glow A",
+      brand: "accent",
+    },
     glowColorB: { type: "color", default: "#6D9BF5", label: "Glow B" },
     colorBack: { type: "color", default: "#00000000", label: "Background" },
   },

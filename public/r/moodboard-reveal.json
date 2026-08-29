@@ -17,6 +17,6 @@
       "target": "components/snap-cn/moodboard-reveal.tsx"
     }
   ],
-  "docs": "New components every week → https://snapcn.dev/#newsletter",
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/moodboard-reveal?ref=cli — this scene spans light and dark by design, so it takes no `mode` — pass `theme` to repaint it.",
   "type": "registry:component"
 }

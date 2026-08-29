@@ -22,7 +22,12 @@ interface Bucket {
  * with different costs, and sharing one bucket meant three uploads left you
  * two exports for the minute.
  */
-export type RateLimitBucket = "render" | "audio" | "showcase" | "project";
+export type RateLimitBucket =
+  | "render"
+  | "audio"
+  | "showcase"
+  | "project"
+  | "checkout";
 
 /** Env prefix per bucket. `render` keeps `RENDER_*` so existing config still applies. */
 const ENV_PREFIX: Record<RateLimitBucket, string> = {
@@ -30,6 +35,7 @@ const ENV_PREFIX: Record<RateLimitBucket, string> = {
   audio: "AUDIO",
   showcase: "SHOWCASE",
   project: "PROJECT",
+  checkout: "CHECKOUT",
 };
 
 /**
@@ -43,6 +49,9 @@ const DEFAULT_LIMIT: Record<RateLimitBucket, number> = {
   audio: 20,
   showcase: 5,
   project: 60,
+  // A purchase is a deliberate, once-in-a-while act. The budget exists to stop
+  // a loop hammering Dodo on our API key, not to pace a human.
+  checkout: 5,
 };
 
 function envInt(name: string, fallback: number, min = 1): number {

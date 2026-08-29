@@ -31,7 +31,12 @@ export const textHighlightConfig: ComponentConfig = {
       label: "Preset",
     },
     baseColor: { type: "color", default: "#101828", label: "Base color" },
-    accentColor: { type: "color", default: "#266DF0", label: "Accent color" },
+    accentColor: {
+      type: "color",
+      default: "#266DF0",
+      label: "Accent color",
+      brand: "accent",
+    },
     highlightedTextColor: {
       type: "color",
       default: "#101828",

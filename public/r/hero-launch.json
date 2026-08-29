@@ -18,6 +18,6 @@
       "target": "components/snap-cn/hero-launch.tsx"
     }
   ],
-  "docs": "New components every week → https://snapcn.dev/#newsletter",
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/hero-launch?ref=cli — pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette and a bare Remotion render is black.",
   "type": "registry:component"
 }

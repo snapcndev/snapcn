@@ -3,6 +3,7 @@
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { ChevronDownIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { ElasticSlider } from "@/components/ui/elastic-slider";
 import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem } from "@/components/ui/select";
@@ -267,22 +268,26 @@ function Control({
           >
             {ctrl.label}
           </Label>
-          {/* The native input fills the swatch box, so it is directly
-              clickable — no wrapping <label> (which would double-label it). */}
-          <span className="flex items-center gap-2">
-            <span className="font-mono text-sm font-medium uppercase text-foreground">
+          {/* Was `<input type="color">`. Native has no text field on any
+              platform, so the one thing people actually do here — paste a hex
+              out of a brand document — meant eyeballing it off the OS gradient.
+              The whole row is the trigger, so the target is a row rather than a
+              20px square. */}
+          <ColorPicker
+            id={id}
+            value={value as string}
+            onValueChange={onChange}
+            className="flex items-center gap-2"
+          >
+            <span className="font-medium font-mono text-foreground text-sm uppercase">
               {value as string}
             </span>
-            <span className="relative inline-flex size-5 shrink-0 overflow-hidden rounded-lg border border-border/60">
-              <input
-                id={id}
-                type="color"
-                value={value as string}
-                onChange={(e) => onChange(e.target.value)}
-                className="absolute top-1/2 left-1/2 size-[200%] -translate-x-1/2 -translate-y-1/2 cursor-pointer border-0 bg-transparent p-0"
-              />
-            </span>
-          </span>
+            <span
+              aria-hidden="true"
+              className="inline-flex size-5 shrink-0 rounded-lg border border-border/60"
+              style={{ background: value as string }}
+            />
+          </ColorPicker>
         </div>
       );
 

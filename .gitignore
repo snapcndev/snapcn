@@ -57,3 +57,12 @@ social-exports/
 
 # Local Lighthouse runs (pnpm lighthouse), not a build input.
 .lighthouse/
+
+# Pro components: private source, and the built items split out of public/r.
+# The public repo must never carry either, or the key gate is theatre.
+registry/.private/
+registry/snap-cn-pro/
+
+# Billing runbook: test-mode ids, the brand setup, the going-live checklist.
+# Useful, and none of it belongs in a public repo.
+BILLING_LOCAL.md

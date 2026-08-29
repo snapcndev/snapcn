@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTrackEvent } from "@/lib/analytics";
 import { FadeUp } from "../fade-up";
-import { InstallAll } from "../install-all";
 
 export function Hero() {
   const trackEvent = useTrackEvent();
@@ -68,8 +67,35 @@ export function Hero() {
 
           <FadeUp delay={0.18}>
             <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row">
+              {/* The editor leads, and the ranking is measured rather than
+                  chosen: of everyone who lands on the site, 24% open the editor
+                  and 3.8% export a video from it, while the gallery's job ends
+                  at a copied install command. Someone who has made a video has
+                  understood the product in a way no component grid explains.
+                  Browsing is still one click away for the reader who wants to
+                  read code first. */}
               <Button
                 size="lg"
+                className="h-11 gap-2 px-6 text-sm"
+                nativeButton={false}
+                render={
+                  <Link
+                    href="/docs/video-editor"
+                    onClick={() =>
+                      trackEvent("cta_clicked", {
+                        cta: "hero_editor",
+                        destination: "/docs/video-editor",
+                      })
+                    }
+                  />
+                }
+              >
+                Make a video
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
                 className="h-11 gap-2 px-6 text-sm"
                 nativeButton={false}
                 render={
@@ -85,9 +111,7 @@ export function Hero() {
                 }
               >
                 Browse components
-                <ArrowRight className="size-4" aria-hidden="true" />
               </Button>
-              <InstallAll />
             </div>
           </FadeUp>
         </div>

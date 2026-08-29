@@ -48,6 +48,6 @@
       "target": "lib/snap-cn-ui/index.ts"
     }
   ],
-  "docs": "snapcn components paint from a shadcn token set in lib/snap-cn-ui/theme.ts. Its defaults are shadcn's, so they will already sit correctly next to your Button and Input. To point them at your own palette instead, wrap your compositions in <SnapCnUIProvider theme={{ primary: '#...', ... }} mode=\"dark\">, or pass the same `theme`/`mode` props to a single component. Use concrete hex/oklch values, not var(--primary) — a Remotion render has none of your app's CSS.",
+  "docs": "Docs and props: https://snapcn.dev/docs?ref=cli — snapcn components paint from a shadcn token set in lib/snap-cn-ui/theme.ts. Its defaults are shadcn's, so they will already sit correctly next to your Button and Input. To point them at your own palette instead, wrap your compositions in <SnapCnUIProvider theme={{ primary: '#...', ... }} mode=\"dark\">, or pass the same `theme`/`mode` props to a single component. Use concrete hex/oklch values, not var(--primary) — a Remotion render has none of your app's CSS.",
   "type": "registry:lib"
 }

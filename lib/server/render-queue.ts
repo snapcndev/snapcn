@@ -4,6 +4,7 @@ import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 import pLimit from "p-limit";
 import { captureServer } from "@/lib/analytics-server";
+import { releaseRender } from "./entitlements";
 import { RENDER_WORK_DIR } from "./paths";
 import { renderComposition } from "./render";
 
@@ -68,6 +69,16 @@ export interface RenderSpec {
    * being answerable.
    */
   distinctId?: string;
+  /**
+   * Who was charged for this render, so a job that dies can hand the export
+   * back.
+   *
+   * Deliberately a different value from `distinctId`: that one is the analytics
+   * identity (IP + UA, or the visitor's cookie), this one is the billing
+   * identity, and mixing them would let a caller pick their own meter bucket.
+   * See the comment in `app/api/render/route.ts`.
+   */
+  meterKey?: string;
 }
 
 /** Max simultaneous renders; the rest queue. Sized for the 8-vCPU box. */
@@ -136,6 +147,7 @@ export function enqueueRender(spec: RenderSpec): string {
       current.status = "error";
       current.error = err instanceof Error ? err.message : "Render failed";
     }
+    refund(spec);
   });
 
   return jobId;
@@ -247,7 +259,26 @@ async function runRender(
       timed_out: controller.signal.aborted,
       reason: job.error,
     });
+    refund(spec);
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Hand a failed render's quota back to whoever was charged for it.
+ *
+ * Both terminal paths call this — `runRender`'s catch, and the outer `.catch`
+ * for a job that never got that far — and `releaseRender` is a floored,
+ * swallowing decrement, so charging one job back twice cannot go negative and a
+ * spec with no `meterKey` (a test, a script) is a no-op.
+ *
+ * The charge happens at enqueue because the CPU is spent either way; this is the
+ * other half of that argument. A render that never produced a file spent nothing
+ * the user asked for, and a wedged Chromium that kept its charge would eat an
+ * allowance against a video nobody ever received.
+ */
+function refund(spec: RenderSpec): void {
+  if (!spec.meterKey) return;
+  void releaseRender(spec.meterKey);
 }

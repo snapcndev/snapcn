@@ -14,14 +14,17 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "registry:build": "shadcn build",
+    "registry:build": "shadcn build && node scripts/split-pro.mts && pnpm run sync:mcp",
+    "sync:mcp": "node scripts/sync-mcp.mts",
     "check:tokens": "node scripts/check-tokens.mts",
     "test": "vitest run",
     "remotion:browser": "node scripts/ensure-browser.mts",
     "bundle:remotion": "node scripts/bundle-remotion.mts",
     "render:demos": "node scripts/render-demos.mts",
     "render:previews": "node scripts/render-previews.mts",
-    "postinstall": "fumadocs-mdx"
+    "measure": "node scripts/motion-check.mts",
+    "postinstall": "fumadocs-mdx",
+    "split:pro": "node scripts/split-pro.mts"
   },
   "packageManager": "pnpm@10.33.0",
   "dependencies": {

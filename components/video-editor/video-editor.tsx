@@ -43,6 +43,10 @@ import registry from "@/registry/__index__";
 import { AudioTrackRow } from "./audio-track-row";
 import { EditorPlayer, type EditorPlayerHandle } from "./editor-player";
 import { EditorStatusBar } from "./editor-status-bar";
+import {
+  ExportEmailPrompt,
+  hasAnsweredEmailPrompt,
+} from "./export-email-prompt";
 import { LibraryPanel } from "./library-panel";
 import { ProjectMenu } from "./project-menu";
 import { PropertiesPanel } from "./properties-panel";
@@ -60,11 +64,18 @@ function nextClipId() {
 
 export function VideoEditor({
   signedIn = false,
+  canRemoveWatermark = false,
+  initialClip,
   providers = [],
   emailEnabled = false,
 }: {
+  /** Slug from `?clip=`, put on the timeline once the stored draft has loaded. */
+  initialClip?: string;
   /** Resolved on the server by the page; no SessionProvider round-trip. */
   signedIn?: boolean;
+  /** The plan allows a clean export. Decided server-side; the render route
+   * re-decides it from the same plan, so this only keeps the preview honest. */
+  canRemoveWatermark?: boolean;
   providers?: AuthProviderId[];
   emailEnabled?: boolean;
 } = {}) {
@@ -211,6 +222,58 @@ export function VideoEditor({
     [clips, trackEvent],
   );
 
+  // Shown once, after a download, to someone we have no address for.
+  const [emailPromptOpen, setEmailPromptOpen] = useState(false);
+
+  /**
+   * Put `?clip=<slug>` on the timeline, exactly once, after the stored draft
+   * has loaded.
+   *
+   * The ordering is the whole reason this is an effect and not an initial
+   * state. `useProjects` restores the previous timeline asynchronously — from
+   * `localStorage` signed out, from a row signed in — and calls `restore`,
+   * which replaces `clips` wholesale. Adding the deep-linked clip before that
+   * lands means watching it appear and then vanish. `projects.ready` is the
+   * signal that the restore has happened, so this waits for it and appends
+   * afterwards, which is also the behaviour someone with a half-built video
+   * would want: their work plus the thing they just clicked.
+   *
+   * The ref, not `clips.length`, is what makes it once: a person who deletes
+   * the clip should not have it put back, and the URL does not change when they
+   * do.
+   */
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || !initialClip || !projects.ready) return;
+    deepLinked.current = true;
+    // `addClip` already ignores a slug the registry does not have, so a
+    // hand-typed or stale URL is a no-op rather than a crash.
+    addClip(initialClip);
+  }, [initialClip, projects.ready, addClip]);
+
+  /**
+   * Give one clip its own typeface, or put it back on the video's.
+   *
+   * `null` deletes the key rather than writing the video's current font into
+   * it: a clip that stored the value would stop following the video-wide picker
+   * the moment somebody changed it, which is the opposite of "reset".
+   */
+  const updateClipFont = useCallback(
+    (next: string | null) => {
+      setClips((prev) =>
+        prev.map((c) => {
+          if (c.id !== selectedId) return c;
+          if (next === null) {
+            const { font: _dropped, ...rest } = c;
+            return rest;
+          }
+          return { ...c, font: next };
+        }),
+      );
+    },
+    [selectedId],
+  );
+
   const updateProp = useCallback(
     (key: string, value: unknown) => {
       setClips((prev) =>
@@ -328,9 +391,15 @@ export function VideoEditor({
           </p>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        {/* Wraps rather than shrinks. This group is a pill, two buttons and an
+            avatar — around 400px of unshrinkable content — so on a phone it has
+            to fall to a second line. It used to be `shrink-0`, which meant it
+            simply ran off the right edge of a 390px screen and got clipped by
+            the root's `overflow-hidden`. */}
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
           <WatermarkBadge
             signedIn={signedIn}
+            canRemoveWatermark={canRemoveWatermark}
             providers={providers}
             emailEnabled={emailEnabled}
             removeWatermark={removeWatermark}
@@ -349,7 +418,22 @@ export function VideoEditor({
           />
           <Button
             size="sm"
-            onClick={() => download(clips, { removeWatermark, font, audio })}
+            onClick={() =>
+              download(clips, {
+                removeWatermark,
+                font,
+                audio,
+                onDownloaded: () => {
+                  // The one moment worth asking: they have the file, so the
+                  // ask is not a toll. Signed-in people are skipped — we
+                  // already have their address — and `hasAnsweredEmailPrompt`
+                  // means nobody is asked twice on the same machine.
+                  if (!signedIn && !hasAnsweredEmailPrompt()) {
+                    setEmailPromptOpen(true);
+                  }
+                },
+              })
+            }
             disabled={exporting || clips.length === 0}
             className="gap-2"
           >
@@ -412,7 +496,7 @@ export function VideoEditor({
         <div className="flex min-h-0 flex-1 flex-col p-2 sm:p-4 xl:p-6">
           <EditorPlayer
             clips={clips}
-            watermark={!(signedIn && removeWatermark)}
+            watermark={!(canRemoveWatermark && removeWatermark)}
             audio={audio}
             font={font}
             playerRef={playerRef}
@@ -430,6 +514,8 @@ export function VideoEditor({
             onPropChange={updateProp}
             onDurationChange={updateDuration}
             onBackgroundChange={updateBackground}
+            onFontChange={updateClipFont}
+            videoFont={font}
           />
         </aside>
       </div>
@@ -482,8 +568,15 @@ export function VideoEditor({
           onPropChange={updateProp}
           onDurationChange={updateDuration}
           onBackgroundChange={updateBackground}
+          onFontChange={updateClipFont}
+          videoFont={font}
         />
       </div>
+
+      <ExportEmailPrompt
+        open={emailPromptOpen}
+        onOpenChange={setEmailPromptOpen}
+      />
 
       <Toaster />
     </div>
@@ -499,6 +592,8 @@ function MobilePanels({
   onPropChange,
   onDurationChange,
   onBackgroundChange,
+  onFontChange,
+  videoFont,
 }: {
   onAdd: (slug: string) => void;
   budgetFrames: number;
@@ -507,13 +602,23 @@ function MobilePanels({
   onPropChange: (key: string, value: unknown) => void;
   onDurationChange: (frames: number) => void;
   onBackgroundChange: (background: string) => void;
+  onFontChange: (font: string | null) => void;
+  videoFont: string;
 }) {
   return (
     <div className="flex shrink-0 gap-2 border-t border-border bg-background p-2">
+      {/* `md:hidden`, not `lg:hidden` like its neighbour: the library rail
+          appears at `md`, so from there up this button opened a sheet listing
+          what was already on screen beside it. The properties panel only
+          appears at `lg`, which is why "Edit clip" keeps the wider range. */}
       <Sheet>
         <SheetTrigger
           render={
-            <Button variant="outline" size="sm" className="flex-1 gap-2" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-2 md:hidden"
+            />
           }
         >
           <LayoutGrid className="size-4" />
@@ -551,6 +656,8 @@ function MobilePanels({
             onPropChange={onPropChange}
             onDurationChange={onDurationChange}
             onBackgroundChange={onBackgroundChange}
+            onFontChange={onFontChange}
+            videoFont={videoFont}
           />
         </SheetContent>
       </Sheet>

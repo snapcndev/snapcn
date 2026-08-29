@@ -59,10 +59,22 @@ export function VideoTimeline({
 }: VideoTimelineProps) {
   const { fps } = useVideoConfig();
   const resolved = resolveFont(font);
-  useGoogleFont(resolved.googleFamily);
   const valid = clips.filter(
     (c) => registry[c.slug] && (c.durationInFrames ?? 0) > 0,
   );
+
+  // Every Google family this video needs, deduped: the video's own face plus
+  // whatever any clip overrides it with. All of them have to be loaded before
+  // the first frame is screenshotted, because a server render does not wait for
+  // a stylesheet on its own — a face that arrives late arrives after the export.
+  const families = Array.from(
+    new Set(
+      [resolved, ...valid.map((c) => resolveFont(c.font ?? font))]
+        .map((r) => r.googleFamily)
+        .filter((f): f is string => Boolean(f)),
+    ),
+  );
+  useGoogleFonts(families);
 
   return (
     // Redefining `--font-geist-sans` here is what restyles every scene: they
@@ -98,6 +110,12 @@ export function VideoTimeline({
                     backgroundColor: isHexColor(clip.background)
                       ? clip.background
                       : DEFAULT_BACKGROUND,
+                    // Redefining the variable *here* is what makes a typeface
+                    // per-clip: the scenes all resolve their family through
+                    // `--font-geist-sans`, and the nearer definition wins. A
+                    // clip with no font of its own inherits the composition's,
+                    // so this costs nothing until somebody uses it.
+                    ...clipFontStyle(clip.font, font),
                   }}
                 >
                   <Component {...clip.props} />
@@ -170,20 +188,31 @@ function EmptyState() {
  */
 const FONT_TIMEOUT_MS = 8_000;
 
-function useGoogleFont(family: string | null) {
+function useGoogleFonts(families: string[]) {
+  // Joined, because the array is rebuilt every render and the effect must not
+  // re-run on identity alone — a re-run would re-enter delayRender bookkeeping
+  // on every frame of a preview.
+  const key = families.join("|");
+  // One handle for the whole set, created once. A handle per family would make
+  // the hook count depend on how many clips carry fonts, which React forbids —
+  // and the render only needs to wait for the *last* face either way.
   const [handle] = useState(() =>
-    family ? delayRender(`Loading font ${family}`) : null,
+    families.length > 0 ? delayRender(`Loading fonts ${key}`) : null,
   );
 
+  // `families` is a fresh array every render, so listing it would re-run the
+  // effect on every frame of a preview and re-enter delayRender bookkeeping.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `key` is the stable identity of `families`
   useEffect(() => {
-    if (!family || handle === null) return;
+    if (families.length === 0 || handle === null) return;
     let cancelled = false;
 
-    const href = googleFontHref(family);
-    if (!document.querySelector(`link[data-google-font="${family}"]`)) {
+    for (const family of families) {
+      if (document.querySelector(`link[data-google-font="${family}"]`))
+        continue;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = href;
+      link.href = googleFontHref(family);
       link.dataset.googleFont = family;
       document.head.appendChild(link);
     }
@@ -209,10 +238,12 @@ function useGoogleFont(family: string | null) {
       }
     }, FONT_TIMEOUT_MS);
 
-    Promise.all([
-      document.fonts.load(`400 32px "${family}"`),
-      document.fonts.load(`700 32px "${family}"`),
-    ])
+    Promise.all(
+      families.flatMap((family) => [
+        document.fonts.load(`400 32px "${family}"`),
+        document.fonts.load(`700 32px "${family}"`),
+      ]),
+    )
       .catch(() => undefined)
       .finally(() => {
         if (cancelled) return;
@@ -227,7 +258,26 @@ function useGoogleFont(family: string | null) {
       cancelled = true;
       continueRender(handle);
     };
-  }, [family, handle]);
+  }, [key, handle]);
+}
+
+/**
+ * The style that gives one clip its own typeface, or nothing at all.
+ *
+ * Returns an empty object when the clip does not override, so the inherited
+ * definition on the composition root is what applies — rather than re-stating
+ * the same stack on every sequence and making it look like a decision.
+ */
+function clipFontStyle(
+  clipFont: string | undefined,
+  videoFont: string,
+): React.CSSProperties {
+  if (!clipFont || clipFont === videoFont) return {};
+  const { stack } = resolveFont(clipFont);
+  return {
+    ["--font-geist-sans" as string]: stack,
+    fontFamily: stack,
+  } as React.CSSProperties;
 }
 
 const MARK_BLUE = "#0062FC";

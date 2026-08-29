@@ -18,6 +18,6 @@
       "target": "components/snap-cn/pulsing-border.tsx"
     }
   ],
-  "docs": "pulsing-border draws with WebGL, and Remotion's headless Chromium has no GL context by default — render it with `npx remotion render --gl=angle` (or set `Config.setChromiumOpenGlRenderer(\"angle\")`), or the render fails with 'WebGL is not supported in this browser'.",
+  "docs": "Docs and props: https://snapcn.dev/docs?ref=cli — pulsing-border draws with WebGL, and Remotion's headless Chromium has no GL context by default — render it with `npx remotion render --gl=angle` (or set `Config.setChromiumOpenGlRenderer(\"angle\")`), or the render fails with 'WebGL is not supported in this browser'.",
   "type": "registry:component"
 }

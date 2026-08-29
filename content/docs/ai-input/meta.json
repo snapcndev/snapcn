@@ -6,6 +6,8 @@
     "search-typing",
     "prompt-zoom",
     "prompt-send",
-    "answer-stream"
+    "answer-stream",
+    "agent-steps",
+    "answer-highlight"
   ]
 }

@@ -13,7 +13,12 @@ export const typeMorphConfig: ComponentConfig = {
     // itself defaults `accent` to `theme.primary` so it belongs in whatever
     // project installs it; the preview quotes the measured colour so the demo
     // reproduces the reference frame for frame.
-    accent: { type: "color", default: "#b3a9f9", label: "Caret & hot glyphs" },
+    accent: {
+      type: "color",
+      default: "#b3a9f9",
+      label: "Caret & hot glyphs",
+      brand: "accent",
+    },
     // The reference's paper, not the theme's warm off-white.
     background: { type: "color", default: "#ffffff", label: "Page" },
     ink: { type: "color", default: "#000000", label: "Text" },

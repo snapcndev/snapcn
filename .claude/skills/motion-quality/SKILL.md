@@ -27,6 +27,22 @@ Recover sub-pixel geometry from the antialiasing: `alpha = (pixel - bg) / (fg - 
 then take intensity-weighted centroids. That is accurate to ~0.01px, which is far
 finer than the bugs you are hunting.
 
+**All four checks are code now — stop re-deriving them by hand.** `lib/motion-check`
+is the measurement library (`settleFrame`, `holdIsStill`, `centroidMonotonic`,
+`shapeInvariant`, `noFrozenFrames`, `edgeBleedDelta`, `detailCoverage`), pure and
+tested on synthetic rasters; `lib/motion-check/capture.ts` renders a component's
+frames straight into memory (one bundle, one browser, PNG buffers, no mp4 — h264
+quantises away the very antialiasing the alpha recovery reads).
+
+```bash
+pnpm run measure --only=text-build   # -> registry/__measured__.json
+```
+
+It also answers the two questions no test could: when a component **settles**
+(a beat still animating when the next fades in over it — @remotion/transitions
+overlaps 18 frames), and how much **copy** it can hold before the line runs off
+the frame.
+
 **If someone says it is still not smooth and your metric says it is fixed, your
 metric is measuring the wrong thing.** Do not argue with them. Go find the metric
 that reproduces what they see. Two separate bugs in this repo were missed exactly
