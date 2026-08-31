@@ -54,6 +54,13 @@ for (const name of proNames) {
 /**
  * Now put the pro items back into the *index* — metadata only.
  *
+ * GATED, and off by default. The pro tier does not go public until 22 Oct 2026,
+ * and an index row is not nothing: it publishes the component's name, title,
+ * full description and dependency list as a static file on the CDN. That is the
+ * catalogue, and the catalogue is the launch. Set SNAPCN_PRO_PUBLIC=1 to list
+ * them; until then the moves above still happen, so the files are protected
+ * either way and only the advertising waits.
+ *
  * `shadcn build` emits an index entry with no `files[].content`, so listing a
  * paid component there gives away its name, description, props and dependency
  * list and none of its source. That is exactly the trade wanted: the gallery
@@ -65,6 +72,14 @@ for (const name of proNames) {
  * registry is built in its own repo — the free `shadcn build` here has never
  * heard of these names.
  */
+if (process.env.SNAPCN_PRO_PUBLIC !== "1") {
+  console.log(
+    `split-pro: ${moved}/${proNames.length} pro items moved out of public/r, ` +
+      `not listed (SNAPCN_PRO_PUBLIC unset)`,
+  );
+  process.exit(0);
+}
+
 const indexPath = path.join(PUBLIC_R, "registry.json");
 const index = await readJson(indexPath);
 const proItems: Record<string, unknown>[] = (await readJson(PRO_SOURCE)).items;

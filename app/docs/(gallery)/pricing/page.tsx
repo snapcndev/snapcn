@@ -74,20 +74,12 @@ const TIERS = [
     cta: "Remove the watermark",
     featured: true,
   },
-  {
-    name: "Template Pack",
-    price: "$199",
-    cadence: "once",
-    blurb: "Twelve finished videos to start from. No subscription.",
-    features: [
-      "12 complete video templates",
-      "Every aspect ratio, pre-cut",
-      "Real React source, not exported files",
-      "Yours forever, lifetime updates",
-    ],
-    product: "pack" as const,
-    cta: "Buy the pack",
-  },
+  // The Template Pack tier is deliberately absent until the templates exist.
+  // `pack` stays in CHECKOUT_PRODUCTS and the webhook still recognises it, so
+  // putting the card back is re-adding this block and nothing else — but a buy
+  // button is a promise, and today `payment.succeeded` for a pack logs a line
+  // and delivers nothing. Selling $199 of files with no delivery path is a
+  // refund queue, not revenue.
 ];
 
 export default async function PricingPage() {

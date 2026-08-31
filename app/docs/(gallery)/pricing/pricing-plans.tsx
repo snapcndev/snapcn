@@ -70,7 +70,14 @@ export function PricingPlans({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    // Column count follows the list rather than being pinned to it, so removing
+    // or restoring a tier cannot leave a hole in the row.
+    <div
+      className={cn(
+        "grid gap-4",
+        tiers.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2",
+      )}
+    >
       {tiers.map((tier) => {
         const current = tier.name.toLowerCase() === currentPlan;
         return (
