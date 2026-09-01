@@ -27,6 +27,15 @@ export interface Clip {
    * gallery the moment it is added, and is one colour picker away from not.
    */
   background?: string;
+  /**
+   * This clip's typeface, overriding the video's.
+   *
+   * Optional and usually absent: one face for a whole video is the normal case,
+   * and writing an explicit value onto every clip would make "the video's font"
+   * a control that silently stopped applying. A built-in id or a Google family,
+   * validated exactly the way the video font is — see `lib/video-editor/fonts`.
+   */
+  font?: string;
 }
 
 /**

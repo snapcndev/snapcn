@@ -160,7 +160,12 @@ export const promptSendConfig: ComponentConfig = {
       label: "Click at (s)",
     },
     cursor: { type: "boolean", default: true, label: "Pointer" },
-    accentColor: { type: "color", default: "#3072db", label: "Accent" },
+    accentColor: {
+      type: "color",
+      default: "#3072db",
+      label: "Accent",
+      brand: "accent",
+    },
     mode: {
       type: "select",
       default: "light",

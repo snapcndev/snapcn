@@ -1,0 +1,227 @@
+---
+title: Screen Recording
+description: Crops the chrome off a raw screen capture, fits it to the frame, and runs a keyframed camera that pushes in on what matters
+---
+
+<ComponentPreview name="screen-recording" />
+
+## Installation
+
+<InstallBlock name="screen-recording" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="screen-recording" />
+
+## Usage
+
+A raw capture is not a shot. This is the treatment that makes it one: **crop** the
+browser and OS chrome off each edge, **fit** what is left to the frame, and run a
+**camera track** that pushes in on the thing you are talking about and pulls back
+when you are done. Everything is a pure function of the current frame, so scrubbing
+and rendering agree.
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { ScreenRecording } from "@/components/snap-cn/screen-recording";
+
+const Demo = () => (
+  <ScreenRecording
+    src="/recordings/checkout.mp4"
+    crop={{ top: 0.11 }}
+    camera={[
+      { at: 34, duration: 25, zoom: 1.6, x: 0.36, y: 0.42 },
+      { at: 96, duration: 25, zoom: 1 },
+    ]}
+  />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="ScreenRecording"
+    component={Demo}
+    durationInFrames={139}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+`src` takes an **image or a video** — a `.mp4/.webm/.mov/.m4v` plays through
+`<OffthreadVideo>`, anything else through `<Img>`, and both take the same camera
+track, so a single screenshot works. Root-relative paths are served by Next in the
+Player and rewritten through `staticFile()` in a render; `http(s)`/data URLs pass
+through.
+
+### Cropping the chrome
+
+`crop` is **fractions of an edge, never pixels** — `{ top: 0.11 }` drops the top 11%,
+which is about what a tab strip and address bar come to. Measure once on a still and
+divide (`chromePixels / recordingHeight`); the same numbers then survive a re-record
+at a different resolution.
+
+Give `sourceAspect` (width ÷ height of the file, `1920x1080` → `1.778`) and the crop
+is exact on the raw file. **Omit it and the source is aspect-filled to the composition
+first**, so the fractions are measured on the shot as it appears rather than on the
+file. Identical whenever the two aspect ratios already match, which is the usual case —
+but if you are dropping a 4:3 capture into a 16:9 composition, pass it.
+
+### The camera
+
+A move eases from wherever the camera actually is at `at` to the pose named, over
+`duration` frames, then **holds until the next move's `at`**. There is no `hold` field —
+the hold is the gap. `zoom` is absolute (`1` is the fitted shot), and omitting `zoom`,
+`x` or `y` carries the previous value, which is what makes a pure pan one line. Moves
+that overlap are truncated, never blended, so the camera stays continuous.
+
+Focal points are **clamped to what the current zoom can actually hold**, so a pull-back
+recentres itself instead of dragging a band of backdrop into frame. That clamp is
+visible in the numbers: at `zoom: 1.2`, `x: 0.95` resolves to `0.583` — the furthest
+right the shot can go without showing its own edge. Zoom in more to reach further out.
+
+Pass `camera={[]}` for a locked-off shot at zoom 1; a treated recording with no camera
+is still the point of this component.
+
+### Composing
+
+Emphasis is this component's own job. `camera` is the way a shot points at something: a
+push to a focal point rides the footage by construction, because the transform *is* the
+footage. Nothing is layered over it, so nothing can drift off it.
+
+```tsx
+<ScreenRecording
+  src="/recordings/checkout.mp4"
+  crop={{ top: 0.11 }}
+  camera={[
+    { at: 30, duration: 25, zoom: 1.8, x: 0.4, y: 0.3 },
+    { at: 90, duration: 25, zoom: 1 },
+  ]}
+/>
+```
+
+The camera transform lives entirely inside this component, so anything wrapping it —
+`cursor-track`, a caption — is unaffected and reads in plain **frame** coordinates. That
+is a feature and a trap at once: a wrapper does **not** ride the camera, so a cursor over a
+push-in visibly detaches from the UI it is clicking. Keyframe the wrapper too, or give that
+beat `camera={[]}`.
+
+Everything is laid out as a **fraction of the box the component is mounted in**, not of the
+composition, so a recording drops into `laptop-frame` or `phone-frame`'s `children` and
+fills the screen. The one exception is `sourceAspect`, which is compared against the
+composition's aspect — inside a device frame, omit it and let the source aspect-fill.
+
+`speed` does not propagate through a stack — pass the same value to every layer.
+
+### When not to use this
+
+When the recording already is the shot. If your capture is a clean, cropped, well-paced
+window and the camera never moves, this component earns nothing over an `<OffthreadVideo>`
+of your own — and it will not fix a bad take. It also has no `chrome="browser"` preset,
+deliberately: a fraction that guesses an unknown recording's chrome is wrong more often
+than it is right, and a wrong crop is a shot with a sliver of tab bar in it.
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "src",
+      type: "string",
+      description:
+        "Required. Video (.mp4/.webm/.mov/.m4v → OffthreadVideo) or image; root-relative, http(s) or data URL",
+    },
+    {
+      name: "crop",
+      type: "ScreenCrop",
+      default: "{}",
+      description:
+        "Chrome to cut away, as a fraction of each edge — { top, right, bottom, left }",
+    },
+    {
+      name: "cropTop / cropRight / cropBottom / cropLeft",
+      type: "number",
+      description:
+        "The four edges of crop, flat. Set here, an edge overrides the same edge of crop",
+    },
+    {
+      name: "sourceAspect",
+      type: "number",
+      description:
+        "Width ÷ height of the source file. Give it and crop is exact on the file; omit it and crop is measured on the fitted shot",
+    },
+    {
+      name: "fit",
+      type: "\"cover\" | \"contain\"",
+      default: "\"cover\"",
+      description:
+        "cover fills the frame and centre-crops the long axis; contain fits the whole region and pads with backdropColor",
+    },
+    {
+      name: "backdropColor",
+      type: "string",
+      default: "theme.background",
+      description: "Padding behind a contain fit",
+    },
+    {
+      name: "camera",
+      type: "CameraMove[]",
+      default: "DEMO_CAMERA",
+      description:
+        "Camera track in at order — { at, duration?, zoom?, x?, y? }. Pass [] for a locked-off shot",
+    },
+    {
+      name: "radius",
+      type: "number",
+      default: "0",
+      description:
+        "Corner radius on the treated shot, in px. Only makes sense when the recording is inset in something else",
+    },
+    {
+      name: "trimBefore",
+      type: "number",
+      default: "0",
+      description:
+        "Frames to skip into the source video before frame 0 — cut dead air without re-exporting. Ignored for images",
+    },
+    {
+      name: "audio",
+      type: "boolean",
+      default: "false",
+      description: "Play the recording's own audio",
+    },
+    {
+      name: "entrance",
+      type: "\"fade\" | \"none\"",
+      default: "\"fade\"",
+      description:
+        "fade is the same 18-frame fade-and-unblur laptop-frame and phone-frame run on screen media, so nesting does not double up",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description:
+        "Time multiplier. Every camera at is measured against frame × speed; layers do not inherit it",
+    },
+    {
+      name: "className",
+      type: "string",
+      description: "Optional className passed to the outer wrapper",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      description:
+        "Design-system token overrides. Anything you leave out falls back to the shadcn defaults",
+    },
+    {
+      name: "mode",
+      type: "\"light\" | \"dark\"",
+      description: "Which end of the design system to resolve tokens against",
+    },
+  ]}
+/>

@@ -238,6 +238,23 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     added: "2026-07-24",
   },
   {
+    name: "Screen Recording",
+    description:
+      "Crops the browser and OS chrome off a raw screen capture, fits what is left to the frame, and runs a keyframed camera that pushes in on whatever matters",
+    category: "screens",
+    href: "/docs/screens/screen-recording",
+    added: "2026-08-29",
+    tile: "wide",
+  },
+  {
+    name: "Cursor Track",
+    description:
+      "A synthetic cursor that walks a path of waypoints over any children and pulses a click ring on arrival — for sims, and for recordings whose cursor never made the file",
+    category: "screens",
+    href: "/docs/screens/cursor-track",
+    added: "2026-08-29",
+  },
+  {
     name: "Follower Rush",
     description:
       "An X-style follower notification that piles up — avatars stack in and the count explodes, then the row bends into an undulating wave of faces",
@@ -318,6 +335,24 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     category: "ai-input",
     href: "/docs/ai-input/answer-stream",
     added: "2026-07-28",
+    tile: "wide",
+  },
+  {
+    name: "Answer Highlight",
+    description:
+      "A question, an answer that writes itself a word at a time, then a caret lands mid-sentence and drags a selection across the one statement that matters — and settles onto one word inside it",
+    category: "ai-input",
+    href: "/docs/ai-input/answer-highlight",
+    added: "2026-08-28",
+    tile: "wide",
+  },
+  {
+    name: "Agent Steps",
+    description:
+      "An agent narrating its own work — a log that writes itself one line at a time, always on the centre line, then swells and clears until only the answer is left",
+    category: "ai-input",
+    href: "/docs/ai-input/agent-steps",
+    added: "2026-08-28",
     tile: "wide",
   },
 ];

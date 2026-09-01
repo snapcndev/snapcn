@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { getProviders, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { SignInButtons } from "@/components/showcase/sign-in-buttons";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,8 +33,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { identifyUser, resetUser, useTrackEvent } from "@/lib/analytics";
 import { type AuthProviderId, EMAIL_PROVIDER_ID } from "@/lib/auth-providers";
+import type { PlanName } from "@/lib/plans";
+import { startCheckout } from "@/lib/upgrade";
 import { cn } from "@/lib/utils";
 import type { ProjectSummary } from "@/lib/video-editor/project";
+
+/**
+ * What each plan is called in the one place a person goes to ask.
+ *
+ * Named by what it *does*, not by a quota. The export counts are fair-use
+ * ceilings nobody will meet, and putting one here would advertise a limit
+ * instead of a capability — the opposite of what this row is for.
+ */
+const PLAN_LABEL: Record<PlanName, string> = {
+  free: "Free — 720p, watermarked",
+  starter: "Starter — 1080p, no watermark",
+  pro: "Pro — 1080p, no watermark",
+};
 
 /**
  * Sign in / account control for the site header.
@@ -53,6 +69,9 @@ import type { ProjectSummary } from "@/lib/video-editor/project";
 export function UserMenu({ className }: { className?: string }) {
   const { data: session } = useSession();
   const user = session?.user;
+  // `free` when the session predates the plan field — an old cookie must read
+  // as the cheaper tier, never the more expensive one.
+  const plan: PlanName = user?.plan ?? "free";
 
   // While the session is unknown, show the *button*, not a placeholder.
   //
@@ -64,7 +83,7 @@ export function UserMenu({ className }: { className?: string }) {
   // feature. It also puts "Sign in" in the server-rendered HTML, which is what
   // makes this verifiable without a browser.
   return user ? (
-    <AccountMenu user={user} className={className} />
+    <AccountMenu user={user} plan={plan} className={className} />
   ) : (
     <SignInDialog className={className} />
   );
@@ -142,8 +161,10 @@ const RECENT_VIDEOS = 5;
 
 function AccountMenu({
   user,
+  plan,
   className,
 }: {
+  plan: PlanName;
   user: {
     id?: string;
     name?: string | null;
@@ -155,6 +176,25 @@ function AccountMenu({
 }) {
   const trackEvent = useTrackEvent();
   const [open, setOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
+
+  async function upgrade() {
+    // Guarded: this is a button someone will click twice, and two checkout
+    // sessions is two chances to pay for the same month.
+    if (starting) return;
+    setStarting(true);
+    trackEvent("upgrade_started", { from: "account_menu" });
+    try {
+      await startCheckout("starter");
+      // `startCheckout` navigates away, so the spinner is cleared by the
+      // teardown rather than by us.
+    } catch (err) {
+      setStarting(false);
+      toast.error(
+        err instanceof Error ? err.message : "Couldn't start checkout.",
+      );
+    }
+  }
   // `null` while unknown, `false` once we know there is nothing to show — a
   // deployment with no database answers 503 here, and a section that cannot
   // work should be absent rather than empty.
@@ -223,14 +263,26 @@ function AccountMenu({
           </span>
         </div>
 
-        {/* The one thing an account actually buys. Stated here because the
-            watermark toggle lives in the editor, and someone reading this menu
-            is asking what signing in got them. */}
-        <div className="px-3 pb-2.5">
+        {/* What this account currently is. It used to read "Watermark-free
+            exports" for everybody, which was true when signing in was the only
+            tier and became a lie the moment one cost money — a menu that
+            overstates the plan is how someone discovers their real plan at the
+            worst possible moment, halfway through an export. */}
+        <div className="flex items-center gap-2 px-3 pb-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[0.6875rem] font-medium text-muted-foreground">
             <Film className="size-3" />
-            Watermark-free exports
+            {PLAN_LABEL[plan]}
           </span>
+          {plan === "free" && (
+            <button
+              type="button"
+              onClick={upgrade}
+              disabled={starting}
+              className="cursor-pointer text-[0.6875rem] font-medium text-primary underline-offset-2 hover:underline disabled:cursor-wait disabled:opacity-60"
+            >
+              {starting ? "Opening…" : "Upgrade"}
+            </button>
+          )}
         </div>
 
         <DropdownMenuSeparator />

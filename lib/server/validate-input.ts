@@ -1,5 +1,5 @@
 import "server-only";
-import { normalizeFont } from "@/lib/video-editor/fonts";
+import { isValidFont, normalizeFont } from "@/lib/video-editor/fonts";
 import {
   type Clip,
   DEFAULT_BACKGROUND,
@@ -223,7 +223,6 @@ const MAX_CLIP_PROPS_BYTES = 4_000_000;
  */
 export function parseVideoTimelineInput(body: unknown): {
   clips: Clip[];
-  removeWatermark: boolean;
   font: string;
   audio: { id: string; volume: number; trimStart: number } | null;
 } {
@@ -290,13 +289,18 @@ export function parseVideoTimelineInput(body: unknown): {
       ? raw.background
       : DEFAULT_BACKGROUND;
 
-    return { id, slug, props, durationInFrames, background };
-  });
+    // Absent means "inherit the video's font", which is the normal case, so a
+    // missing value is not an error. A *present* one that is not a real family
+    // is dropped rather than rejected: it can only have come from a stale draft
+    // naming a font that has since left the Google set, and losing one clip's
+    // typeface is a better outcome than refusing to render the video.
+    const clipFont =
+      typeof raw.font === "string" && isValidFont(raw.font)
+        ? raw.font
+        : undefined;
 
-  // A *request* to drop the watermark, honoured only if the caller turns out to
-  // be signed in — see `/api/render`. Anything other than an explicit `true` is
-  // read as "no", so a malformed or missing value keeps the mark.
-  const removeWatermark = isPlainObject(body) && body.removeWatermark === true;
+    return { id, slug, props, durationInFrames, background, font: clipFont };
+  });
 
   // Allow-list, not a free string: the value reaches both a `font-family` and a
   // fonts.googleapis.com URL inside a server-side render. `normalizeFont`
@@ -334,5 +338,5 @@ export function parseVideoTimelineInput(body: unknown): {
     throw new RenderInputError("timeline exceeds the maximum total duration");
   }
 
-  return { clips, removeWatermark, font, audio };
+  return { clips, font, audio };
 }

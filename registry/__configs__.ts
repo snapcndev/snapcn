@@ -1,7 +1,10 @@
 import { type ComponentConfig, SHARED_CONTROLS } from "@/lib/customizer-config";
+import { agentStepsConfig } from "@/registry/snap-cn/agent-steps/config";
 import { announceTitleConfig } from "@/registry/snap-cn/announce-title/config";
+import { answerHighlightConfig } from "@/registry/snap-cn/answer-highlight/config";
 import { answerStreamConfig } from "@/registry/snap-cn/answer-stream/config";
 import { blockWordmarkConfig } from "@/registry/snap-cn/block-wordmark/config";
+import { cursorTrackConfig } from "@/registry/snap-cn/cursor-track/config";
 import { followerRushConfig } from "@/registry/snap-cn/follower-rush/config";
 import { heroLaunchConfig } from "@/registry/snap-cn/hero-launch/config";
 import { karaokeCaptionsConfig } from "@/registry/snap-cn/karaoke-captions/config";
@@ -14,6 +17,7 @@ import { orbitGalleryConfig } from "@/registry/snap-cn/orbit-gallery/config";
 import { phoneFrameConfig } from "@/registry/snap-cn/phone-frame/config";
 import { promptSendConfig } from "@/registry/snap-cn/prompt-send/config";
 import { promptZoomConfig } from "@/registry/snap-cn/prompt-zoom/config";
+import { screenRecordingConfig } from "@/registry/snap-cn/screen-recording/config";
 import { searchTypingConfig } from "@/registry/snap-cn/search-typing/config";
 import { statusCycleConfig } from "@/registry/snap-cn/status-cycle/config";
 import { terminalSimulatorConfig } from "@/registry/snap-cn/terminal-simulator/config";
@@ -41,9 +45,12 @@ import { typeMorphConfig } from "./snap-cn/type-morph/config";
  * from, and there is one place that decides what a control is.
  */
 export const CONFIGS: Record<string, ComponentConfig> = {
+  "agent-steps": agentStepsConfig,
   "announce-title": announceTitleConfig,
+  "answer-highlight": answerHighlightConfig,
   "answer-stream": answerStreamConfig,
   "block-wordmark": blockWordmarkConfig,
+  "cursor-track": cursorTrackConfig,
   "follower-rush": followerRushConfig,
   "hero-launch": heroLaunchConfig,
   "type-morph": typeMorphConfig,
@@ -57,6 +64,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "phone-frame": phoneFrameConfig,
   "prompt-send": promptSendConfig,
   "prompt-zoom": promptZoomConfig,
+  "screen-recording": screenRecordingConfig,
   "search-typing": searchTypingConfig,
   "status-cycle": statusCycleConfig,
   "terminal-simulator": terminalSimulatorConfig,
@@ -111,6 +119,18 @@ const MIN_SPEED_ONE = [
   // The last chip arrives at frame 115 of 150 and its step settles by ~124;
   // under speed < 1 act 2 never finishes inside the composition.
   "status-cycle",
+  // The result chip lands at frame ~145 of 160; under speed < 1 the log never
+  // resolves into an answer inside the composition.
+  "agent-steps",
+  // The picked word lands in the last beat; under speed < 1 the answer never
+  // resolves into an emphasis inside the composition.
+  "answer-highlight",
+  // Both screen components report a `durationInFrames` COMPUTED from their own
+  // demo track at speed 1 — the camera's pull-back at frame 96 of 139, the
+  // second click at 72 of 132. Under speed < 1 the clock never reaches either
+  // inside that same length, so the preview stops on a shot mid-move.
+  "screen-recording",
+  "cursor-track",
 ];
 for (const name of MIN_SPEED_ONE) {
   const config = CONFIGS[name];

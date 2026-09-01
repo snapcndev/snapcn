@@ -93,6 +93,9 @@ describe("mixOklch shortest-arc hue", () => {
     const b = "oklch(0.6 0.12 10)";
     const mid = rgbOf(mixOklch(a, b, 0.5));
     const hue = rgbToOklch({ mode: "rgb", r: mid.r, g: mid.g, b: mid.b }).h;
+    // culori leaves `h` undefined for an achromatic result. Both endpoints here
+    // carry chroma, so an undefined hue is the failure, not a value to default.
+    if (hue === undefined) throw new Error("midpoint lost its hue");
     const nearZero = hue <= 15 || hue >= 345;
     expect(nearZero).toBe(true);
     expect(Math.abs(hue - 180)).toBeGreaterThan(120);
@@ -113,6 +116,7 @@ describe("mixOklch holds hue for neutrals (no phantom hue)", () => {
     const blue = "oklch(0.6 0.12 250)";
     const near = rgbOf(mixOklch(gray, blue, 0.9));
     const hue = rgbToOklch({ mode: "rgb", r: near.r, g: near.g, b: near.b }).h;
+    if (hue === undefined) throw new Error("90% toward blue must have a hue");
     const dh = Math.abs(((hue - 250 + 540) % 360) - 180);
     expect(dh).toBeLessThan(20);
   });

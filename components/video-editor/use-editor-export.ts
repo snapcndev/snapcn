@@ -61,6 +61,7 @@ export function useEditorExport() {
         font = "Geist",
         audio = null,
         onDone,
+        onDownloaded,
       }: {
         removeWatermark?: boolean;
         font?: string;
@@ -75,6 +76,14 @@ export function useEditorExport() {
          * done branch below.
          */
         onDone?: (jobId: string) => Promise<void> | void;
+        /**
+         * Fired only when the file actually reached the user's disk.
+         *
+         * Not merged into `onDone`, which is the opposite case — the showcase
+         * claims the render *instead of* downloading it — and not fired on the
+         * showcase path, because "your video is downloading" is not true there.
+         */
+        onDownloaded?: () => void;
       } = {},
     ) => {
       if (clips.length === 0) {
@@ -120,6 +129,11 @@ export function useEditorExport() {
               : null,
           }),
         });
+        // 402 is the quota wall, and it is the one failure that is not a
+        // failure: nothing broke, the person simply ran out. It gets its own
+        // error type so the catch below can offer the way past it instead of
+        // reporting a bug that does not exist.
+        if (res.status === 402) throw new QuotaError(await readError(res));
         if (!res.ok) throw new Error(await readError(res));
         const { jobId } = (await res.json()) as { jobId: string };
 
@@ -138,8 +152,12 @@ export function useEditorExport() {
                 // submission has to claim the file rather than consume it.
                 // It owns its own errors — a failed submit must not be
                 // reported as a failed render.
-                if (onDone) await onDone(jobId);
-                else triggerDownload(job.downloadUrl);
+                if (onDone) {
+                  await onDone(jobId);
+                } else {
+                  triggerDownload(job.downloadUrl);
+                  onDownloaded?.();
+                }
                 trackEvent("editor_export_succeeded", {
                   clip_count: clips.length,
                   duration_ms: Date.now() - startedAt,
@@ -157,7 +175,18 @@ export function useEditorExport() {
           void tick();
         });
       } catch (err) {
-        if (!cancelledRef.current) {
+        if (err instanceof QuotaError && !cancelledRef.current) {
+          // Not a sales moment. The free row allows fifty exports a month, so
+          // reaching this is either a very good day or a script — and the one
+          // real person who hits it should get a way to keep working, not a
+          // checkout button. The upgrade offer lives on the watermark, which
+          // every export passes through, rather than on a wall almost nobody
+          // reaches.
+          toast.warning("Export limit reached", {
+            description: err.message,
+            duration: 12_000,
+          });
+        } else if (!cancelledRef.current) {
           console.error("[video-editor] export failed:", err);
           // A failed export is a bug report we would otherwise never get — the
           // user reads the toast and closes the tab.
@@ -179,6 +208,15 @@ export function useEditorExport() {
 
   return { exporting, progress, download };
 }
+
+/**
+ * "You are out of exports", as a type rather than a string match.
+ *
+ * The alternative is sniffing the message text in the catch, which breaks the
+ * first time the server rewords its own copy — and the server owns that copy,
+ * deliberately, because it is the only side that knows the numbers.
+ */
+class QuotaError extends Error {}
 
 function triggerDownload(url: string) {
   const a = document.createElement("a");

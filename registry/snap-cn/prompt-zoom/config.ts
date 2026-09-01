@@ -71,7 +71,12 @@ export const promptZoomConfig: ComponentConfig = {
       step: 0.005,
       label: "Focus Y",
     },
-    accentColor: { type: "color", default: "#266DF0", label: "Accent" },
+    accentColor: {
+      type: "color",
+      default: "#266DF0",
+      label: "Accent",
+      brand: "accent",
+    },
     mode: {
       type: "select",
       default: "light",

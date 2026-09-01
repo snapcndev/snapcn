@@ -7,12 +7,14 @@ import Resend from "next-auth/providers/resend";
 import Twitter from "next-auth/providers/twitter";
 import type { AuthProviderId } from "@/lib/auth-providers";
 import { accounts, sessions, users, verificationTokens } from "@/lib/db/schema";
+import type { PlanName } from "@/lib/plans";
 import { getDb, isDbConfigured } from "@/lib/server/db";
 import {
   magicLinkEmail,
   sendEmail,
   welcomeUserEmail,
 } from "@/lib/server/email";
+import { planFor } from "@/lib/server/entitlements";
 
 const PROVIDER_ENV: Record<AuthProviderId, [idKey: string, secretKey: string]> =
   {
@@ -181,7 +183,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return profile?.email_verified === true;
       return true;
     },
-    session({ session, user }) {
+    async session({ session, user }) {
       // Database-session strategy: expose the user id to server code.
       if (session.user && user) {
         session.user.id = user.id;
@@ -190,6 +192,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // from `ADMIN_EMAILS` on every session read, never stored, so removing
         // an address from the list revokes it on the next request.
         session.user.isAdmin = isAdmin(user.email);
+        // The plan, on the session, because the account menu in the header
+        // needs it on every page and prop-drilling it from each server
+        // component that happens to render a header is not a thing that stays
+        // correct. Database sessions already round-trip to Postgres on every
+        // authenticated request, so this is one more indexed lookup on a
+        // one-row-per-user table rather than a new class of cost — and
+        // `planFor` fails soft, so a billing outage cannot log anybody out.
+        session.user.plan = (await planFor(user.id)).plan as PlanName;
       }
       return session;
     },

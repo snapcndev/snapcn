@@ -18,6 +18,7 @@ export const logoAssembleConfig: ComponentConfig = {
       type: "image",
       default: "/logo/snapcn-white.png",
       label: "Logo (simple, monochrome)",
+      brand: "logo",
     },
     count: {
       type: "number",

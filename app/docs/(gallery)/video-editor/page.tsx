@@ -3,6 +3,7 @@ import { auth, getConfiguredProviders, isEmailSignInConfigured } from "@/auth";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { VideoEditor } from "@/components/video-editor/video-editor";
 import { DOCS_PAGE_META } from "@/config/site";
+import { planFor } from "@/lib/server/entitlements";
 import {
   docsBreadcrumb,
   JsonLd,
@@ -76,14 +77,33 @@ const jsonLd = [
   docsBreadcrumb(TITLE, "/docs/video-editor"),
 ];
 
-export default async function VideoEditorPage() {
+export default async function VideoEditorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  // `?clip=<slug>` — the gallery's "Make a video with this" lands here, and the
+  // component someone was already looking at is on the timeline before they
+  // touch anything. An editor that opens empty asks a newcomer to pick from
+  // thirty-three things they have not seen move; this one opens mid-thought.
+  // Validated in the editor against the real registry, so a hand-typed slug is
+  // ignored rather than trusted.
+  const clip = (await searchParams).clip;
+  const initialClip = typeof clip === "string" ? clip : undefined;
   const session = await auth().catch(() => null);
+  // The plan is resolved here rather than plumbed through the session, because
+  // this is the one page that needs it and a session callback would pay for the
+  // lookup on every authenticated request in the app. `signedIn` still travels
+  // separately: it decides whether the badge offers a sign-in or an upgrade.
+  const { limits } = await planFor(session?.user?.id ?? null);
 
   return (
     <GalleryFrame fill>
       <JsonLd graph={jsonLd} />
       <VideoEditor
         signedIn={Boolean(session?.user)}
+        canRemoveWatermark={!limits.watermark}
+        initialClip={initialClip}
         providers={getConfiguredProviders()}
         emailEnabled={isEmailSignInConfigured()}
       />

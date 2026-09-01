@@ -15,5 +15,6 @@
       "target": "components/snap-cn/caret.tsx"
     }
   ],
+  "docs": "Docs and props: https://snapcn.dev/docs?ref=cli — it paints with `color`, which defaults to `currentColor`, and takes no `mode`.",
   "type": "registry:component"
 }

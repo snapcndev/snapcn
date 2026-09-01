@@ -21,8 +21,11 @@ type SnippetValues = {
   primary?: string;
 };
 
-const snippet = (values: SnippetValues): string =>
-  inputConfig.snippet(values as Record<string, unknown>);
+const snippet = (values: SnippetValues): string => {
+  if (!inputConfig.snippet)
+    throw new Error("inputConfig must define a snippet");
+  return inputConfig.snippet(values as Record<string, unknown>);
+};
 
 describe("InputState union", () => {
   it("contains exactly the six documented states", () => {

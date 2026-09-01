@@ -1,6 +1,7 @@
 import { DocsBody, DocsDescription, DocsTitle } from "fumadocs-ui/page";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { RelatedComponents } from "@/components/docs/related-components";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import { galleryItemByHref } from "@/lib/gallery-data";
 import { collectDocsPages } from "@/lib/llms";
@@ -129,6 +130,8 @@ export default async function Page(props: {
       <DocsBody className="mt-8">
         <MDX components={getMDXComponents()} />
       </DocsBody>
+      {/* Renders nothing on a page that is not a component. */}
+      <RelatedComponents slug={page.slugs.at(-1) ?? ""} />
     </article>
   );
 }

@@ -1,9 +1,12 @@
 import type React from "react";
 import type { ComponentConfig } from "@/lib/customizer-config";
 import { CONFIGS } from "@/registry/__configs__";
+import { AgentSteps } from "@/registry/snap-cn/agent-steps";
 import { AnnounceTitle } from "@/registry/snap-cn/announce-title";
+import { AnswerHighlight } from "@/registry/snap-cn/answer-highlight";
 import { AnswerStream } from "@/registry/snap-cn/answer-stream";
 import { BlockWordmark } from "@/registry/snap-cn/block-wordmark";
+import { CursorTrack } from "@/registry/snap-cn/cursor-track";
 import { FollowerRush } from "@/registry/snap-cn/follower-rush";
 import { HeroLaunch } from "@/registry/snap-cn/hero-launch";
 import { KaraokeCaptions } from "@/registry/snap-cn/karaoke-captions";
@@ -16,6 +19,7 @@ import { OrbitGallery } from "@/registry/snap-cn/orbit-gallery";
 import { PhoneFrame } from "@/registry/snap-cn/phone-frame";
 import { PromptSend } from "@/registry/snap-cn/prompt-send";
 import { PromptZoom } from "@/registry/snap-cn/prompt-zoom";
+import { ScreenRecording } from "@/registry/snap-cn/screen-recording";
 import { SearchTyping } from "@/registry/snap-cn/search-typing";
 import { StatusCycle } from "@/registry/snap-cn/status-cycle";
 import { TerminalSimulator } from "@/registry/snap-cn/terminal-simulator";
@@ -44,9 +48,17 @@ export interface RegistryEntry {
 }
 
 const registry: Record<string, RegistryEntry> = {
+  "agent-steps": {
+    Component: AgentSteps,
+    config: CONFIGS["agent-steps"],
+  },
   "announce-title": {
     Component: AnnounceTitle,
     config: CONFIGS["announce-title"],
+  },
+  "answer-highlight": {
+    Component: AnswerHighlight,
+    config: CONFIGS["answer-highlight"],
   },
   "answer-stream": {
     Component: AnswerStream,
@@ -56,6 +68,7 @@ const registry: Record<string, RegistryEntry> = {
     Component: BlockWordmark,
     config: CONFIGS["block-wordmark"],
   },
+  "cursor-track": { Component: CursorTrack, config: CONFIGS["cursor-track"] },
   "follower-rush": {
     Component: FollowerRush,
     config: CONFIGS["follower-rush"],
@@ -84,6 +97,10 @@ const registry: Record<string, RegistryEntry> = {
   "phone-frame": { Component: PhoneFrame, config: CONFIGS["phone-frame"] },
   "prompt-send": { Component: PromptSend, config: CONFIGS["prompt-send"] },
   "prompt-zoom": { Component: PromptZoom, config: CONFIGS["prompt-zoom"] },
+  "screen-recording": {
+    Component: ScreenRecording,
+    config: CONFIGS["screen-recording"],
+  },
   "search-typing": {
     Component: SearchTyping,
     config: CONFIGS["search-typing"],

@@ -5,9 +5,11 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckIcon,
+  Clapperboard,
   CopyIcon,
   XIcon,
 } from "lucide-react";
+import Link from "next/link";
 import {
   type ReactNode,
   useCallback,
@@ -17,6 +19,7 @@ import {
   useState,
 } from "react";
 import { installCommand as buildInstallCommand } from "@/config/site";
+import { useTrackEvent } from "@/lib/analytics";
 import {
   GALLERY_CATEGORIES,
   type GalleryItem,
@@ -215,6 +218,7 @@ function OverlayBody({
   const installCommand = buildInstallCommand(slug);
   const [copied, setCopied] = useState(false);
   const hasDocs = hasDoc;
+  const trackEvent = useTrackEvent();
 
   const copyInstall = () => {
     navigator.clipboard.writeText(installCommand);
@@ -304,6 +308,27 @@ function OverlayBody({
               </button>
             </MetaRow>
           </dl>
+
+          {/* The gallery's second exit, and the one that stays measurable.
+              A copied install command finishes in somebody else's terminal —
+              this keeps them here, and the editor is where the product is
+              actually understood: 64% of the people who open it put a clip on
+              the timeline. `?clip=` carries this component straight onto it, so
+              the first thing they see is the shot they were already looking at,
+              with their own words waiting to be typed into it. */}
+          <Link
+            href={`/docs/video-editor?clip=${slug}`}
+            onClick={() =>
+              trackEvent("cta_clicked", {
+                cta: "gallery_make_video",
+                destination: `/docs/video-editor?clip=${slug}`,
+              })
+            }
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90"
+          >
+            <Clapperboard className="size-4" aria-hidden="true" />
+            Make a video with this
+          </Link>
         </div>
       </aside>
 

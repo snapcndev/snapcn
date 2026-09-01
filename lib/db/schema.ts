@@ -166,3 +166,106 @@ export const subscribers = pgTable("subscriber", {
     .notNull()
     .defaultNow(),
 });
+
+// --- Billing ---
+
+/** Mirrors `PlanName` in `lib/plans.ts`. Changing one without the other breaks. */
+export const planEnum = pgEnum("plan", ["free", "starter", "pro"]);
+
+/**
+ * One row per user — the entitlement, not the billing history. Dodo keeps the
+ * history; duplicating it here only creates a second thing to reconcile.
+ *
+ * Named `billing_subscription` rather than the obvious `subscription` because
+ * `subscriber` next door is the marketing email list. Two tables one letter
+ * apart, one holding "who gets Pro" and the other "who gets the newsletter", is
+ * a mis-JOIN waiting for a tired evening.
+ *
+ * `status` is plain text on purpose: it is Dodo's vocabulary, not ours
+ * (`pending`, `active`, `on_hold`, `paused`, `cancelled`, `failed`, `expired`).
+ * A pgEnum here means the day Dodo adds a status the webhook handler starts
+ * throwing on insert, which is a billing outage caused entirely by our own type.
+ *
+ * A user with no row is free — see `limitsFor(null)`. Only the webhook writes
+ * here, so the whole paid tier can be switched off by simply never writing.
+ */
+export const billingSubscriptions = pgTable("billing_subscription", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  plan: planEnum("plan").notNull().default("free"),
+  status: text("status").notNull().default("active"),
+  dodoSubscriptionId: text("dodo_subscription_id"),
+  dodoCustomerId: text("dodo_customer_id"),
+  /**
+   * The key a paid customer pastes into their MCP config, and the only thing
+   * standing between `/r/<pro>.json` and the world.
+   *
+   * Stored in plain text, deliberately. A hash would be the reflex, but the
+   * threat here is not a credential: the worst a leaked key buys is component
+   * source, never money, never someone else's data. What a hash *does* cost is
+   * the dashboard — this key lives in a config file the customer re-pastes on
+   * every new machine, so it has to be readable back to them, and "regenerate,
+   * you cannot see the old one" is a support ticket per laptop.
+   *
+   * Null until the first paid webhook mints one. A row with a null key is a
+   * free or lapsed customer, which is the same answer the gate wants anyway.
+   */
+  apiKey: text("api_key").unique(),
+  /**
+   * Dodo calls this `next_billing_date` — there is no `current_period_end` in
+   * its payloads. Stored under the neutral name so a second processor could
+   * fill it without a migration. The meter resets on the calendar month, not on
+   * this: it is for showing a renewal date and for deciding when a cancelled
+   * subscription stops being honoured.
+   */
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * The meter. One row per meter key per calendar month, `period_month` as
+ * "YYYY-MM" text — a date would invite timezone-dependent bucketing, and the
+ * bucket is a billing boundary, not an instant.
+ *
+ * `meter_key` is text and deliberately NOT a foreign key to `user`: it holds a
+ * user id for a signed-in caller and an anonymous hash (IP-derived) otherwise.
+ * An FK would make the anonymous case unstorable, and the alternatives — a
+ * nullable user_id plus a nullable hash, or a second table — both cost a branch
+ * at every call site to save a constraint nothing here needs.
+ *
+ * The composite primary key is the ON CONFLICT target. Callers MUST increment
+ * atomically in one statement, never read-then-write:
+ *
+ *   INSERT INTO render_usage (meter_key, period_month, renders_used)
+ *   VALUES ($1, $2, 1)
+ *   ON CONFLICT (meter_key, period_month)
+ *   DO UPDATE SET renders_used = render_usage.renders_used + 1
+ *   RETURNING renders_used
+ *
+ * Two renders started in the same second are the normal case, not the edge one:
+ * a SELECT-then-UPDATE loses one of them, and a lost increment is a free render
+ * on a paid plan.
+ */
+export const renderUsage = pgTable(
+  "render_usage",
+  {
+    meterKey: text("meter_key").notNull(),
+    periodMonth: text("period_month").notNull(),
+    rendersUsed: integer("renders_used").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({
+      name: "render_usage_pk",
+      columns: [t.meterKey, t.periodMonth],
+    }),
+  ],
+);

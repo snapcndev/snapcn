@@ -118,8 +118,15 @@ pnpm dev                  # start the dev server
 pnpm run build            # build the site
 pnpm run registry:build   # rebuild the shadcn registry output
 pnpm run render:previews  # re-render the mp4s in lib/rendered-demos.tsx
+pnpm run measure          # measure rendered frames -> registry/__measured__.json
 pnpm run lint             # biome check
 ```
+
+`measure` needs chromium and takes minutes (32 components ≈ 6 min, ~10k frames),
+so it is deliberately NOT in `pnpm test`; `pnpm test` only checks that no
+`registry/__measured__.json` entry was measured against source that has since
+changed. Default run measures only the components whose source hash moved —
+`--all` for the whole registry, `--only=<slug>[,<slug>]` for one.
 
 Do **not** run a formatter over `registry/snap-cn/registry.json` — it reflows the
 whole file. And `registry:build` rewrites every `public/r/*.json`, not just yours.

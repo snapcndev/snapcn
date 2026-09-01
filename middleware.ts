@@ -1,5 +1,5 @@
 import { after, type NextRequest, NextResponse } from "next/server";
-import { INSTALL_ALL_NAMES } from "@/config/site";
+import { ALL_COMPONENT_NAMES, INSTALL_ALL_NAMES } from "@/config/site";
 import {
   anonymousId,
   captureServer,
@@ -17,7 +17,7 @@ import { suggestComponents } from "@/lib/registry-suggest";
  * real install unless we check the name ourselves. Both manifests together are
  * ~17KB, which is nothing against the Edge bundle limit.
  */
-const KNOWN_COMPONENTS = new Set(INSTALL_ALL_NAMES);
+const KNOWN_COMPONENTS = new Set(ALL_COMPONENT_NAMES);
 
 /**
  * Tracks the two things that happen *outside the browser*, and are therefore

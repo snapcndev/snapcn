@@ -115,7 +115,12 @@ export const answerStreamConfig: ComponentConfig = {
       step: 0.5,
       label: "Motion blur",
     },
-    accentColor: { type: "color", default: "#266DF0", label: "Accent" },
+    accentColor: {
+      type: "color",
+      default: "#266DF0",
+      label: "Accent",
+      brand: "accent",
+    },
     mode: {
       type: "select",
       default: "light",
