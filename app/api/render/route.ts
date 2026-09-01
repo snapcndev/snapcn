@@ -298,7 +298,7 @@ export function quotaMessage(err: QuotaExceededError, plan: string): string {
   // checkout button — the upgrade offer lives on the watermark, which every
   // export passes through.
   const who = plan === "anonymous" ? " Signing in raises it." : "";
-  return `That's ${err.limit} exports this month — the fair-use ceiling.${who} Email support@simplifyingai.com and we'll lift it.`;
+  return `That's ${err.limit} exports this month — the fair-use ceiling.${who} Email hello@snapcn.dev and we'll lift it.`;
 }
 
 /**
