@@ -136,9 +136,9 @@ function SignInDialog({ className }: { className?: string }) {
         <DialogHeader>
           <DialogTitle>Sign in to snapcn</DialogTitle>
           <DialogDescription>
-            Removes the watermark from video-editor exports and lets you post to
-            the showcase. Nothing else changes — the components stay MIT and a
-            local render is never marked.
+            Saves your projects and lets you post to the showcase. Removing the
+            watermark from an export is Starter, $19/mo — the components stay
+            MIT either way, and a local render is never marked.
           </DialogDescription>
         </DialogHeader>
 

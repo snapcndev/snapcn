@@ -93,9 +93,9 @@ export default async function SignInPage({
               Sign in to snapcn
             </h1>
             <p className="mt-1.5 mb-5 text-sm text-muted-foreground">
-              Removes the watermark from video-editor exports and lets you post
-              to the showcase. The components stay MIT either way, and a local
-              render is never marked.
+              Saves your projects and lets you post to the showcase. Removing
+              the watermark from an export is Starter, $19/mo. The components
+              stay MIT either way, and a local render is never marked.
             </p>
 
             {error && (
