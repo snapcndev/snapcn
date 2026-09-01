@@ -79,7 +79,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/culori": "^4.0.0",
     "@types/mdx": "^2.0.14",
-    "@types/node": "^20",
+    "@types/node": "^24.13.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.10",

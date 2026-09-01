@@ -5,6 +5,9 @@
     "**/__tests__/**",
     "test/**",
     "scripts/**",
+    // dev-root imports the gitignored pro barrel; it is a render-script
+    // bundle root, never in the Next graph. Public checkouts have no pro tier.
+    "src/remotion/**",
     ".remotion-bundle/**"
   ]
 }
