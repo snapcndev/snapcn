@@ -157,6 +157,18 @@ export const RENDERED_DEMOS: readonly string[] = [
   // moves at ~500px/s at that scale, which is the exact motion a live Player
   // mispaces on a high-refresh display — every frame of it is sub-pixel.
   "prompt-send",
+
+  // ── The four from 08d947b, which shipped without demos ────────────────────
+  // Added in the same commit as the paid tier and missed by the render pass, so
+  // for four components the card grid mounted a live Player — the cost this
+  // whole list exists to avoid — and their docs pages emitted no `VideoObject`,
+  // which is the one piece of schema a component page has that a prose page
+  // does not. Coverage, on the same contract as everything above: change the
+  // component, re-render the file, commit it.
+  "agent-steps",
+  "answer-highlight",
+  "cursor-track",
+  "screen-recording",
 ];
 
 /**
