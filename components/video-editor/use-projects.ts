@@ -265,7 +265,11 @@ export function useProjects({
       SAVE_DEBOUNCE_MS,
     );
     return () => clearTimeout(timer);
-  }, [ready, mode, clips, audio, font, persist]);
+    // `brand` and `tempo` are here in their own right, not just because the
+    // effect reads them: setting a kit on an empty timeline changes no clip, so
+    // leaving them out means the one thing the user just did is the one thing
+    // that does not get saved.
+  }, [ready, mode, clips, audio, font, brand, tempo, persist]);
 
   const newProject = useCallback(async () => {
     // Flush first: the pending debounce belongs to the project being left, and
