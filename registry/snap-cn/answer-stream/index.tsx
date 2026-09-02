@@ -13,6 +13,7 @@ import {
   clamp01,
   easings,
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
 } from "@/lib/snap-cn-ui";
@@ -80,6 +81,15 @@ export interface AnswerStreamProps {
   accentColor?: string;
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   speed?: number;
 }
 
@@ -374,11 +384,13 @@ export function AnswerStream({
   accentColor,
   theme,
   mode,
+  fontFamily,
   speed = 1,
 }: AnswerStreamProps) {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const ui = inputStyleContext(t);
   const accent = accentColor ?? t.primary;
 
@@ -485,7 +497,7 @@ export function AnswerStream({
           left: 28,
           top: 26,
           right: 28,
-          fontFamily: SANS,
+          fontFamily: face,
           fontSize: 14,
           lineHeight: 1.4,
           color: t.foreground,
@@ -504,7 +516,7 @@ export function AnswerStream({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          fontFamily: SANS,
+          fontFamily: face,
           fontSize: 9,
           color: t.mutedForeground,
         }}
@@ -591,7 +603,7 @@ export function AnswerStream({
                   coolF={coolF}
                   ramp={mutedRamp}
                   style={{
-                    fontFamily: SANS,
+                    fontFamily: face,
                     fontSize: PILL.size,
                     lineHeight: 1,
                     whiteSpace: "nowrap",
@@ -696,7 +708,7 @@ export function AnswerStream({
                         left: 12,
                         top: 46,
                         right: 12,
-                        fontFamily: SANS,
+                        fontFamily: face,
                         fontSize: 7,
                         lineHeight: "10px",
                       }}

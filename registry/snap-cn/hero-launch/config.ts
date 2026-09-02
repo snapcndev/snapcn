@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const heroLaunchConfig: ComponentConfig = {
   componentName: "HeroLaunch",
@@ -19,6 +25,7 @@ export const heroLaunchConfig: ComponentConfig = {
       default: "npx shadcn add @snapcn",
       label: "Headline",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 170,
   fps: FPS,

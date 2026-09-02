@@ -11,7 +11,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme, withAlpha } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+  withAlpha,
+} from "@/lib/snap-cn-ui";
 
 export type PhoneFrameVariant = "flat" | "tilt" | "showcase";
 export type PhoneFrameEntrance = "rise" | "rotate-in" | "float";
@@ -41,6 +46,15 @@ export interface PhoneFrameProps {
   /** Design-system token overrides. */
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   /** Outer body corner radius. Defaults to real-device curvature. */
   radius?: number;
   /** Screen corner radius. Defaults to `radius - bezel` (concentric corners). */
@@ -545,7 +559,7 @@ export function showcasePose(
 const CLAMP = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
 /** Default screen: a glowing ride-summary map that draws itself with insight pills. */
-function RideSummaryDemo({ frame }: { frame: number }) {
+function RideSummaryDemo({ frame, face }: { frame: number; face: string }) {
   const ease = Easing.bezier(0.2, 0.6, 0.35, 1);
   const draw = interpolate(frame, [12, 128], [0, 1], {
     ...CLAMP,
@@ -562,7 +576,7 @@ function RideSummaryDemo({ frame }: { frame: number }) {
         inset: 0,
         overflow: "hidden",
         backgroundColor: "#0A0A0B",
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
         textRendering: "geometricPrecision",
         color: "#fff",
       }}
@@ -941,6 +955,7 @@ export function PhoneFrame({
   screenColor,
   theme,
   mode,
+  fontFamily,
   radius,
   screenRadius,
   shadow,
@@ -958,6 +973,7 @@ export function PhoneFrame({
   // Dynamic Island are a physical object: they take the dark end of the system
   // whatever mode the screen is in.
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? FONT_FAMILY;
   const island = useSnapCnTheme(theme, "dark");
   const body = bezelColor ?? t.foreground;
   const glass = screenColor ?? t.card;
@@ -984,7 +1000,7 @@ export function PhoneFrame({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
       }}
     >
       {/* Entrance + float rig */}
@@ -1057,7 +1073,7 @@ export function PhoneFrame({
                   (screenSrc ? (
                     <ScreenMedia src={screenSrc} frame={frame} />
                   ) : (
-                    <RideSummaryDemo frame={frame} />
+                    <RideSummaryDemo frame={frame} face={face} />
                   ))}
 
                 {/* Dynamic island */}

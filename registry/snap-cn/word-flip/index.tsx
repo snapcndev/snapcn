@@ -11,7 +11,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  mixOklch,
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 /**
  * Pure animation math for WordFlip. Everything above the component is
@@ -254,7 +259,7 @@ export function WordFlip({
   loop = true,
   motion,
   perspective = 6.5,
-  fontFamily = FONT_FAMILY,
+  fontFamily,
   fontSize = 72,
   color,
   fontWeight = 600,
@@ -266,6 +271,7 @@ export function WordFlip({
   const frame = useCurrentFrame() * speed;
   const { fps } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? FONT_FAMILY;
   const fill = color ?? t.foreground;
   const stops = gradient ?? [
     t.primary,
@@ -378,7 +384,7 @@ export function WordFlip({
     fontWeight,
     color: fill,
     letterSpacing: "-0.02em",
-    fontFamily,
+    fontFamily: face,
     lineHeight: 1.25,
     whiteSpace: "pre",
     // Hinting re-snaps every stem to the pixel grid as the size slides, so the

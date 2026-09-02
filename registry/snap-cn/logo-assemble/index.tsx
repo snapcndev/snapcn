@@ -11,6 +11,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -44,6 +45,15 @@ export interface LogoAssembleProps {
    * has to be dark for it to read. Pass `"light"` with a dark logo asset.
    */
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
 }
 
 const FONT_FAMILY =
@@ -191,10 +201,12 @@ export function LogoAssemble({
   className,
   theme,
   mode,
+  fontFamily,
 }: LogoAssembleProps) {
   const frame = useCurrentFrame() * speed;
   const { width, height } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode ?? "dark");
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? FONT_FAMILY;
   const stage = background ?? t.background;
   // A shadow is cast in the dark direction whatever the mode, so it is walked
   // from the stage toward black — not toward `foreground`, which is near-white
@@ -236,7 +248,7 @@ export function LogoAssemble({
         inset: 0,
         overflow: "hidden",
         backgroundColor: stage,
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
         textRendering: "geometricPrecision",
       }}
     >

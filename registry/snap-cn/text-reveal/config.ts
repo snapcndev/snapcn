@@ -1,5 +1,6 @@
 import {
   type ComponentConfig,
+  FONT_FAMILY_CONTROL,
   FONT_WEIGHT_OPTIONS,
   FPS,
   H,
@@ -114,6 +115,7 @@ export const textRevealConfig: ComponentConfig = {
       step: 1,
       label: "Word fade",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 90,
   fps: FPS,

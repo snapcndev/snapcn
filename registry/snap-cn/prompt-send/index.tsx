@@ -13,6 +13,7 @@ import {
 import { inputStyleContext } from "@/components/snap-cn/input";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -591,7 +592,7 @@ export function PromptSend({
   chipFontSize = 12.3,
   radius = 22,
   sendSize = 27.4,
-  fontFamily = SANS,
+  fontFamily,
   revealAt = 0.025,
   revealDuration = PANEL_GROW,
   fieldAt = 0.417,
@@ -620,6 +621,7 @@ export function PromptSend({
   const frame = useCurrentFrame();
   const { width: compWidth, height: compHeight, fps } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const ui = inputStyleContext(t);
   const accent = accentColor ?? t.primary;
 
@@ -637,9 +639,7 @@ export function PromptSend({
     sendSize,
     chipWidths: labels.map(
       (c) =>
-        measureWidth(c, chipFontSize, fontFamily) +
-        chipFontSize * CHIP_PAD_X * 2 +
-        2,
+        measureWidth(c, chipFontSize, face) + chipFontSize * CHIP_PAD_X * 2 + 2,
     ),
   });
 
@@ -663,7 +663,7 @@ export function PromptSend({
   const count = typedCount(now, typeStart, typeDuration, text.length);
   const typed = text.slice(0, count);
   const progress = typedProgress(now, typeStart, typeDuration);
-  const fullWidth = measureWidth(text, fontSize, fontFamily);
+  const fullWidth = measureWidth(text, fontSize, face);
 
   // The line rides the *continuous* curve, so a sentence longer than the field
   // scrolls under the caret the way a real single-line input does — and the
@@ -866,7 +866,7 @@ export function PromptSend({
                   display: "flex",
                   alignItems: "center",
                   height: L.lineHeight,
-                  fontFamily,
+                  fontFamily: face,
                   fontWeight: 400,
                   fontSize,
                   lineHeight: `${L.lineHeight}px`,
@@ -952,7 +952,7 @@ export function PromptSend({
                           background: t.card,
                           border: `1px solid ${hairline}`,
                           color: t.foreground,
-                          fontFamily,
+                          fontFamily: face,
                           fontWeight: 400,
                           fontSize: chipFontSize,
                           // The label rides low in the pill on the reference,

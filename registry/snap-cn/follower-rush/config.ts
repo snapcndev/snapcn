@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const followerRushConfig: ComponentConfig = {
   componentName: "FollowerRush",
@@ -30,6 +36,7 @@ export const followerRushConfig: ComponentConfig = {
       options: ["horizontal", "vertical"],
       label: "Orientation",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // `speed` is appended from SHARED_CONTROLS in registry/__index__.tsx.
   // `followers` is an array → not a control; the preview uses SAMPLE_FOLLOWERS.

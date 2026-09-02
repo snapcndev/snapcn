@@ -13,6 +13,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -51,6 +52,15 @@ export interface LaptopFrameProps {
   /** Design-system token overrides — applied to the screen's contents. */
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   /** Notch status indicator. The macOS system green is the look, not a token. */
   indicatorColor?: string;
   /** rotateX of the lid at rest, in degrees (positive tips the top back). */
@@ -688,6 +698,7 @@ export function LaptopFrame({
   screenColor,
   theme,
   mode,
+  fontFamily,
   indicatorColor = "#30D158",
   restTilt = REST_TILT,
   radius = LID_RADIUS,
@@ -706,6 +717,7 @@ export function LaptopFrame({
   // and the drop shadow are a physical object photographed on a desk: they take
   // the dark end of the system whatever mode the screen is in.
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? FONT_FAMILY;
   const shell = useSnapCnTheme(theme, "dark");
   const lid = bezelColor ?? mixOklch(shell.background, shell.foreground, 0.09);
   const glass = screenColor ?? t.card;
@@ -747,7 +759,7 @@ export function LaptopFrame({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
       }}
     >
       {/* Camera: the screen-takeover dolly. `geometricPrecision` keeps any scaled

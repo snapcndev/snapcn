@@ -11,7 +11,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme, withAlpha } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+  withAlpha,
+} from "@/lib/snap-cn-ui";
 
 /**
  * A "moodboard reveal": a kinetic headline with a swapping inline image, then a
@@ -41,6 +46,15 @@ export interface MoodboardRevealProps {
    * this scene spans light and dark, so it takes no `mode`.
    */
   theme?: Partial<SnapCnTheme>;
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   speed?: number;
   className?: string;
 }
@@ -317,6 +331,7 @@ export function MoodboardReveal({
   darkColor,
   lightColor,
   theme,
+  fontFamily,
   speed = 1,
   className,
 }: MoodboardRevealProps) {
@@ -326,6 +341,7 @@ export function MoodboardReveal({
   // the system at once rather than one resolved mode. Both still take a user's
   // `theme` override.
   const dark = useSnapCnTheme(theme, "dark");
+  const face = resolveFont(fontFamily ?? dark.fontFamily) ?? FONT_FAMILY;
   const light = useSnapCnTheme(theme, "light");
   const cx = width / 2;
   const cy = height / 2;
@@ -366,7 +382,7 @@ export function MoodboardReveal({
         inset: 0,
         overflow: "hidden",
         backgroundColor: bgColor,
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
         // Any scaled text renders as the outline, not re-hinted per frame.
         textRendering: "geometricPrecision",
       }}

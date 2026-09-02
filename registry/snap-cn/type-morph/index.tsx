@@ -13,7 +13,12 @@ import {
   useVideoConfig,
 } from "remotion";
 import { TextReveal } from "@/components/snap-cn/text-reveal";
-import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  mixOklch,
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 import {
   CUT_AT,
   CUT2_AT,
@@ -107,6 +112,15 @@ export interface TypeMorphProps {
   size?: number;
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
 }
 
 /**
@@ -164,6 +178,7 @@ function pairGlyphs(from: string, to: string): (number | null)[] {
 function useGlyphOffsets(
   strings: string[],
   fontSize: number,
+  face: string,
   /** Glyphs before this index in string 0 are rendered at 400, the rest at 700. */
   _regularUntil: number,
 ) {
@@ -205,7 +220,7 @@ function useGlyphOffsets(
         visibility: "hidden",
         pointerEvents: "none",
         whiteSpace: "pre",
-        fontFamily: SANS,
+        fontFamily: face,
         fontSize,
         letterSpacing: "-0.035em",
         ...CRISP,
@@ -262,10 +277,12 @@ export function TypeMorph({
   size = 0.1256,
   theme,
   mode,
+  fontFamily,
 }: TypeMorphProps) {
   const frame = useCurrentFrame();
   const { height, width } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const _hot = accent ?? t.primary;
   const paper = background ?? t.background;
   const type = ink ?? t.foreground;
@@ -275,6 +292,7 @@ export function TypeMorph({
   const { probe, offsets } = useGlyphOffsets(
     [typed, emphasis, morphTo, finally_],
     fontSize,
+    face,
     lead.length,
   );
 
@@ -452,7 +470,7 @@ export function TypeMorph({
     <AbsoluteFill
       style={{
         background: floodColor ?? paper,
-        fontFamily: SANS,
+        fontFamily: face,
         ...CRISP,
       }}
     >

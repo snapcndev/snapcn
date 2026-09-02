@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * Colour defaults are the design system's own token values, spelled out.
@@ -94,6 +100,7 @@ export const answerHighlightConfig: ComponentConfig = {
       label: "Selection",
       brand: "accent",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // 0.6 question + ~34 words at 0.055 + 0.45 + the drag + 0.6 + the word, on
   // the 30fps clock, then a beat to read the result.

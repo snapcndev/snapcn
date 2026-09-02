@@ -1,5 +1,6 @@
 import {
   type ComponentConfig,
+  FONT_FAMILY_CONTROL,
   FONT_WEIGHT_OPTIONS,
   FPS,
   H,
@@ -84,6 +85,10 @@ export const textHighlightConfig: ComponentConfig = {
       type: "image",
       default: "",
       label: "Logo URL",
+      // The CTA is where a video signs its name, so this follows the brand kit
+      // like the two logo stings do. Empty by default, so a timeline with no kit
+      // keeps the built-in mark.
+      brand: "logo",
     },
     logoScale: {
       type: "number",
@@ -175,6 +180,7 @@ export const textHighlightConfig: ComponentConfig = {
       options: FONT_WEIGHT_OPTIONS,
       label: "Font weight",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // 6 start + 14 wipe + 12 hold + 24 rush. The ink closes over the last of the backdrop
   // three frames before the rush formally ends, and that is all the flat colour this

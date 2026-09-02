@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 import { totalFrames } from "./type-morph-timeline";
 
 export const typeMorphConfig: ComponentConfig = {
@@ -22,6 +28,7 @@ export const typeMorphConfig: ComponentConfig = {
     // The reference's paper, not the theme's warm off-white.
     background: { type: "color", default: "#ffffff", label: "Page" },
     ink: { type: "color", default: "#000000", label: "Text" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: totalFrames(false),
   fps: FPS,

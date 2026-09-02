@@ -12,7 +12,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme, withAlpha } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+  withAlpha,
+} from "@/lib/snap-cn-ui";
 
 // Montserrat, 700–900. This is the face the look is actually made of: the caption
 // styles every big channel uses are a heavy geometric grotesque, and Inter at 700
@@ -129,6 +134,15 @@ export interface WordCaptionsProps {
   theme?: Partial<SnapCnTheme>;
   /** Defaults to `"dark"` — a caption scrim is lit for footage. */
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   /** Backdrop pill behind the caption line. Any CSS color; empty string hides it. */
   pillColor?: string;
   /** Active-word accent used by the `highlight` and `color` styles. */
@@ -557,6 +571,7 @@ export function WordCaptions({
   pillColor,
   theme,
   mode,
+  fontFamily,
   accentColor = "#FFE81F",
   accentCycle = DEFAULT_ACCENT_CYCLE,
   strokeColor = "#000000",
@@ -573,6 +588,7 @@ export function WordCaptions({
   // from the dark end of the system by default. The accent, the outline and
   // the cycle are the caption's look and stay props (design-system Rule 3c).
   const t = useSnapCnTheme(theme, mode ?? "dark");
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? MONTSERRAT;
   const ink = textColor ?? t.foreground;
   const scrim = pillColor ?? withAlpha(t.background, 0.55);
 
@@ -680,7 +696,7 @@ export function WordCaptions({
     : ("transform" as const);
 
   const typeStyle = {
-    fontFamily: MONTSERRAT,
+    fontFamily: face,
     fontWeight: weight,
     fontSize: size,
     lineHeight: `${lineHeight}px`,

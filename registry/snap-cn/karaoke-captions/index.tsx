@@ -12,7 +12,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme, withAlpha } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+  withAlpha,
+} from "@/lib/snap-cn-ui";
 
 // The face the look is made of. Inter at 600 is a subtitle; a caption is a heavy
 // geometric grotesque carrying an outline.
@@ -71,6 +76,15 @@ export interface KaraokeCaptionsProps {
   emphasize?: string;
   /** Design-system token overrides. */
   theme?: Partial<SnapCnTheme>;
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   /** Light or dark pill chrome. */
   mode?: CaptionTheme;
   /** Color of emphasized words. */
@@ -422,6 +436,7 @@ export function KaraokeCaptions({
   emphasize = "automatically",
   preset = "boxed",
   theme,
+  fontFamily,
   mode = "dark",
   accentColor = "#FFE81F",
   fontSize,
@@ -442,6 +457,7 @@ export function KaraokeCaptions({
 
   const look = KARAOKE_LOOKS[preset] ?? KARAOKE_LOOKS.karaoke;
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? MONTSERRAT;
   const palette = karaokePalette(t);
   const safeArea = CAPTION_SAFE_AREAS[aspect] ?? CAPTION_SAFE_AREAS.landscape;
 
@@ -543,7 +559,7 @@ export function KaraokeCaptions({
     : ("transform" as const);
 
   const typeStyle = {
-    fontFamily: MONTSERRAT,
+    fontFamily: face,
     fontWeight: weight,
     fontSize: size,
     lineHeight: `${lineHeight}px`,

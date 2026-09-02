@@ -10,6 +10,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -281,7 +282,7 @@ export function AnswerHighlight({
   answerColor,
   accentColor,
   centerY = 0.5,
-  fontFamily = SANS,
+  fontFamily,
   theme: themeOverride,
   mode,
   speed = 1,
@@ -289,6 +290,7 @@ export function AnswerHighlight({
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const t = useSnapCnTheme(themeOverride, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
 
   const fc = frame * speed;
   const paper = paperColor ?? t.background;
@@ -371,7 +373,7 @@ export function AnswerHighlight({
         >
           <div
             style={{
-              fontFamily,
+              fontFamily: face,
               fontSize: QUESTION_FONT * height,
               fontWeight: 500,
               lineHeight: 1,
@@ -396,7 +398,7 @@ export function AnswerHighlight({
             No DOM measurement, and it survives any copy you put in it. */}
         <div
           style={{
-            fontFamily,
+            fontFamily: face,
             fontSize: font,
             fontWeight: 400,
             lineHeight: ANSWER_LEADING,

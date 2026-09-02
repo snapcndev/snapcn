@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * The reference clip is 1.078s and stops mid-word — it cuts at 0.81s and is still
@@ -83,6 +89,7 @@ export const promptZoomConfig: ComponentConfig = {
       options: ["light", "dark"],
       label: "Mode",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // `speed` is appended from SHARED_CONTROLS in registry/__index__.tsx.
   // `chips` is an array → not a control, and defaults to none.

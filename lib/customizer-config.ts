@@ -15,13 +15,16 @@ export type PreviewBackdropFill =
  * and renders the component unreadable. So it is declared, once, by the person
  * who knows what the knob does.
  *
- * Only two roles, deliberately. `accent` is a colour that is *supposed* to be
+ * `font` is the third: the face a scene paints its words in, safe to move as a
+ * set because every value on the list is a face this registry has loaded.
+ *
+ * Only two colour roles, deliberately. `accent` is a colour that is *supposed* to be
  * loud — a highlight, a glow, a colour field — so replacing it can never hide
  * text behind its own background. Bare `color` and `textColor` controls are
  * left unmarked for exactly that reason: they are ink, and ink that follows a
  * brand colour is one light palette away from an invisible headline.
  */
-export type BrandRole = "accent" | "logo";
+export type BrandRole = "accent" | "logo" | "font";
 
 export type ControlType =
   | { type: "text"; default: string; label: string }
@@ -45,7 +48,13 @@ export type ControlType =
       label: string;
     }
   | { type: "color"; default: string; label: string; brand?: BrandRole }
-  | { type: "select"; default: string; options: string[]; label: string }
+  | {
+      type: "select";
+      default: string;
+      options: readonly string[];
+      label: string;
+      brand?: BrandRole;
+    }
   | { type: "boolean"; default: boolean; label: string };
 
 export type ControlConfig = Record<string, ControlType>;
@@ -74,6 +83,33 @@ export interface ComponentConfig {
   snippet?: (values: Record<string, unknown>) => string;
   previewBackdrop?: PreviewBackdropFill;
 }
+
+/**
+ * The faces `registry/snap-cn-ui/core/fonts.ts` loads, by label.
+ *
+ * Repeated here rather than imported because that module calls `loadFont()` at
+ * module scope, and the manifest scripts that read these configs run in plain
+ * Node with no Remotion around them. `Default` means "keep the face the
+ * component was designed with" — `resolveFont` maps it back to nothing.
+ */
+export const FONT_FAMILY_OPTIONS = [
+  "Default",
+  "Inter",
+  "Geist",
+  "Space Grotesk",
+  "Outfit",
+  "Montserrat",
+  "Instrument Serif",
+];
+
+/** The same knob on every scene that paints words, so a brand kit can set one value. */
+export const FONT_FAMILY_CONTROL = {
+  type: "select",
+  default: "Default",
+  options: FONT_FAMILY_OPTIONS,
+  label: "Font",
+  brand: "font",
+} as const;
 
 export const FPS = 30;
 export const W = 1280;

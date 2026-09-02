@@ -20,7 +20,12 @@ import {
 } from "remotion";
 import { Caret } from "@/components/snap-cn/caret";
 import { inputStyleContext } from "@/components/snap-cn/input";
-import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  mixOklch,
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 // Outfit Light. Identified by measuring the reference's letterforms against a
 // field of candidates: its stem/cap ratio is 0.121, and Outfit 300 is the only
@@ -449,10 +454,11 @@ export function SearchTyping({
   const frame = useCurrentFrame();
   const { fps, width: frameWidth, height: frameHeight } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? OUTFIT;
   // The very same context the shadcn <Input> paints itself from, so this field and
   // that one cannot drift apart.
   const ui = inputStyleContext(t);
-  const resolvedFontFamily = fontFamily ?? OUTFIT;
+  const resolvedFontFamily = face;
 
   const H = LAYOUT_UNIT;
   const fontSize = R.fontSize * H;

@@ -16,6 +16,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -41,6 +42,15 @@ export interface HeroLaunchProps {
   theme?: Partial<SnapCnTheme>;
   /** Defaults to `"dark"` — the scene is a cinematic stage, lit for dark. */
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
 }
 
 const PERSP = 1000;
@@ -153,10 +163,12 @@ export function HeroLaunch({
   image2 = SHOWCASE[1],
   theme,
   mode,
+  fontFamily,
 }: HeroLaunchProps) {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode ?? "dark");
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const s = height / 720;
 
   const cardW = 1000 * s;
@@ -241,7 +253,7 @@ export function HeroLaunch({
   });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: t.background, fontFamily: SANS }}>
+    <AbsoluteFill style={{ backgroundColor: t.background, fontFamily: face }}>
       <AbsoluteFill style={{ transform: `translateY(${groupY}px)` }}>
         <div style={cardBox(leftX, leftOpacity)}>
           <div style={zoom(leftScale)}>

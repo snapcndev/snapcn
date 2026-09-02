@@ -27,6 +27,7 @@ import {
   MAX_CLIPS,
   MAX_TOTAL_FRAMES,
 } from "@/lib/video-editor/types";
+import { EMPTY_BRAND } from "../brand";
 
 const KEY = "snapcn.editor.draft.v1";
 
@@ -58,6 +59,8 @@ const draft = (over: Partial<EditorDraft> = {}): EditorDraft => ({
   clips: [clip()],
   audio: null,
   font: "Geist",
+  brand: EMPTY_BRAND,
+  tempo: 1,
   ...over,
 });
 

@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const terminalSimulatorConfig: ComponentConfig = {
   componentName: "TerminalSimulator",
@@ -36,6 +42,7 @@ export const terminalSimulatorConfig: ComponentConfig = {
       label: "Chunk size",
     },
     zoom: { type: "boolean", default: false, label: "Extra zoom" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 200,
   fps: FPS,

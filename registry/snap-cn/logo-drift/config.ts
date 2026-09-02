@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * The reference clip is 3.37s and cuts while the headline is still blurring out.
@@ -143,6 +149,7 @@ export const logoDriftConfig: ComponentConfig = {
       options: ["light", "dark"],
       label: "Mode",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // `speed` is appended from SHARED_CONTROLS in registry/__index__.tsx.
   durationInFrames: 108,

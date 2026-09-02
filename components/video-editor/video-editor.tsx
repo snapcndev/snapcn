@@ -19,9 +19,15 @@ import { useTrackEvent } from "@/lib/analytics";
 import type { AuthProviderId } from "@/lib/auth-providers";
 import { getDefaults } from "@/lib/customizer-config";
 import { cn } from "@/lib/utils";
+import {
+  applyBrand,
+  type BrandKit,
+  EMPTY_BRAND,
+} from "@/lib/video-editor/brand";
 import type { EditorDraft } from "@/lib/video-editor/draft";
 import { DEFAULT_FONT } from "@/lib/video-editor/fonts";
 import { moveItem } from "@/lib/video-editor/reorder";
+import { applyTempo, DEFAULT_TEMPO } from "@/lib/video-editor/tempo";
 import {
   DEFAULT_PX_PER_SECOND,
   fitPxPerSecond,
@@ -88,6 +94,8 @@ export function VideoEditor({
   const [removeWatermark, setRemoveWatermark] = useState(false);
   const [audio, setAudio] = useState<AudioTrack | null>(null);
   const [font, setFont] = useState<string>(DEFAULT_FONT);
+  const [brand, setBrandState] = useState<BrandKit>(EMPTY_BRAND);
+  const [tempo, setTempoState] = useState(DEFAULT_TEMPO);
   const [currentFrame, setCurrentFrame] = useState(0);
   const playerRef = useRef<EditorPlayerHandle | null>(null);
   const trackShellRef = useRef<HTMLDivElement | null>(null);
@@ -144,6 +152,8 @@ export function VideoEditor({
     setClips(draft?.clips ?? []);
     setAudio(draft?.audio ?? null);
     setFont(draft?.font ?? DEFAULT_FONT);
+    setBrandState(draft?.brand ?? EMPTY_BRAND);
+    setTempoState(draft?.tempo ?? DEFAULT_TEMPO);
     setSelectedId(null);
   }, []);
 
@@ -159,6 +169,8 @@ export function VideoEditor({
     clips,
     audio,
     font,
+    brand,
+    tempo,
     onRestore: restore,
   });
 
@@ -210,8 +222,15 @@ export function VideoEditor({
             ? backdrop.value
             : DEFAULT_BACKGROUND,
       };
-      setClips((prev) => [...prev, clip]);
-      setSelectedId(clip.id);
+      // Applied on the way in, not after: a clip that appeared in the
+      // library's colours and then repainted a frame later reads as a bug.
+      const [branded] = applyTempo(
+        applyBrand([clip], brand, (slug) => registry[slug]?.config.controls),
+        tempo,
+        (slug) => registry[slug]?.config.controls,
+      );
+      setClips((prev) => [...prev, branded]);
+      setSelectedId(branded.id);
       // Which components people reach for when composing a real video — a
       // different ranking from which docs pages get read.
       trackEvent("editor_clip_added", {
@@ -219,8 +238,34 @@ export function VideoEditor({
         clip_count: clips.length + 1,
       });
     },
-    [clips, trackEvent],
+    [clips, brand, tempo, trackEvent],
   );
+
+  /**
+   * The kit, and every clip already on the timeline, in one move.
+   *
+   * Repainting existing clips is the whole feature — a kit that only applied to
+   * what you add next would mean rebuilding the video to change one colour.
+   */
+  const setBrand = useCallback((next: BrandKit) => {
+    setBrandState(next);
+    setClips((prev) =>
+      applyBrand(prev, next, (slug) => registry[slug]?.config.controls),
+    );
+  }, []);
+
+  /**
+   * The dial, and every clip it can re-time.
+   *
+   * `applyTempo` reads each clip's current `speed` to work out the ratio, so
+   * calling this repeatedly walks the timeline rather than compounding it.
+   */
+  const setTempo = useCallback((next: number) => {
+    setTempoState(next);
+    setClips((prev) =>
+      applyTempo(prev, next, (slug) => registry[slug]?.config.controls),
+    );
+  }, []);
 
   // Shown once, after a download, to someone we have no address for.
   const [emailPromptOpen, setEmailPromptOpen] = useState(false);
@@ -546,6 +591,10 @@ export function VideoEditor({
         <EditorStatusBar
           font={font}
           onFontChange={setFont}
+          brand={brand}
+          onBrandChange={setBrand}
+          tempo={tempo}
+          onTempoChange={setTempo}
           pxPerSecond={pxPerSecond}
           onZoom={setPxPerSecond}
           onFit={fitToWidth}

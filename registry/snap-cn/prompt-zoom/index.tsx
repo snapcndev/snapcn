@@ -9,7 +9,12 @@ import {
   useVideoConfig,
 } from "remotion";
 import { inputStyleContext } from "@/components/snap-cn/input";
-import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  mixOklch,
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 // Loaded through @remotion/google-fonts, never a CSS variable — a Remotion
 // bundle has none of the app's CSS, so a `var(--font-…)` gets you the right face
@@ -52,6 +57,15 @@ export interface PromptZoomProps {
   accentColor?: string;
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   speed?: number;
 }
 
@@ -224,11 +238,13 @@ export function PromptZoom({
   accentColor,
   theme,
   mode,
+  fontFamily,
   speed = 1,
 }: PromptZoomProps) {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const ui = inputStyleContext(t);
   const accent = accentColor ?? t.primary;
 
@@ -298,7 +314,7 @@ export function PromptZoom({
                 background: t.card,
                 border: `1px solid ${borderColor}`,
                 color: t.foreground,
-                fontFamily: SANS,
+                fontFamily: face,
                 fontWeight: 500,
                 fontSize: 11,
                 lineHeight: 1,
@@ -388,7 +404,7 @@ export function PromptZoom({
                 right: PAD,
                 display: "flex",
                 alignItems: "center",
-                fontFamily: SANS,
+                fontFamily: face,
                 fontWeight: 400,
                 fontSize: 12,
                 lineHeight: 1.4,
@@ -420,7 +436,7 @@ export function PromptZoom({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                fontFamily: SANS,
+                fontFamily: face,
                 fontSize: 10,
                 color: t.mutedForeground,
               }}

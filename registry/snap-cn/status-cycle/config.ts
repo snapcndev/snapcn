@@ -1,5 +1,6 @@
 import {
   type ComponentConfig,
+  FONT_FAMILY_CONTROL,
   FONT_WEIGHT_OPTIONS,
   FPS,
   H,
@@ -136,6 +137,7 @@ export const statusCycleConfig: ComponentConfig = {
       step: 1,
       label: "Start at (frames)",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // The last chip lands at frame 115 and its step settles by ~124; the rest is
   // the hold the field needs to read as finished rather than cut.

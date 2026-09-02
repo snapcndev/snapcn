@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const orbitGalleryConfig: ComponentConfig = {
   componentName: "OrbitGallery",
@@ -77,6 +83,7 @@ export const orbitGalleryConfig: ComponentConfig = {
     },
     background: { type: "color", default: "#050505", label: "Background" },
     textColor: { type: "color", default: "#FFFFFF", label: "Text color" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 300,
   fps: FPS,

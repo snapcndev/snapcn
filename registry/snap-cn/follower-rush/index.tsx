@@ -11,7 +11,11 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 const { fontFamily: FONT_FAMILY } = loadSans("normal", {
   weights: ["400", "500", "700", "800"],
@@ -40,6 +44,15 @@ export interface FollowerRushProps {
   /** Design-system token overrides. */
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   orientation?: "horizontal" | "vertical";
   speed?: number;
 }
@@ -264,11 +277,13 @@ function Avatar({
   size,
   ring,
   theme,
+  face,
 }: {
   follower: Follower;
   size: number;
   ring: number;
   theme: Theme;
+  face: string;
 }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return (
@@ -286,7 +301,7 @@ function Avatar({
         alignItems: "center",
         justifyContent: "center",
         color: theme.fgMuted,
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
         fontWeight: 700,
         fontSize: size * 0.4,
         overflow: "hidden",
@@ -332,12 +347,14 @@ function FollowLine({
   fontSize,
   theme,
   accent,
+  face,
 }: {
   name: string;
   others: number;
   fontSize: number;
   theme: Theme;
   accent: string;
+  face: string;
 }) {
   return (
     <div
@@ -346,7 +363,7 @@ function FollowLine({
         alignItems: "center",
         gap: fontSize * 0.24,
         whiteSpace: "nowrap",
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
         fontSize,
         lineHeight: 1,
       }}
@@ -374,12 +391,14 @@ export function FollowerRush({
   accentColor,
   theme,
   mode,
+  fontFamily,
   orientation = "horizontal",
   speed = 1,
 }: FollowerRushProps) {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
   const tokens = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? tokens.fontFamily) ?? FONT_FAMILY;
   const t = paletteFrom(tokens);
   const accent = accentColor ?? tokens.primary;
   const pool = followers.length > 0 ? followers : SAMPLE_FOLLOWERS;
@@ -535,9 +554,16 @@ export function FollowerRush({
             }}
           >
             <PersonIcon color={accent} size={iconSize} />
-            <Avatar follower={pool[0]} size={D} ring={ring} theme={t} />
+            <Avatar
+              follower={pool[0]}
+              size={D}
+              ring={ring}
+              theme={t}
+              face={face}
+            />
             <div style={{ marginLeft: iconGap * 0.6 }}>
               <FollowLine
+                face={face}
                 name={pool[0].name}
                 others={0}
                 fontSize={fontSize}
@@ -610,7 +636,13 @@ export function FollowerRush({
                   willChange,
                 }}
               >
-                <Avatar follower={follower} size={D} ring={ring} theme={t} />
+                <Avatar
+                  follower={follower}
+                  size={D}
+                  ring={ring}
+                  theme={t}
+                  face={face}
+                />
               </div>
             );
           })}
@@ -632,6 +664,7 @@ export function FollowerRush({
           }}
         >
           <FollowLine
+            face={face}
             name={leadName}
             others={shownOthers}
             fontSize={fontSize}

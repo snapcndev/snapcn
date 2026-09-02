@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * The reference clip is 5.02s and ends while the send bloom is still opening.
@@ -172,6 +178,7 @@ export const promptSendConfig: ComponentConfig = {
       options: ["light", "dark"],
       label: "Mode",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // `speed` is appended from SHARED_CONTROLS in registry/__index__.tsx.
   durationInFrames: 165,

@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * Colour defaults are the design system's own token values, spelled out.
@@ -78,6 +84,7 @@ export const agentStepsConfig: ComponentConfig = {
       label: "Check",
       brand: "accent",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // 0.683 prompt + six steps (0.45 x 5 + 0.283) + 0.75 to the result + a beat
   // on it, on the 30fps clock. The reference runs 5.2s end to end.

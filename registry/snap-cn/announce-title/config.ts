@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * The snapcn mark, as a path string so the customizer can edit it in a text
@@ -54,6 +60,7 @@ export const announceTitleConfig: ComponentConfig = {
       label: "Glow strength",
     },
     taglineColor: { type: "color", default: "#f2f8ff", label: "Tagline ink" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 170,
   fps: FPS,

@@ -1,7 +1,11 @@
 "use client";
 
 import { Easing, interpolate, useCurrentFrame } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 export type TextSwapTransition =
   | "fly-through"
@@ -257,6 +261,15 @@ export interface TextSwapProps {
   /** Design-system token overrides. */
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
 }
 
 export function TextSwap({
@@ -277,6 +290,7 @@ export function TextSwap({
   className,
   theme,
   mode,
+  fontFamily,
 }: TextSwapProps) {
   const frame = useCurrentFrame() * speed;
   const t = useSnapCnTheme(theme, mode);
@@ -313,7 +327,9 @@ export function TextSwap({
     (_, sample) => frame - (sample / trail) * SHUTTER,
   );
 
-  const fontStack = "-apple-system, BlinkMacSystemFont, sans-serif";
+  const fontStack =
+    resolveFont(fontFamily ?? t.fontFamily) ??
+    "-apple-system, BlinkMacSystemFont, sans-serif";
   const lineStyle: React.CSSProperties = {
     fontSize,
     fontWeight,

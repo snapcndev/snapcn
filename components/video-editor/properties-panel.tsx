@@ -139,7 +139,13 @@ export function PropertiesPanel({
       </div>
 
       <ComponentCustomizer
-        controls={entry.config.controls}
+        // `brand: "font"` is the FontPicker directly above; the docs
+        // customizer has no picker, which is why the control still exists.
+        controls={Object.fromEntries(
+          Object.entries(entry.config.controls).filter(
+            ([, c]) => !("brand" in c) || c.brand !== "font",
+          ),
+        )}
         values={clip.props}
         onChange={onPropChange}
         columns={1}

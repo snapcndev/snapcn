@@ -2,13 +2,16 @@
 
 import { Maximize2, Minus, Plus } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import type { BrandKit } from "@/lib/video-editor/brand";
 import {
   clampZoom,
   formatTimecode,
   sliderToZoom,
   zoomToSlider,
 } from "@/lib/video-editor/timeline-zoom";
+import { BrandKitPicker } from "./brand-kit-picker";
 import { FontPicker } from "./font-picker";
+import { TempoPicker } from "./tempo-picker";
 
 /**
  * The bar under the timeline: zoom, a fit-to-width button, and the clock.
@@ -19,6 +22,10 @@ import { FontPicker } from "./font-picker";
 export function EditorStatusBar({
   font,
   onFontChange,
+  brand,
+  onBrandChange,
+  tempo,
+  onTempoChange,
   pxPerSecond,
   onZoom,
   onFit,
@@ -29,6 +36,10 @@ export function EditorStatusBar({
 }: {
   font: string;
   onFontChange: (next: string) => void;
+  brand: BrandKit;
+  onBrandChange: (next: BrandKit) => void;
+  tempo: number;
+  onTempoChange: (next: number) => void;
   pxPerSecond: number;
   onZoom: (pxPerSecond: number) => void;
   onFit: () => void;
@@ -50,6 +61,8 @@ export function EditorStatusBar({
             restyles every scene at once, so it does not belong in a clip's
             properties. */}
         <FontPicker value={font} onChange={onFontChange} />
+        <BrandKitPicker value={brand} onChange={onBrandChange} />
+        <TempoPicker value={tempo} onChange={onTempoChange} />
       </div>
 
       <div className="flex min-w-0 flex-wrap items-center gap-2">

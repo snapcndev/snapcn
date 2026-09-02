@@ -11,7 +11,11 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 export interface TextSwellProps {
   /** The sentence to assemble. Its first word leads, and everything else pushes it left. */
@@ -24,6 +28,15 @@ export interface TextSwellProps {
   /** Design-system token overrides. */
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
 
   /** Frames the lead word fades in over. */
   introDuration?: number;
@@ -155,6 +168,7 @@ export function TextSwell({
   fontWeight = 600,
   theme,
   mode,
+  fontFamily,
   introDuration = 8,
   riseDistance = 0.7,
   riseDuration = 10,
@@ -181,6 +195,9 @@ export function TextSwell({
   const frame = useCurrentFrame() * speed;
   const { width } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face =
+    resolveFont(fontFamily ?? t.fontFamily) ??
+    "-apple-system, BlinkMacSystemFont, sans-serif";
   const fill = color ?? t.foreground;
 
   const words = text.split(" ").filter(Boolean);
@@ -395,7 +412,7 @@ export function TextSwell({
           letterSpacing,
           lineHeight: 1.1,
           whiteSpace: "nowrap",
-          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+          fontFamily: face,
           // Pivot on the lead word's left edge, and on the baseline. See above:
           // the baseline is what must not move.
           transformOrigin: `0% ${baseline}px`,

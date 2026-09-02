@@ -11,6 +11,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -59,6 +60,15 @@ export interface OrbitGalleryProps {
   theme?: Partial<SnapCnTheme>;
   /** Defaults to `"dark"` — the orbit is a cinematic stage, lit for dark. */
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   /** Tiny captions pinned to the bottom edge. Empty strings hide them. */
   footerLeft?: string;
   footerCenter?: string;
@@ -208,6 +218,7 @@ export function OrbitGallery({
   textColor,
   theme,
   mode,
+  fontFamily,
   footerLeft = "",
   footerCenter = "",
   footerRight = "",
@@ -217,6 +228,7 @@ export function OrbitGallery({
   const frame = useCurrentFrame();
   const { width, height, fps, durationInFrames } = useVideoConfig();
   const tokens = useSnapCnTheme(theme, mode ?? "dark");
+  const face = resolveFont(fontFamily ?? tokens.fontFamily) ?? FONT_STACK;
   const stage = background ?? tokens.background;
   const ink = textColor ?? tokens.foreground;
   const t = frame * speed;
@@ -261,7 +273,7 @@ export function OrbitGallery({
   return (
     <AbsoluteFill
       className={className}
-      style={{ backgroundColor: stage, fontFamily: FONT_STACK }}
+      style={{ backgroundColor: stage, fontFamily: face }}
     >
       {cards.map((card) => {
         const p = archimedeanPoint(card.n, R, turns);

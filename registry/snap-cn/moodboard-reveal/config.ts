@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const moodboardRevealConfig: ComponentConfig = {
   componentName: "MoodboardReveal",
@@ -26,6 +32,7 @@ export const moodboardRevealConfig: ComponentConfig = {
     },
     darkColor: { type: "color", default: "#0A0A0A", label: "Start background" },
     lightColor: { type: "color", default: "#E7E7E7", label: "End background" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 150,
   fps: FPS,
