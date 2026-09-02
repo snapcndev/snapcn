@@ -1,12 +1,5 @@
-"use client";
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useTrackEvent } from "@/lib/analytics";
+import { NewsletterForm } from "@/components/newsletter-form";
 import { FadeUp } from "../fade-up";
-
-type Status = "idle" | "sending" | "done" | "error";
 
 /**
  * The launch list.
@@ -16,54 +9,15 @@ type Status = "idle" | "sending" | "done" | "error";
  * collected in August is warm in October; one collected in October is a cold
  * blast. So this asks now, months before there is anything to sell.
  *
- * A re-submitted address is treated as success by the route, so nobody is told
+ * The form itself is `<NewsletterForm>`, shared with the docs footer. This file
+ * is now only the band: the heading, the promise, and the animation. A
+ * re-submitted address is treated as success by the route, so nobody is told
  * off for signing up twice.
+ *
+ * No longer a client component — nothing here holds state, so the interactive
+ * half is the only thing that ships as JS.
  */
 export function Newsletter() {
-  const trackEvent = useTrackEvent();
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Where the signup came from. The `docs` string every registry component
-   * prints after `shadcn add` links here with `?ref=cli`, so the launch list
-   * can be split by the surface that earned it — otherwise a signup the CLI
-   * won is indistinguishable from someone who just scrolled the page.
-   */
-  function source() {
-    const ref = new URLSearchParams(window.location.search).get("ref");
-    return ref && /^[a-z0-9-]{1,32}$/.test(ref) ? ref : "home";
-  }
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (status === "sending") return;
-    setStatus("sending");
-    setError(null);
-    try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source: source() }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        setError(body?.error ?? "Something went wrong. Please try again.");
-        setStatus("error");
-        return;
-      }
-      trackEvent("email_subscribed", { source: source() });
-      setStatus("done");
-      setEmail("");
-    } catch {
-      setError("Couldn't reach the server. Please try again.");
-      setStatus("error");
-    }
-  }
-
   return (
     <section id="newsletter" className="relative pb-20 sm:pb-28">
       <div className="section">
@@ -83,39 +37,11 @@ export function Newsletter() {
         </FadeUp>
 
         <FadeUp delay={0.14}>
-          <form
-            onSubmit={onSubmit}
-            className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
-          >
-            <label htmlFor="newsletter-email" className="sr-only">
-              Email address
-            </label>
-            <Input
-              id="newsletter-email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={status === "sending"}
-              className="flex-1"
-            />
-            <Button type="submit" disabled={status === "sending"}>
-              {status === "sending" ? "Joining…" : "Join the list"}
-            </Button>
-          </form>
+          <NewsletterForm
+            defaultSource="home"
+            className="mx-auto mt-8 max-w-md [&_p]:text-center"
+          />
         </FadeUp>
-
-        {/* Announced, not just painted — the form is the only thing on the page
-            whose result a screen reader cannot infer from what moved. */}
-        <p
-          aria-live="polite"
-          className="mt-3 min-h-5 text-center text-sm text-muted-foreground"
-        >
-          {status === "done" && "You're on the list."}
-          {status === "error" && error}
-        </p>
       </div>
     </section>
   );
