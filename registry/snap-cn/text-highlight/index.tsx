@@ -13,6 +13,7 @@ import {
 } from "remotion";
 import {
   parseColor,
+  resolveFont,
   rgbToOklch,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -243,6 +244,15 @@ export interface TextHighlightProps {
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
   /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
+  /**
    * Final color of the highlighted span. Defaults to `accentColor` for the
    * "color" and "strikethrough" presets and to `baseColor` otherwise.
    */
@@ -363,6 +373,7 @@ export function TextHighlight({
   accentColor,
   theme,
   mode,
+  fontFamily,
   highlightedTextColor,
   replaceWith,
   startAt = 6,
@@ -388,6 +399,9 @@ export function TextHighlight({
   const frame = useCurrentFrame() * speed;
   const { fps, width, height } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face =
+    resolveFont(fontFamily ?? t.fontFamily) ??
+    "Inter, -apple-system, BlinkMacSystemFont, sans-serif";
   const base = baseColor ?? t.foreground;
   const accent = accentColor ?? t.primary;
   // A gloss sweep is white light in both modes, so it takes whichever of the
@@ -413,7 +427,7 @@ export function TextHighlight({
     color: base,
     letterSpacing: "-0.02em",
     lineHeight: 1.25,
-    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+    fontFamily: face,
     whiteSpace: "pre-wrap",
     textAlign: "center",
     maxWidth: "80%",

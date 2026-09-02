@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Easing, interpolate, useCurrentFrame } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 export type TextBuildAxis = "x" | "y";
 
@@ -35,6 +39,15 @@ export interface TextBuildProps {
   /** Design-system token overrides. */
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
 }
 
 const FONT_FAMILY = "-apple-system, BlinkMacSystemFont, sans-serif";
@@ -127,9 +140,11 @@ export function TextBuild({
   className,
   theme,
   mode,
+  fontFamily,
 }: TextBuildProps) {
   const frame = useCurrentFrame() * speed;
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? FONT_FAMILY;
   const fill = color ?? t.foreground;
 
   const defaults = AXIS_DEFAULTS[axis];
@@ -179,7 +194,7 @@ export function TextBuild({
           fontWeight,
           color: fill,
           letterSpacing: "-0.03em",
-          fontFamily: FONT_FAMILY,
+          fontFamily: face,
           whiteSpace: "nowrap",
         }}
       >

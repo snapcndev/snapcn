@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const phoneFrameConfig: ComponentConfig = {
   componentName: "PhoneFrame",
@@ -74,6 +80,7 @@ export const phoneFrameConfig: ComponentConfig = {
       default: "0 30px 70px rgba(16,24,40,0.28)",
       label: "Shadow",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 240,
   fps: FPS,

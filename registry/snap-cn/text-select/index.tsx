@@ -14,6 +14,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -394,6 +395,15 @@ export interface TextSelectProps {
   accentColor?: string;
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   speed?: number;
 }
 
@@ -487,11 +497,13 @@ export function TextSelect({
   accentColor,
   theme,
   mode,
+  fontFamily,
   speed = 1,
 }: TextSelectProps) {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const accent = accentColor ?? t.primary;
   const wash = glowColor ?? accent;
 
@@ -611,7 +623,7 @@ export function TextSelect({
             top: 0,
             visibility: "hidden",
             whiteSpace: "pre",
-            fontFamily: SANS,
+            fontFamily: face,
             fontSize,
             fontWeight,
             lineHeight: `${lineHeight}px`,
@@ -692,7 +704,7 @@ export function TextSelect({
               position: "absolute",
               inset: 0,
               textAlign: "center",
-              fontFamily: SANS,
+              fontFamily: face,
               fontSize,
               fontWeight,
               lineHeight: `${lineHeight}px`,

@@ -1,5 +1,6 @@
 import {
   type ComponentConfig,
+  FONT_FAMILY_CONTROL,
   FONT_WEIGHT_OPTIONS,
   FPS,
   H,
@@ -92,6 +93,7 @@ export const textBuildConfig: ComponentConfig = {
       options: FONT_WEIGHT_OPTIONS,
       label: "Font weight",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 75,
   fps: FPS,

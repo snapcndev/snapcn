@@ -1,4 +1,9 @@
-import { type ComponentConfig, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * 60fps, not the shared 30: this is a slow dolly plus a fast pan, and both are
@@ -155,6 +160,7 @@ export const searchTypingConfig: ComponentConfig = {
       label: "Font weight",
     },
     seed: { type: "text", default: "search-typing", label: "Seed" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 420,
   fps: 60,

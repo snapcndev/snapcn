@@ -9,7 +9,11 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 /**
  * A Marvel-Studios-style flicker reveal: images flip full-screen at a constant
@@ -37,6 +41,15 @@ export interface LogoFlickerProps {
    * has to be dark for it to read. Pass `"light"` with a dark logo asset.
    */
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
 }
 
 const FONT_FAMILY =
@@ -120,10 +133,12 @@ export function LogoFlicker({
   className,
   theme,
   mode,
+  fontFamily,
 }: LogoFlickerProps) {
   const frame = useCurrentFrame() * speed;
   const { width, height } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode ?? "dark");
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? FONT_FAMILY;
   const stage = background ?? t.background;
   const short = Math.min(width, height);
   const isRendering = getRemotionEnvironment().isRendering;
@@ -144,7 +159,7 @@ export function LogoFlicker({
         inset: 0,
         overflow: "hidden",
         backgroundColor: stage,
-        fontFamily: FONT_FAMILY,
+        fontFamily: face,
         textRendering: "geometricPrecision",
       }}
     >

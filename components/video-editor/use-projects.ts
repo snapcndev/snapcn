@@ -58,12 +58,16 @@ export function useProjects({
   clips,
   audio,
   font,
+  brand,
+  tempo,
   onRestore,
 }: {
   signedIn: boolean;
   clips: EditorDraft["clips"];
   audio: EditorDraft["audio"];
   font: string;
+  brand: EditorDraft["brand"];
+  tempo: number;
   /** Push a loaded timeline into the editor. `null` clears it. */
   onRestore: (draft: EditorDraft | null) => void;
 }): UseProjects {
@@ -79,7 +83,7 @@ export function useProjects({
   // one that was open when its timer was set.
   const idRef = useRef<string | null>(null);
   const titleRef = useRef(DEFAULT_TITLE);
-  const latestRef = useRef<EditorDraft>({ clips, audio, font });
+  const latestRef = useRef<EditorDraft>({ clips, audio, font, brand, tempo });
   // One save at a time, in order. Two overlapping saves of a project that has
   // no row yet would otherwise each create one.
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -249,7 +253,7 @@ export function useProjects({
    */
   useEffect(() => {
     if (!ready) return;
-    const draft: EditorDraft = { clips, audio, font };
+    const draft: EditorDraft = { clips, audio, font, brand, tempo };
     latestRef.current = draft;
 
     if (mode !== "remote") {
@@ -261,7 +265,11 @@ export function useProjects({
       SAVE_DEBOUNCE_MS,
     );
     return () => clearTimeout(timer);
-  }, [ready, mode, clips, audio, font, persist]);
+    // `brand` and `tempo` are here in their own right, not just because the
+    // effect reads them: setting a kit on an empty timeline changes no clip, so
+    // leaving them out means the one thing the user just did is the one thing
+    // that does not get saved.
+  }, [ready, mode, clips, audio, font, brand, tempo, persist]);
 
   const newProject = useCallback(async () => {
     // Flush first: the pending debounce belongs to the project being left, and

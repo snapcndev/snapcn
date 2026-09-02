@@ -11,6 +11,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -339,6 +340,15 @@ export interface LogoDriftProps {
   accentColor?: string;
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   speed?: number;
 }
 
@@ -402,11 +412,13 @@ export function LogoDrift({
   accentColor,
   theme,
   mode,
+  fontFamily,
   speed = 1,
 }: LogoDriftProps) {
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const accent = accentColor ?? t.primary;
   const wash = glowColor ?? accent;
 
@@ -477,7 +489,7 @@ export function LogoDrift({
                 justifyContent: "center",
                 gap: p.size * 0.04,
                 color: fg,
-                fontFamily: SANS,
+                fontFamily: face,
                 overflow: "hidden",
                 willChange,
               }}
@@ -531,7 +543,7 @@ export function LogoDrift({
               alignItems: "baseline",
               justifyContent: "center",
               gap: fontSize * 0.28,
-              fontFamily: SANS,
+              fontFamily: face,
               fontSize,
               fontWeight,
               lineHeight: 1.2,

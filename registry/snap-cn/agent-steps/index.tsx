@@ -8,7 +8,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  mixOklch,
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 // Loaded through @remotion/google-fonts, never a CSS variable — a Remotion
 // bundle has none of the app's CSS, so a `var(--font-…)` gets you the right face
@@ -476,7 +481,7 @@ export function AgentSteps({
   stepColor,
   accentColor,
   centerY = 0.5,
-  fontFamily = SANS,
+  fontFamily,
   theme: themeOverride,
   mode,
   speed = 1,
@@ -484,6 +489,7 @@ export function AgentSteps({
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const t = useSnapCnTheme(themeOverride, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
   const steps = toSteps(stepsInput);
 
   const fc = frame * speed;
@@ -548,7 +554,7 @@ export function AgentSteps({
   } as const;
 
   const label = {
-    fontFamily,
+    fontFamily: face,
     fontSize: font,
     fontWeight: 400,
     lineHeight: 1,

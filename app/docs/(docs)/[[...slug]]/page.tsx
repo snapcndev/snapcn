@@ -1,6 +1,7 @@
 import { DocsBody, DocsDescription, DocsTitle } from "fumadocs-ui/page";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { DocsNewsletterCta } from "@/components/docs/newsletter-cta";
 import { RelatedComponents } from "@/components/docs/related-components";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import { galleryItemByHref } from "@/lib/gallery-data";
@@ -132,6 +133,9 @@ export default async function Page(props: {
       </DocsBody>
       {/* Renders nothing on a page that is not a component. */}
       <RelatedComponents slug={page.slugs.at(-1) ?? ""} />
+      {/* Every docs page, not just component ones — a guide reader is as good
+          an address as a component reader, and this is the only ask on them. */}
+      <DocsNewsletterCta />
     </article>
   );
 }

@@ -497,26 +497,38 @@ async function measureOne(
   // implemented and then had ZERO callers, which is the same as not having them:
   // the skill's whole point is that these bugs are invisible until measured.
   //
-  // Judged vs reported is not squeamishness. `noFrozenFrames` is valid for any
-  // animation — a frame that moves less than half a pixel rasterises identically
-  // and reads as a stall. The other two assume a MONOTONE scale or translate,
-  // which most of this registry is not (a status cycle reverses on purpose, a
-  // chart grows bar by bar), so on an arbitrary component a direction reversal
-  // is a fact about the animation rather than a defect. They are measured and
-  // printed; a floor belongs on them only once a component declares it scales
-  // text, which nothing does yet.
+  // All three are REPORTED, never judged, and that was measured rather than
+  // assumed. `noFrozenFrames` was judged on the first full run and failed 31 of
+  // 32 components, from logo-drift at 5 frames to search-typing at 263 — a check
+  // that fails 97% of a hand-tuned registry is measuring the wrong thing, and a
+  // check nobody can pass is a check everybody mutes.
   //
-  // ponytail: range is [0, settle] — the animating window. A component that
-  // never settles is measured over the whole clip, which is the honest window
-  // for it.
+  // The reason is the assumption all three share: they read the ink CENTROID and
+  // expect a continuous monotone translation. Most of this registry is not that.
+  // A component that fades or recolours in place (text-highlight, answer-stream,
+  // follower-rush) never moves its centroid at all, so every frame reads frozen
+  // while it is plainly animating. A component that holds between steps
+  // (agent-steps' motion series is exact zeros for frames 13-20 and 29-35) is
+  // deliberately still, and a hold is not a freeze — which is precisely the
+  // clause the skill's own wording leans on, "while it is SUPPOSED to be
+  // animating".
+  //
+  // The numbers are still worth printing: a run of 263 sub-pixel frames is worth
+  // a human's eye even if it is a hold. A floor belongs here only once a
+  // component can declare that it translates, which nothing does yet.
+  //
+  // ponytail: the honest fix is to judge only over intervals where the centroid
+  // actually travels, and only for components that declare a transform. Worth
+  // building when a positional freeze actually ships; reporting is enough until
+  // then.
   const animEnd = settle.frame ?? baseline.frames.length - 1;
   if (animEnd >= 2) {
     const bg = modalLevel(baseline.frames[0].gray);
     const fg = foregroundLevel(baseline.frames[animEnd].gray, bg);
     const range: [number, number] = [0, animEnd];
     const geometry = { background: bg, foreground: fg, range };
-    measurements.push(noFrozenFrames(baseline.frames, geometry));
     for (const m of [
+      noFrozenFrames(baseline.frames, geometry),
       centroidMonotonic(baseline.frames, geometry),
       shapeInvariant(baseline.frames, { background: bg, range }),
     ]) {

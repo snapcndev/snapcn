@@ -14,7 +14,12 @@ import {
   useCurrentScale,
   useVideoConfig,
 } from "remotion";
-import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  mixOklch,
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 // Loaded through @remotion/google-fonts, never a CSS variable — a Remotion
 // bundle has none of the app's CSS, so `var(--font-…)` gets you the right face
@@ -320,7 +325,7 @@ function defaultColors(t: SnapCnTheme): string[] {
 export function BlockWordmark({
   text = "base",
   fontSize = 160,
-  fontFamily = ULTRA,
+  fontFamily,
   fontWeight = 400,
   color,
   colors,
@@ -352,6 +357,7 @@ export function BlockWordmark({
   const frame = useCurrentFrame() * speed;
   const { width, height, fps } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? ULTRA;
   const ink = color ?? t.foreground;
   const stage = background ?? t.background;
   const palette =
@@ -410,7 +416,7 @@ export function BlockWordmark({
       const unique = Array.from(
         new Set(glyphChars.filter((c) => c.trim() !== "")),
       );
-      const measured = measureInk(unique, fontFamily, fontWeight, fontSize);
+      const measured = measureInk(unique, face, fontWeight, fontSize);
       setMetrics({
         xHeight: measured?.xHeight ?? fontSize * 0.52,
         baselineOffset: baselineOffset || fontSize * 0.86,
@@ -440,7 +446,7 @@ export function BlockWordmark({
     // hands back a new array every render, which would re-run the measurement
     // (and its `delayRender`) forever. `scale` only ever cancels itself back out,
     // so a re-run on resize produces the identical metrics.
-  }, [handle, text, fontFamily, fontWeight, fontSize, scale]);
+  }, [handle, text, face, fontWeight, fontSize, scale]);
 
   useEffect(() => {
     if (metrics) continueRender(handle);
@@ -636,7 +642,7 @@ export function BlockWordmark({
       style={{
         backgroundColor: stage,
         overflow: "hidden",
-        fontFamily,
+        fontFamily: face,
         fontWeight,
         // Hinting re-snaps every stem as a glyph changes size, so the letterforms
         // literally change shape frame to frame. Off, they hold still.

@@ -9,6 +9,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
   withAlpha,
@@ -68,6 +69,15 @@ export interface TerminalSimulatorProps {
   theme?: Partial<SnapCnTheme>;
   /** Defaults to `"dark"` — a terminal is lit for dark. */
   mode?: "light" | "dark";
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   fontSize?: number;
   /**
    * Reveal speed. The reveal is CHUNKED — every `1 / charsPerFrame` frames
@@ -443,6 +453,7 @@ export function TerminalSimulator({
   borderColor,
   theme,
   mode,
+  fontFamily,
   fontSize = 18,
   charsPerFrame = 2,
   chunkSize = 3,
@@ -454,6 +465,7 @@ export function TerminalSimulator({
   const { fps, width, height } = useVideoConfig();
   const { isRendering } = getRemotionEnvironment();
   const t = useSnapCnTheme(theme, mode ?? "dark");
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS_FAMILY;
   const panel = background ?? t.card;
   const hairline = borderColor ?? t.border;
   // One constant stage across the whole flythrough — the page, a shade under
@@ -476,6 +488,7 @@ export function TerminalSimulator({
 
   const world = (
     <WorldContent
+      face={face}
       frame={frame}
       fps={fps}
       intro={hasIntro ? intro : null}
@@ -558,6 +571,7 @@ function WorldContent({
   charsPerFrame,
   chunkSize,
   hasIntro,
+  face,
 }: {
   frame: number;
   fps: number;
@@ -572,13 +586,20 @@ function WorldContent({
   charsPerFrame: number;
   chunkSize: number;
   hasIntro: boolean;
+  face: string;
 }) {
   const s = fontSize / 18; // font scale, layout stays fixed
 
   return (
     <div style={{ position: "absolute", left: 0, top: 0 }}>
       {intro !== null && (
-        <IntroStation frame={frame} text={intro} fontScale={s} ink={ink} />
+        <IntroStation
+          frame={frame}
+          text={intro}
+          fontScale={s}
+          ink={ink}
+          face={face}
+        />
       )}
       {command !== null && (
         <CommandStation
@@ -616,11 +637,13 @@ function IntroStation({
   text,
   fontScale,
   ink,
+  face,
 }: {
   frame: number;
   text: string;
   fontScale: number;
   ink: string;
+  face: string;
 }) {
   const tokens = parseIntro(text);
   return (
@@ -631,7 +654,7 @@ function IntroStation({
         top: INTRO_POS.y,
         transform: "translate(-50%, -50%)",
         whiteSpace: "pre",
-        fontFamily: SANS_FAMILY,
+        fontFamily: face,
         fontSize: Math.round(58 * fontScale),
         fontWeight: 600,
         letterSpacing: "-0.01em",

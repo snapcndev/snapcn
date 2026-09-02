@@ -7,6 +7,7 @@ import {
   Series,
   useVideoConfig,
 } from "remotion";
+import { SnapCnUIProvider } from "@/lib/snap-cn-ui";
 import {
   DEFAULT_FONT,
   googleFontHref,
@@ -77,9 +78,12 @@ export function VideoTimeline({
   useGoogleFonts(families);
 
   return (
-    // Redefining `--font-geist-sans` here is what restyles every scene: they
-    // all resolve their family through it, so one variable on the composition
-    // reaches all of them without any component knowing this control exists.
+    // The variable is still defined for anything that paints with CSS, but it
+    // is NOT what restyles a scene. Every snapcn component loads its face
+    // through `@remotion/google-fonts` and writes `fontFamily` into its own
+    // style — a `var(--font-…)` on an ancestor loses to that every time, which
+    // is why this picker used to move the chrome and leave the words in Inter.
+    // `SnapCnUIProvider` below is what actually reaches them.
     <AbsoluteFill
       style={{
         backgroundColor: DEFAULT_BACKGROUND,
@@ -110,15 +114,21 @@ export function VideoTimeline({
                     backgroundColor: isHexColor(clip.background)
                       ? clip.background
                       : DEFAULT_BACKGROUND,
-                    // Redefining the variable *here* is what makes a typeface
-                    // per-clip: the scenes all resolve their family through
-                    // `--font-geist-sans`, and the nearer definition wins. A
-                    // clip with no font of its own inherits the composition's,
-                    // so this costs nothing until somebody uses it.
+                    // The per-clip variable, for the same reason as above.
                     ...clipFontStyle(clip.font, font),
                   }}
                 >
-                  <Component {...clip.props} />
+                  {/* A clip with no font of its own inherits the video's. The
+                      provider sets `theme.fontFamily`, which every scene falls
+                      through to when its own `fontFamily` prop is unset — so
+                      one picker moves the words, not just the background. */}
+                  <SnapCnUIProvider
+                    theme={{
+                      fontFamily: resolveFont(clip.font ?? font).stack,
+                    }}
+                  >
+                    <Component {...clip.props} />
+                  </SnapCnUIProvider>
                 </AbsoluteFill>
               </Series.Sequence>
             );

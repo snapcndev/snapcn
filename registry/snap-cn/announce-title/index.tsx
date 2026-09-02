@@ -11,6 +11,11 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import {
+  resolveFont,
+  SnapCnUIProvider,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 // Loaded through @remotion/google-fonts, never a CSS variable — a Remotion
 // bundle has none of the app's CSS, so `var(--font-…)` gets you the right face
@@ -21,6 +26,15 @@ const { fontFamily: SANS } = loadGoogleSans("normal", {
 });
 
 export interface AnnounceTitleProps {
+  /**
+   * The face this scene paints its words in — a label from `fonts.ts`
+   * ("Inter", "Space Grotesk", "Instrument Serif") or a CSS family you have
+   * loaded yourself. Unset, the scene keeps the face it was designed around.
+   *
+   * Overrides `theme.fontFamily`, which is how a brand kit re-skins a whole
+   * timeline from one value.
+   */
+  fontFamily?: string;
   /** The word that rushes past the camera and lands on the colour field. */
   eyebrow?: string;
   /** The product name, assembled word by word on the paper card. */
@@ -189,9 +203,13 @@ function Shutter({
  * heights is wider than that — display type in the reference is tracked hard in,
  * body type barely at all.
  */
-function lineStyle(fontSize: number, tracking: number): CSSProperties {
+function lineStyle(
+  fontSize: number,
+  tracking: number,
+  face: string,
+): CSSProperties {
   return {
-    fontFamily: SANS,
+    fontFamily: face,
     fontSize,
     fontWeight: 400,
     lineHeight: 1,
@@ -248,9 +266,10 @@ function Line({
   height: number;
   style?: CSSProperties;
 }) {
+  const face = useSnapCnTheme().fontFamily ?? SANS;
   return (
     <Stage offset={(baseline - 0.5) * height - BASELINE_DROP * fontSize}>
-      <div style={{ ...lineStyle(fontSize, tracking), ...style }}>
+      <div style={{ ...lineStyle(fontSize, tracking, face), ...style }}>
         {children}
       </div>
     </Stage>
@@ -309,6 +328,9 @@ function useFitScales(lines: LineFit[]): {
   probes: ReactNode;
   scales: number[];
 } {
+  // The probe measures in the same face the words paint in — a ruler in a
+  // different typeface fits the lines to the wrong width.
+  const face = useSnapCnTheme().fontFamily ?? SANS;
   const refs = useRef<(HTMLSpanElement | null)[]>([]);
   const [handle] = useState(() => delayRender("announce-title: measure lines"));
   const [measured, setMeasured] = useState<{
@@ -351,7 +373,7 @@ function useFitScales(lines: LineFit[]): {
           ref={(el) => {
             refs.current[i] = el;
           }}
-          style={lineStyle(line.fontSize, line.tracking)}
+          style={lineStyle(line.fontSize, line.tracking, face)}
         >
           {line.text}
         </span>
@@ -589,6 +611,7 @@ function RecedingPlane({
   height: number;
   fontSize: number;
 }) {
+  const face = useSnapCnTheme().fontFamily ?? SANS;
   const mag = sample(PLANE_MAG, frame);
   const rake = sample(PLANE_RAKE, frame);
   return (
@@ -604,7 +627,7 @@ function RecedingPlane({
         >
           <div
             style={{
-              ...lineStyle(fontSize * PLANE_BASE, EYEBROW_TRACK),
+              ...lineStyle(fontSize * PLANE_BASE, EYEBROW_TRACK, face),
               color: "#ffffff",
               transform: `rotateX(${rake}deg)`,
             }}
@@ -848,6 +871,7 @@ function MacroShot({
   width: number;
   height: number;
 }) {
+  const face = useSnapCnTheme().fontFamily ?? SANS;
   const pan = (macroPan(frame) * width) / REF_W;
   const fontSize = MACRO_SIZE * width;
   return (
@@ -858,7 +882,7 @@ function MacroShot({
       >
         <div
           style={{
-            ...lineStyle(fontSize, TAGLINE_TRACK),
+            ...lineStyle(fontSize, TAGLINE_TRACK, face),
             color: "#ffffff",
             // The percentage is of the line's own width, so the hold lands on
             // the same part of any sentence; the px is the camera.
@@ -1081,8 +1105,10 @@ export function AnnounceTitle({
   symbolPath = MARK_PATH,
   symbolColors,
   symbolScale = 1,
+  fontFamily,
   speed = 1,
 }: AnnounceTitleProps) {
+  const face = resolveFont(fontFamily) ?? SANS;
   const frame = useCurrentFrame() * speed;
   const { width, height } = useVideoConfig();
 
@@ -1215,9 +1241,11 @@ export function AnnounceTitle({
   };
 
   return (
-    <AbsoluteFill>
-      {probes}
-      {shot()}
-    </AbsoluteFill>
+    <SnapCnUIProvider theme={{ fontFamily: face }}>
+      <AbsoluteFill>
+        {probes}
+        {shot()}
+      </AbsoluteFill>
+    </SnapCnUIProvider>
   );
 }

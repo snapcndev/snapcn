@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const logoAssembleConfig: ComponentConfig = {
   componentName: "LogoAssemble",
@@ -29,6 +35,7 @@ export const logoAssembleConfig: ComponentConfig = {
       label: "Ring images",
     },
     background: { type: "color", default: "#050505", label: "Background" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 108,
   fps: FPS,

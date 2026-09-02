@@ -22,7 +22,7 @@
     "bundle:remotion": "node scripts/bundle-remotion.mts",
     "render:demos": "node scripts/render-demos.mts",
     "render:previews": "node scripts/render-previews.mts",
-    "measure": "node scripts/motion-check.mts",
+    "motion:measure": "node scripts/motion-check.mts",
     "postinstall": "fumadocs-mdx",
     "split:pro": "node scripts/split-pro.mts"
   },

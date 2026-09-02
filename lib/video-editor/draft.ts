@@ -1,4 +1,6 @@
+import { type BrandKit, hasBrand, normalizeBrand } from "./brand";
 import { isValidFont } from "./fonts";
+import { normalizeTempo } from "./tempo";
 import {
   type AudioTrack,
   type Clip,
@@ -29,6 +31,24 @@ export interface EditorDraft {
   clips: Clip[];
   audio: AudioTrack | null;
   font: string | null;
+  /**
+   * The accent and logo, kept alongside the timeline they were applied to.
+   *
+   * Stored even though every clip already carries the painted values: the kit
+   * is what the next clip gets applied to it on add, and rebuilding it by
+   * guessing a common colour back out of the clips would be the name-heuristic
+   * this feature exists to avoid.
+   */
+  brand: BrandKit;
+  /**
+   * How fast the whole video runs. 1 is every component at the pace it was
+   * tuned at.
+   *
+   * Stored even though the `speed` it produced is already on each clip: the
+   * dial has to come back where it was left, and reading it back out of the
+   * clips would be a guess the moment one of them was clamped to its own range.
+   */
+  tempo: number;
 }
 
 /** Version is in the key: a schema change orphans old drafts instead of tripping over them. */
@@ -54,7 +74,7 @@ export function saveDraft(draft: EditorDraft): void {
   const store = storage();
   if (!store) return;
   try {
-    if (draft.clips.length === 0 && !draft.audio) {
+    if (draft.clips.length === 0 && !draft.audio && !hasBrand(draft.brand)) {
       store.removeItem(KEY);
       return;
     }
@@ -117,12 +137,15 @@ export function reviveDraft(
 
   const clips = reviveClips(raw.clips, isKnownSlug);
   const audio = reviveAudio(raw.audio);
-  if (clips.length === 0 && !audio) return null;
+  const brand = normalizeBrand(raw.brand);
+  if (clips.length === 0 && !audio && !hasBrand(brand)) return null;
 
   return {
     clips,
     audio,
     font: typeof raw.font === "string" && raw.font ? raw.font : null,
+    brand,
+    tempo: normalizeTempo(raw.tempo),
   };
 }
 

@@ -24,6 +24,17 @@ export interface SnapCnTheme {
   input: string;
   ring: string;
   radius: number;
+  /**
+   * The face every text component paints with, as a label from `fonts.ts` or a
+   * CSS family the caller has loaded themselves.
+   *
+   * Optional and defaulted to nothing on purpose: unset, each component keeps
+   * the face it was designed around, so adding this token changed no existing
+   * render. Set it on `SnapCnUIProvider` and one value re-skins a whole
+   * timeline — which is the only reason it lives on the theme rather than
+   * staying a per-component prop.
+   */
+  fontFamily?: string;
 }
 
 /**

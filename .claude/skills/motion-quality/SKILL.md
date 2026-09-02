@@ -35,7 +35,7 @@ frames straight into memory (one bundle, one browser, PNG buffers, no mp4 — h2
 quantises away the very antialiasing the alpha recovery reads).
 
 ```bash
-pnpm run measure --only=text-build   # -> registry/__measured__.json
+pnpm run motion:measure --only=text-build   # -> registry/__measured__.json
 ```
 
 It also answers the two questions no test could: when a component **settles**

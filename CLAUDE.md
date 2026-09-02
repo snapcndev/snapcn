@@ -118,7 +118,7 @@ pnpm dev                  # start the dev server
 pnpm run build            # build the site
 pnpm run registry:build   # rebuild the shadcn registry output
 pnpm run render:previews  # re-render the mp4s in lib/rendered-demos.tsx
-pnpm run measure          # measure rendered frames -> registry/__measured__.json
+pnpm run motion:measure   # measure rendered frames -> registry/__measured__.json
 pnpm run lint             # biome check
 ```
 

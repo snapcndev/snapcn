@@ -1,5 +1,6 @@
 import {
   type ComponentConfig,
+  FONT_FAMILY_CONTROL,
   FONT_WEIGHT_OPTIONS,
   FPS,
   H,
@@ -170,6 +171,7 @@ export const textSwellConfig: ComponentConfig = {
       step: 1,
       label: "Recede",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 110,
   fps: FPS,

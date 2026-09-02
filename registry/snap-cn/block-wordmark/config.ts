@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 /**
  * Colour defaults are the design system's own token values, spelled out.
@@ -115,6 +121,7 @@ export const blockWordmarkConfig: ComponentConfig = {
       step: 2,
       label: "Hold before resolve",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   // 94 (the resolve cue) + 10 (the last letter's stagger) + 5 (its swap) and a
   // beat and a half of the finished wordmark holding, which is what the

@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const logoFlickerConfig: ComponentConfig = {
   componentName: "LogoFlicker",
@@ -24,6 +30,7 @@ export const logoFlickerConfig: ComponentConfig = {
       label: "Flip interval (frames)",
     },
     background: { type: "color", default: "#050505", label: "Background" },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 100,
   fps: FPS,

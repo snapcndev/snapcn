@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const karaokeCaptionsConfig: ComponentConfig = {
   componentName: "KaraokeCaptions",
@@ -61,6 +67,7 @@ export const karaokeCaptionsConfig: ComponentConfig = {
       step: 0.01,
       label: "Emphasis scale",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 150,
   fps: FPS,

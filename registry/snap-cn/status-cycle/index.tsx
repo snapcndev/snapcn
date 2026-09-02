@@ -13,7 +13,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { mixOklch, type SnapCnTheme, useSnapCnTheme } from "@/lib/snap-cn-ui";
+import {
+  mixOklch,
+  resolveFont,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 const { fontFamily: SANS } = loadInter("normal", {
   weights: ["400"],
@@ -349,7 +354,7 @@ export function StatusCycle({
   motion,
   fontSize,
   chipFontSize,
-  fontFamily = SANS,
+  fontFamily,
   statusHold = 18,
   introFrames = 24,
   chipStagger = 8,
@@ -361,6 +366,7 @@ export function StatusCycle({
   const frame = useCurrentFrame() * speed - startAt;
   const { fps, width, height } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
+  const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
 
   // Memoised because they are `useEffect` dependencies: rebuilt every render,
   // the measuring effect would re-run forever.
@@ -547,7 +553,7 @@ export function StatusCycle({
     : ({ willChange: "transform" } as const);
 
   const typeStyle = {
-    fontFamily,
+    fontFamily: face,
     fontWeight,
     // Hinting re-snaps every stem as the size slides, so the letterforms boil.
     // Off, shape drift over a scale falls from 3.41% to 0.22%.

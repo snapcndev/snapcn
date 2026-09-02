@@ -1,4 +1,10 @@
-import { type ComponentConfig, FPS, H, W } from "@/lib/customizer-config";
+import {
+  type ComponentConfig,
+  FONT_FAMILY_CONTROL,
+  FPS,
+  H,
+  W,
+} from "@/lib/customizer-config";
 
 export const laptopFrameConfig: ComponentConfig = {
   componentName: "LaptopFrame",
@@ -75,6 +81,7 @@ export const laptopFrameConfig: ComponentConfig = {
       default: "0 40px 80px rgba(10,12,20,0.45)",
       label: "Shadow",
     },
+    fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 240,
   fps: FPS,

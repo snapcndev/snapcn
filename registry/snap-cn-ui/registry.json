@@ -8,9 +8,15 @@
       "type": "registry:lib",
       "title": "snapcn UI Core",
       "description": "Shared timeline-fold hook, theme context, and color math for snapcn UI primitives.",
-      "dependencies": ["remotion", "culori"],
-      "devDependencies": ["@types/culori"],
-      "docs": "Docs and props: https://snapcn.dev/docs?ref=cli \u2014 snapcn components paint from a shadcn token set in lib/snap-cn-ui/theme.ts. Its defaults are shadcn's, so they will already sit correctly next to your Button and Input. To point them at your own palette instead, wrap your compositions in <SnapCnUIProvider theme={{ primary: '#...', ... }} mode=\"dark\">, or pass the same `theme`/`mode` props to a single component. Use concrete hex/oklch values, not var(--primary) — a Remotion render has none of your app's CSS.",
+      "dependencies": [
+        "remotion",
+        "culori",
+        "@remotion/google-fonts"
+      ],
+      "devDependencies": [
+        "@types/culori"
+      ],
+      "docs": "Docs and props: https://snapcn.dev/docs?ref=cli \u2014 snapcn components paint from a shadcn token set in lib/snap-cn-ui/theme.ts. Its defaults are shadcn's, so they will already sit correctly next to your Button and Input. To point them at your own palette instead, wrap your compositions in <SnapCnUIProvider theme={{ primary: '#...', ... }} mode=\"dark\">, or pass the same `theme`/`mode` props to a single component. Use concrete hex/oklch values, not var(--primary) \u2014 a Remotion render has none of your app's CSS.",
       "files": [
         {
           "path": "core/timeline.ts",
@@ -21,6 +27,11 @@
           "path": "core/theme.ts",
           "type": "registry:lib",
           "target": "lib/snap-cn-ui/theme.ts"
+        },
+        {
+          "path": "core/fonts.ts",
+          "type": "registry:lib",
+          "target": "lib/snap-cn-ui/fonts.ts"
         },
         {
           "path": "core/color.ts",
@@ -49,8 +60,10 @@
       "type": "registry:component",
       "docs": "Docs and props: https://snapcn.dev/docs?ref=cli \u2014 it paints with `color`, which defaults to `currentColor`, and takes no `mode`.",
       "title": "UI Caret",
-      "description": "A blinking text caret — a controlled vertical bar, or a pure motion atom that blinks deterministically from useCurrentFrame.",
-      "dependencies": ["remotion"],
+      "description": "A blinking text caret \u2014 a controlled vertical bar, or a pure motion atom that blinks deterministically from useCurrentFrame.",
+      "dependencies": [
+        "remotion"
+      ],
       "registryDependencies": [],
       "files": [
         {
@@ -66,7 +79,10 @@
       "docs": "Docs and props: https://snapcn.dev/docs?ref=cli \u2014 pass `theme` (or wrap the composition in `SnapCnUIProvider`) to repaint it; it takes no `mode`.",
       "title": "UI Input",
       "description": "A text input whose idle/hover/active/typing/invalid state is a pure function of the timeline; the focus ring, border, caret, and value reveal are keyframed presets.",
-      "dependencies": ["remotion", "class-variance-authority"],
+      "dependencies": [
+        "remotion",
+        "class-variance-authority"
+      ],
       "registryDependencies": [
         "https://snapcn.dev/r/snap-cn-ui.json",
         "https://snapcn.dev/r/caret.json",
