@@ -1,11 +1,8 @@
 import "server-only";
-import { copyFile, mkdir, rename, rm, stat } from "node:fs/promises";
-import path from "node:path";
 import { desc, eq } from "drizzle-orm";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { showcaseSubmissions, users } from "@/lib/db/schema";
 import { getDb, isDbConfigured } from "@/lib/server/db";
-import { RENDER_WORK_DIR, SHOWCASE_WORK_DIR } from "@/lib/server/paths";
 import {
   detectPlatform,
   isHostedVideo,
@@ -13,49 +10,6 @@ import {
 } from "@/lib/showcase/platform";
 
 export { isHostedVideo, showcaseVideoUrl } from "@/lib/showcase/platform";
-
-/**
- * Take a finished render out of the scratch dir and keep it.
- *
- * The export pipeline deletes an MP4 the moment its download stream ends and
- * sweeps anything left after ten minutes — correct for an export, fatal for a
- * submission. Moving the file is what turns one into the other, and a rename is
- * the whole operation: same filesystem, atomic, no copy of a multi-megabyte
- * file, and no window where the sweep can take it mid-flight.
- *
- * Returns false when there is nothing to claim — a jobId from a previous
- * process, one already swept, or one that was never real. The caller must treat
- * that as a failed submission rather than storing a row pointing at nothing.
- */
-export async function claimRenderForShowcase(jobId: string): Promise<boolean> {
-  const from = path.join(RENDER_WORK_DIR, `${jobId}.mp4`);
-  const to = path.join(SHOWCASE_WORK_DIR, `${jobId}.mp4`);
-
-  try {
-    if (!(await stat(from)).isFile()) return false;
-  } catch {
-    return false;
-  }
-
-  await mkdir(SHOWCASE_WORK_DIR, { recursive: true });
-  try {
-    await rename(from, to);
-  } catch (err) {
-    // ponytail: EXDEV only — the two dirs are on different filesystems, which
-    // happens the moment SHOWCASE_WORK_DIR is a mounted volume and the renders
-    // stay on tmpfs. Copy then unlink. Put both dirs on the same volume and
-    // this branch never runs.
-    if ((err as NodeJS.ErrnoException).code !== "EXDEV") throw err;
-    await copyFile(from, to);
-    await rm(from, { force: true });
-  }
-  return true;
-}
-
-/** Drop a hosted video. Called when its submission is rejected. */
-export async function discardShowcaseVideo(jobId: string): Promise<void> {
-  await rm(path.join(SHOWCASE_WORK_DIR, `${jobId}.mp4`), { force: true });
-}
 
 export type ShowcaseItem = {
   id: string;

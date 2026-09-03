@@ -67,6 +67,12 @@ const nextConfig: NextConfig = {
         destination: `${POSTHOG_ASSETS}/static/:path*`,
       },
       { source: "/ingest/:path*", destination: `${POSTHOG_INGEST}/:path*` },
+      // `<docs url>.md` serves that page as markdown. A rewrite rather than a
+      // route because `app/docs/[[...slug]]/page.tsx` already owns this path
+      // and a second handler on it will not build; the public URL is still the
+      // docs URL, which is the whole point — an agent appends `.md` to the link
+      // it already has and does not need to learn a second URL shape.
+      { source: "/docs/:path*.md", destination: "/docs-md/:path*" },
     ];
   },
   // Rendered demos always ship to the SAME path (`/demos/<slug>.mp4`), so a

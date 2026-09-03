@@ -24,7 +24,8 @@
     "render:previews": "node scripts/render-previews.mts",
     "motion:measure": "node scripts/motion-check.mts",
     "postinstall": "fumadocs-mdx",
-    "split:pro": "node scripts/split-pro.mts"
+    "split:pro": "node scripts/split-pro.mts",
+    "db:migrate": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs migrate"
   },
   "packageManager": "pnpm@10.33.0",
   "dependencies": {

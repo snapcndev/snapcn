@@ -1,4 +1,4 @@
-import { collectDocsPages, LLMS_HEADER, SITE_URL } from "@/lib/llms";
+import { collectDocsPages, LLMS_HEADER, pageMarkdown } from "@/lib/llms";
 
 export const dynamic = "force-static";
 
@@ -10,19 +10,7 @@ export const dynamic = "force-static";
 export function GET() {
   const pages = collectDocsPages();
 
-  const body = pages
-    .map((page) =>
-      [
-        `# ${page.title}`,
-        `URL: ${SITE_URL}${page.url}`,
-        page.description,
-        "",
-        page.body,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    )
-    .join("\n\n---\n\n");
+  const body = pages.map(pageMarkdown).join("\n\n---\n\n");
 
   return new Response(`${LLMS_HEADER}\n${body}\n`, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
