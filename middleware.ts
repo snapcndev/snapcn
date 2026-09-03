@@ -100,7 +100,10 @@ export async function middleware(request: NextRequest) {
       $current_url: request.nextUrl.href,
     };
 
-    if (pathname === "/llms.txt" || pathname === "/llms-full.txt") {
+    // Every agent-facing surface reports as one event so the channel reads as a
+    // single number: the three plain-text indexes and the `.md` form of any
+    // docs page. `file` keeps them apart when the breakdown is wanted.
+    if (pathname.endsWith(".txt") || pathname.endsWith(".md")) {
       await captureServer("llms_txt_fetched", distinctId, {
         ...shared,
         file: pathname.slice(1),
@@ -169,6 +172,16 @@ function unknownComponent(component: string, origin: string): NextResponse {
   );
 }
 
+/**
+ * `/docs/:path*.md` is matched, plain `/docs/*` is not — so the HTML docs keep
+ * costing nothing and only the agent-shaped request pays for the capture.
+ */
 export const config = {
-  matcher: ["/r/:path*", "/llms.txt", "/llms-full.txt"],
+  matcher: [
+    "/r/:path*",
+    "/llms.txt",
+    "/llms-full.txt",
+    "/llms-components.txt",
+    "/docs/:path*.md",
+  ],
 };

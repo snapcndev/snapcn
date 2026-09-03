@@ -281,4 +281,127 @@ Prerequisites: an existing Remotion project (\`npx create-video@latest\`) and th
 Maintained by Sri Nath. Project account: https://x.com/snapcndev
 Last updated: ${lastUpdated()} (newest component release)
 
+Building a video? Start at ${SITE_URL}/llms-components.txt — every installable
+component in one table with what it is for, how many frames it runs and what it
+pulls in, linking to each component's full page. Any docs URL also serves raw
+markdown: append \`.md\`.
+
 ${INSTALLABLE}`;
+
+/**
+ * One page as the plain-markdown block that `/llms-full.txt` and the `.md` URLs
+ * both emit — the same bytes either way, so an agent that fetches a single page
+ * and one that ingests the whole corpus never see two different documents.
+ */
+export function pageMarkdown(page: LlmsPage): string {
+  return [
+    `# ${page.title}`,
+    `URL: ${SITE_URL}${page.url}`,
+    page.description,
+    "",
+    page.body,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** What the render pipeline measured for each component, keyed by name. */
+interface Measured {
+  fps: number;
+  durationInFrames: number;
+}
+
+function measurements(): Record<string, Measured> {
+  try {
+    const raw = fs.readFileSync(
+      path.join(process.cwd(), "registry", "__measured__.json"),
+      "utf8",
+    );
+    return JSON.parse(raw).components ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * What `shadcn add` pulls in alongside one component, read off the built
+ * registry item rather than restated here — npm packages first, then the
+ * snapcn primitives the CLI installs transitively.
+ */
+function dependencies(name: string): string[] {
+  try {
+    const raw = fs.readFileSync(
+      path.join(process.cwd(), "public", "r", `${name}.json`),
+      "utf8",
+    );
+    const item = JSON.parse(raw) as {
+      dependencies?: string[];
+      registryDependencies?: string[];
+    };
+    const registry = (item.registryDependencies ?? []).map((dep) => {
+      const bare =
+        dep
+          .split("/")
+          .pop()
+          ?.replace(/\.json$/, "") ?? dep;
+      return dep.startsWith("http") ? `@snapcn/${bare}` : bare;
+    });
+    return [...(item.dependencies ?? []), ...registry];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * `/llms-components.txt` — every installable component in one table.
+ *
+ * `llms.txt` names the *pages*; this names the *components*, with the two facts
+ * that decide which one to reach for — what it is for and how long it runs — so
+ * an agent picks from a single fetch instead of opening thirty docs pages to
+ * find out. It is the router; the `.md` pages are the reference.
+ *
+ * Built by intersecting the gallery with `INSTALL_ALL_NAMES`, deliberately.
+ * That list is the free registry and nothing else, so a component that has not
+ * been published cannot reach this file by being added to the gallery early.
+ */
+export function componentIndex(): string {
+  const measured = measurements();
+  const installable = new Set(INSTALL_ALL_NAMES);
+
+  const tables = GALLERY_CATEGORIES.map((cat) => {
+    const rows = GALLERY_ITEMS.filter((item) => item.category === cat.id)
+      .map((item) => ({ item, name: item.href.split("/").pop() ?? "" }))
+      .filter(({ name }) => installable.has(name))
+      .map(({ item, name }) => {
+        const m = measured[name];
+        const length = m ? `${m.durationInFrames}f @ ${m.fps}fps` : "—";
+        const deps = dependencies(name);
+        return `| \`${name}\` | ${item.description} | ${length} | ${
+          deps.length ? deps.map((d) => `\`${d}\``).join(", ") : "—"
+        } | [docs](${SITE_URL}${item.href}.md) |`;
+      });
+
+    return rows.length
+      ? `## ${cat.label}\n\n| Component | Use for | Length | Deps | Docs |\n|---|---|---|---|---|\n${rows.join("\n")}`
+      : "";
+  }).filter(Boolean);
+
+  return `# snapcn component index
+
+> Every installable snapcn component in one file. Scan the tables, pick by
+> \`Use for\`, then fetch only the component pages you need.
+
+Install any entry: \`npx shadcn@latest add @snapcn/<name>\`. The source is copied
+into the project and the caller owns it — MIT, with no runtime dependency on
+snapcn. \`Deps\` installs transitively; do not add those by hand.
+
+\`Length\` is how many frames the component's own animation runs at its native
+fps. It is the floor for the \`<Sequence>\` that wraps it, not the whole beat:
+add hold time on top when the element should stay on screen after it settles.
+
+Full reference for one component — props, examples, the interactive preview —
+lives at its Docs link. Every docs URL serves raw markdown: append \`.md\`.
+
+${tables.join("\n\n")}
+`;
+}
