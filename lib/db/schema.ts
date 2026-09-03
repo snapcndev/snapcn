@@ -269,3 +269,51 @@ export const renderUsage = pgTable(
     }),
   ],
 );
+
+/**
+ * A finished export, kept, with a public page at `/v/<id>`.
+ *
+ * ## Why this is not a `showcase_submission`
+ *
+ * The two look identical — a claimed MP4 plus a row — and they are not the same
+ * thing. A submission is authored, moderated, and listed in a public gallery. A
+ * shared video is created automatically the moment someone asks for a link, is
+ * never listed anywhere, and is only reachable by knowing its id.
+ *
+ * Overloading `showcase_submission` with an extra status would work today and
+ * leak later: every showcase query would have to remember to exclude the new
+ * state, and one that forgot would publish a stranger's private video into the
+ * gallery. `app/r/[file]/route.ts` already states the rule this follows — "a
+ * gate that has to remember to say no is one refactor away from saying yes".
+ *
+ * `jobId` is both the storage key and the render it came from: the file lives at
+ * `SHOWCASE_WORK_DIR/<jobId>.mp4` and is streamed by the same range-capable
+ * route the showcase uses, so hosting a share link added no new storage path
+ * and no second player.
+ */
+export const sharedVideos = pgTable(
+  "shared_video",
+  {
+    /** What appears in the URL. Unguessable, and not the render's id. */
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /**
+     * Basename of the claimed MP4, which is the render job's own uuid.
+     *
+     * Unique: claiming moves the file, so a second row for the same job would
+     * be a second page pointing at one file — and deleting either would break
+     * the other.
+     */
+    jobId: text("job_id").notNull().unique(),
+    title: text("title").notNull().default("Untitled video"),
+    /** For "built with", and so a page can link the components it used. */
+    componentsUsed: text("components_used").array(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // "My links", newest first, is the only list this table is ever queried for.
+  (t) => [index("shared_video_user_created_idx").on(t.userId, t.createdAt)],
+);

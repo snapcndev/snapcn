@@ -2,13 +2,10 @@ import { after, NextResponse } from "next/server";
 import { adminEmails, auth } from "@/auth";
 import { isDbConfigured } from "@/lib/server/db";
 import { sendEmail, showcaseReviewEmail } from "@/lib/server/email";
+import { claimRender } from "@/lib/server/hosted-video";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 import { getJob } from "@/lib/server/render-queue";
-import {
-  claimRenderForShowcase,
-  createSubmission,
-  showcaseVideoUrl,
-} from "@/lib/server/showcase";
+import { createSubmission, showcaseVideoUrl } from "@/lib/server/showcase";
 import { submissionInputSchema } from "@/lib/showcase/validation";
 
 /** Create a showcase submission (auth required; lands as `pending`). */
@@ -71,7 +68,7 @@ export async function POST(req: Request) {
         { status: 409 },
       );
     }
-    if (!(await claimRenderForShowcase(jobId))) {
+    if (!(await claimRender(jobId))) {
       return NextResponse.json(
         { error: "That video has expired. Export it again and retry." },
         { status: 409 },
