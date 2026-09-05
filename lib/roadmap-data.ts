@@ -66,7 +66,7 @@ export const ROADMAP: RoadmapEntry[] = [
   },
   {
     stage: "building",
-    due: "2026-09-02",
+    due: "2026-09-15",
     title: "Templates",
     body: "Whole videos rather than single scenes — a launch film, a feature walkthrough, a changelog clip — composed from the registry and ready to render once you drop your own copy in.",
     href: "/docs/templates",

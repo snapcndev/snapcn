@@ -103,6 +103,14 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     added: "2026-07-24",
   },
   {
+    name: "Punch Lines",
+    description:
+      "Full-frame title cards that cut hard between beats — a statement flicked in line by line and rushed past the camera, then a hero line whose words punch up from a third of their size",
+    category: "text",
+    href: "/docs/text/punch-lines",
+    added: "2026-09-03",
+  },
+  {
     name: "Text Swell",
     description:
       "The lead word floats toward you and hangs there while the sentence assembles around it, letters bouncing up off the baseline — then the whole line falls back",

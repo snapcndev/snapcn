@@ -66,6 +66,12 @@ export const RENDERED_DEMOS: readonly string[] = [
   // shown a frame late.
   "type-morph",
   "text-swell",
+  // Two of its three cards hold a scale on type for their whole life — a word
+  // wave, then a slow push that never stops — and the third rushes the whole
+  // frame past the camera in nine frames. Slow smooth scale on type is the exact
+  // motion a live Player mispaces, and the rush is over before a dropped frame
+  // can be forgiven.
+  "punch-lines",
   "hero-launch",
   // Type is under a moving scale for most of the run — a receding 3D plane, a
   // 1.5x settle, then a whole line panned at 19x — and each of the first two
