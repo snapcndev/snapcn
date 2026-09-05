@@ -17,6 +17,7 @@ import { orbitGalleryConfig } from "@/registry/snap-cn/orbit-gallery/config";
 import { phoneFrameConfig } from "@/registry/snap-cn/phone-frame/config";
 import { promptSendConfig } from "@/registry/snap-cn/prompt-send/config";
 import { promptZoomConfig } from "@/registry/snap-cn/prompt-zoom/config";
+import { punchLinesConfig } from "@/registry/snap-cn/punch-lines/config";
 import { screenRecordingConfig } from "@/registry/snap-cn/screen-recording/config";
 import { searchTypingConfig } from "@/registry/snap-cn/search-typing/config";
 import { statusCycleConfig } from "@/registry/snap-cn/status-cycle/config";
@@ -64,6 +65,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "phone-frame": phoneFrameConfig,
   "prompt-send": promptSendConfig,
   "prompt-zoom": promptZoomConfig,
+  "punch-lines": punchLinesConfig,
   "screen-recording": screenRecordingConfig,
   "search-typing": searchTypingConfig,
   "status-cycle": statusCycleConfig,

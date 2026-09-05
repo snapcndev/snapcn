@@ -445,6 +445,22 @@
       ]
     },
     {
+      "name": "punch-lines",
+      "type": "registry:component",
+      "docs": "Docs and props: https://snapcn.dev/docs/text/punch-lines?ref=cli \u2014 pass mode=\"dark\" if you are rendering onto a dark frame \u2014 these default to shadcn's light palette and a bare Remotion render is black.",
+      "title": "Punch Lines",
+      "description": "A run of full-frame title cards that cut hard between beats. A statement card is flicked in from the left line by line and settles on a critically damped curve, then rushes past the camera; a hero card punches its words up from a third of their size in a wave and pushes slowly forward until it cuts. Every curve is fitted from frame measurements \u2014 the slide to 0.42px rms over 37 frames.",
+      "dependencies": ["remotion", "@remotion/google-fonts"],
+      "registryDependencies": ["https://snapcn.dev/r/snap-cn-ui.json"],
+      "files": [
+        {
+          "path": "punch-lines/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/punch-lines.tsx"
+        }
+      ]
+    },
+    {
       "name": "orbit-gallery",
       "type": "registry:component",
       "docs": "Docs and props: https://snapcn.dev/docs/scenes/orbit-gallery?ref=cli \u2014 pass mode=\"dark\" if you are rendering onto a dark frame \u2014 these default to shadcn's light palette and a bare Remotion render is black.",

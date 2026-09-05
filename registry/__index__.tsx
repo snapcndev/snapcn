@@ -19,6 +19,7 @@ import { OrbitGallery } from "@/registry/snap-cn/orbit-gallery";
 import { PhoneFrame } from "@/registry/snap-cn/phone-frame";
 import { PromptSend } from "@/registry/snap-cn/prompt-send";
 import { PromptZoom } from "@/registry/snap-cn/prompt-zoom";
+import { PunchLines } from "@/registry/snap-cn/punch-lines";
 import { ScreenRecording } from "@/registry/snap-cn/screen-recording";
 import { SearchTyping } from "@/registry/snap-cn/search-typing";
 import { StatusCycle } from "@/registry/snap-cn/status-cycle";
@@ -97,6 +98,7 @@ const registry: Record<string, RegistryEntry> = {
   "phone-frame": { Component: PhoneFrame, config: CONFIGS["phone-frame"] },
   "prompt-send": { Component: PromptSend, config: CONFIGS["prompt-send"] },
   "prompt-zoom": { Component: PromptZoom, config: CONFIGS["prompt-zoom"] },
+  "punch-lines": { Component: PunchLines, config: CONFIGS["punch-lines"] },
   "screen-recording": {
     Component: ScreenRecording,
     config: CONFIGS["screen-recording"],

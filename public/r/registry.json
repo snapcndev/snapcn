@@ -561,6 +561,27 @@
       "type": "registry:component"
     },
     {
+      "name": "punch-lines",
+      "title": "Punch Lines",
+      "description": "A run of full-frame title cards that cut hard between beats. A statement card is flicked in from the left line by line and settles on a critically damped curve, then rushes past the camera; a hero card punches its words up from a third of their size in a wave and pushes slowly forward until it cuts. Every curve is fitted from frame measurements — the slide to 0.42px rms over 37 frames.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/punch-lines/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/punch-lines.tsx"
+        }
+      ],
+      "docs": "Docs and props: https://snapcn.dev/docs/text/punch-lines?ref=cli — pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette and a bare Remotion render is black.",
+      "type": "registry:component"
+    },
+    {
       "name": "orbit-gallery",
       "title": "Orbit Gallery",
       "description": "An image-universe hero: a continuous stream of photos flows along an Archimedean spiral (a vortex) from the frame edges into the center — evenly spaced by arc length, shrinking and rotating to follow the coil, with the title held in the clear middle. A slow, cinematic opener for launch and editorial videos.",

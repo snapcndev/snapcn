@@ -209,8 +209,14 @@ export function isCopy(value: string): boolean {
   if (/^[Mm][\s\d.-]/.test(value)) return false;
   if (/^#[0-9a-f]{3,8}/i.test(value)) return false;
   // CSS values ride in text controls too — `laptop-frame.shadow` is
-  // "0 40px 80px rgba(10,12,20,0.45)".
+  // "0 40px 80px rgba(10,12,20,0.45)", `punch-lines.letterSpacing` is "-0.013em".
   if (/\d+px|rgba?\(|^var\(/.test(value)) return false;
+  if (/^-?\d*\.?\d+(em|rem|ch|ex|%|vw|vh|deg|s|ms)$/i.test(value)) return false;
+  // A comma-joined list with no whitespace anywhere is structured data, not a
+  // sentence — `punch-lines` describes its cards with "slide,punch", "59,39,37".
+  // The lists that *are* copy all breathe: `status-cycle` ships
+  // "animating, transitioning, rendering a scene, installed".
+  if (value.includes(",") && !/\s/.test(value.trim())) return false;
   return true;
 }
 
