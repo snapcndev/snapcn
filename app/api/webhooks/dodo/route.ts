@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { planForProduct } from "@/lib/plans";
+import { oneTimePlanFor, planForProduct } from "@/lib/plans";
 import { isDbConfigured } from "@/lib/server/db";
 import { type DodoEvent, verifyWebhookSignature } from "@/lib/server/dodo";
 import { activatePlan } from "@/lib/server/entitlements";
@@ -169,6 +169,33 @@ export async function POST(request: Request) {
       }
 
       case "payment.succeeded": {
+        // A lifetime seat arrives here and nowhere else: Dodo reports a
+        // one-time purchase as a payment and never as a subscription, so this
+        // is the only branch that can grant it.
+        //
+        // `currentPeriodEnd: null` is the entitlement. `planFor` treats a null
+        // period as never-expiring — a bought-outright seat has no renewal to
+        // miss — and `subscriptionId: null` records the truth that there is no
+        // subscription behind it rather than inventing one. The row is the same
+        // `billing_subscription` row everything else writes, so every reader,
+        // every gate and the API key mint all work unchanged.
+        const outright = oneTimePlanFor(metadata.product);
+        if (outright) {
+          await activatePlan({
+            userId,
+            plan: outright,
+            subscriptionId: null,
+            customerId: str(
+              (data.customer as { customer_id?: unknown } | undefined)
+                ?.customer_id,
+            ),
+            status: "active",
+            currentPeriodEnd: null,
+          });
+          console.info(`[dodo] ${metadata.product} granted to ${userId}`);
+          break;
+        }
+
         // Subscription payments land here too, and the events above already
         // handled those. Re-activating on both would mostly be harmless — but
         // "buying the template pack renewed your subscription" is the version

@@ -4,6 +4,7 @@ import {
   ANONYMOUS,
   CHECKOUT_PRODUCTS,
   isCheckoutProduct,
+  oneTimePlanFor,
   PLANS,
   type PlanName,
   planForProduct,
@@ -97,18 +98,64 @@ describe("pro component entitlement", () => {
     expect(unlocked).toEqual(["pro"]);
   });
 
-  it("sells no product that grants a components plan yet", () => {
-    // Pro is not launched. Every product on sale today must resolve to a plan
-    // that cannot install the paid registry — if this fails, something on the
-    // pricing page is shipping the components early.
-    for (const p of Object.keys(CHECKOUT_PRODUCTS) as Array<
-      keyof typeof CHECKOUT_PRODUCTS
-    >) {
+  it("sells the components through exactly two products, and names them", () => {
+    // This used to read "sells no product that grants a components plan yet",
+    // which was the right assertion while pro was unlaunched and is the wrong
+    // one now that it is for sale. Kept as a named list rather than deleted:
+    // the risk it was guarding has not gone away, it has changed shape. Before,
+    // any product reaching a components plan was a leak; now, any product
+    // *other than these two* reaching one is. A `starter` row that drifted to
+    // `pro` would hand the whole catalogue to the $19 editor tier, and nobody
+    // files a bug about getting more than they paid for.
+    const selling = (
+      Object.keys(CHECKOUT_PRODUCTS) as Array<keyof typeof CHECKOUT_PRODUCTS>
+    ).filter((p) => {
       const { plan } = CHECKOUT_PRODUCTS[p];
-      expect(
-        plan === null || PLANS[plan as PlanName].components === false,
-        p,
-      ).toBe(true);
-    }
+      return plan !== null && PLANS[plan as PlanName].components;
+    });
+    expect(selling.sort()).toEqual(["founder", "lifetime"]);
+  });
+});
+
+/**
+ * Shape C, the ladder decided 2026-09-11: the editor subscription and the
+ * catalogue are different purchases, and only the catalogue carries components.
+ *
+ * These three are money bugs rather than typos. A `founder` row that resolved to
+ * `starter` would take $99 and hand back the editor; a `lifetime` row that went
+ * through the subscription branch would be granted and then revoked the first
+ * time `planFor` looked at a null `currentPeriodEnd`... which it would not,
+ * because the webhook never writes the row at all. And a `starter` that ever
+ * answered `oneTimePlanFor` would be re-granted on every monthly charge.
+ */
+describe("the catalogue ladder", () => {
+  it("sells the catalogue as pro and the editor as starter", () => {
+    expect(planForProduct("founder")).toBe("pro");
+    expect(planForProduct("lifetime")).toBe("pro");
+    expect(planForProduct("starter")).toBe("starter");
+    expect(planForProduct("starter_annual")).toBe("starter");
+    expect(planForProduct("pack")).toBeNull();
+  });
+
+  it("gives components to the catalogue plans and to nothing else", () => {
+    expect(PLANS.pro.components).toBe(true);
+    expect(PLANS.starter.components).toBe(false);
+    expect(PLANS.free.components).toBe(false);
+  });
+
+  it("grants outright only for one-time products that carry a plan", () => {
+    expect(oneTimePlanFor("lifetime")).toBe("pro");
+    // The pack is one-time and entitles nothing.
+    expect(oneTimePlanFor("pack")).toBeNull();
+    // Subscriptions are granted by their own events, never by a payment.
+    expect(oneTimePlanFor("founder")).toBeNull();
+    expect(oneTimePlanFor("starter")).toBeNull();
+    expect(oneTimePlanFor("anything-else")).toBeNull();
+  });
+
+  it("names an env var for every product and never repeats one", () => {
+    const envs = Object.values(CHECKOUT_PRODUCTS).map((p) => p.env);
+    expect(new Set(envs).size).toBe(envs.length);
+    for (const e of envs) expect(e).toMatch(/^DODO_PRODUCT_[A-Z_]+$/);
   });
 });

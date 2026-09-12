@@ -32,6 +32,12 @@ type Tier = {
    * answer to a subscription whose churn shows up in month two.
    */
   annual?: { product: UpgradeProduct; label: string };
+  /**
+   * One line under the button, for a fact about the price rather than about the
+   * plan — seats left, a dated rise. Not a feature: a feature is what you get,
+   * and this is a reason to decide now.
+   */
+  note?: string;
   cta: string;
   featured?: boolean;
 };
@@ -123,6 +129,12 @@ export function PricingPlans({
             ) : (
               <p className="mt-5 text-center text-muted-foreground text-xs">
                 {current ? "Your plan" : tier.cta}
+              </p>
+            )}
+
+            {tier.note && (
+              <p className="mt-2 text-center text-muted-foreground text-xs">
+                {tier.note}
               </p>
             )}
 

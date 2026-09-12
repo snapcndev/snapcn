@@ -140,13 +140,34 @@ export function limitsFor(plan: PlanName | null): PlanLimits {
  * one-time purchase that entitles nothing in this app.
  */
 export const CHECKOUT_PRODUCTS = {
-  starter: { env: "DODO_PRODUCT_STARTER", plan: "starter" },
+  starter: {
+    env: "DODO_PRODUCT_STARTER",
+    plan: "starter",
+    kind: "subscription",
+  },
   // Annual is a separate Dodo product, not a flag on the monthly one — Dodo
   // snapshots the billing interval onto the subscription at creation. Same
   // plan, different cart.
-  starter_annual: { env: "DODO_PRODUCT_STARTER_ANNUAL", plan: "starter" },
-  pack: { env: "DODO_PRODUCT_PACK", plan: null },
-} as const satisfies Record<string, { env: string; plan: PlanName | null }>;
+  starter_annual: {
+    env: "DODO_PRODUCT_STARTER_ANNUAL",
+    plan: "starter",
+    kind: "subscription",
+  },
+  // The catalogue, annually. `pro` is the only plan whose `components` is true,
+  // so this row is the entire difference between paying for the editor and
+  // paying for the registry.
+  founder: {
+    env: "DODO_PRODUCT_FOUNDER",
+    plan: "pro",
+    kind: "subscription",
+  },
+  // The catalogue, bought outright. Same plan, no renewal — see `kind`.
+  lifetime: { env: "DODO_PRODUCT_LIFETIME", plan: "pro", kind: "once" },
+  pack: { env: "DODO_PRODUCT_PACK", plan: null, kind: "once" },
+} as const satisfies Record<
+  string,
+  { env: string; plan: PlanName | null; kind: "subscription" | "once" }
+>;
 
 export type CheckoutProduct = keyof typeof CHECKOUT_PRODUCTS;
 
@@ -175,3 +196,35 @@ export function isCheckoutProduct(value: unknown): value is CheckoutProduct {
 export function planForProduct(value: unknown): PlanName | null {
   return isCheckoutProduct(value) ? CHECKOUT_PRODUCTS[value].plan : null;
 }
+
+/**
+ * The plan a **one-time** purchase grants, or null for everything else.
+ *
+ * `kind` exists for exactly this call. Dodo reports a lifetime seat as a
+ * `payment.succeeded` and never as a subscription event, so the webhook's
+ * payment branch has to be able to tell three things apart that all arrive on
+ * the same event: a subscription's monthly charge (already granted by its own
+ * `subscription.active`, and re-granting on the payment would be harmless right
+ * up until the day it is not), a one-time purchase that entitles nothing (the
+ * template pack), and a one-time purchase that entitles everything (this).
+ *
+ * Inferring it instead — "a payment with a plan must be one-time" — is the
+ * version that breaks the first time a subscription payment arrives before its
+ * activation event, which is a race Dodo makes no promise about.
+ */
+export function oneTimePlanFor(value: unknown): PlanName | null {
+  if (!isCheckoutProduct(value)) return null;
+  const row = CHECKOUT_PRODUCTS[value];
+  return row.kind === "once" ? row.plan : null;
+}
+
+/**
+ * How many founder seats exist at the launch price.
+ *
+ * A number, not a feature flag: the seat counter on the pricing page is the
+ * only thing that reads it, and when it runs out the price rises by hand on the
+ * date already announced. Enforcing it in the checkout route would mean a buyer
+ * who loads the page at seat 50 and pays at seat 51 gets a 400 after entering a
+ * card, which is a worse outcome than selling a fifty-first seat.
+ */
+export const FOUNDER_SEATS = 50;

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
-import { planFor } from "@/lib/server/entitlements";
+import { FOUNDER_SEATS } from "@/lib/plans";
+import { planFor, seatsTaken } from "@/lib/server/entitlements";
 import { docsBreadcrumb, JsonLd } from "@/lib/structured-data";
 import { PricingPlans } from "./pricing-plans";
 
@@ -72,7 +73,39 @@ const TIERS = [
       label: "or $190 a year — two months free",
     },
     cta: "Remove the watermark",
+  },
+  // The catalogue. These two are the only tiers whose plan has `components:
+  // true`, which is the whole of the entitlement — everything above sells the
+  // editor, and the registry is a separate purchase.
+  {
+    name: "Founder",
+    price: "$99",
+    cadence: "/year",
+    blurb:
+      "Every pro component, and every one that ships while your year runs.",
+    features: [
+      "The whole pro catalogue",
+      "New components as they land",
+      "Installed with the shadcn CLI you already use",
+      "Yours outright — the files are copied into your project",
+    ],
+    product: "founder" as const,
+    cta: "Take a founder seat",
     featured: true,
+  },
+  {
+    name: "Lifetime",
+    price: "$199",
+    cadence: " once",
+    blurb: "The same catalogue, bought outright. Nothing to renew.",
+    features: [
+      "The whole pro catalogue",
+      "Every component that ships from here on",
+      "One payment, no renewal",
+      "Yours outright — the files are copied into your project",
+    ],
+    product: "lifetime" as const,
+    cta: "Buy it outright",
   },
   // The Template Pack tier is deliberately absent until the templates exist.
   // `pack` stays in CHECKOUT_PRODUCTS and the webhook still recognises it, so
@@ -85,6 +118,23 @@ const TIERS = [
 export default async function PricingPage() {
   const session = await auth().catch(() => null);
   const { plan } = await planFor(session?.user?.id ?? null);
+  // Read at render, not baked at build: the whole point of a seat counter is
+  // that it is smaller than it was the last time you looked.
+  const taken = await seatsTaken();
+  const left = Math.max(0, FOUNDER_SEATS - taken);
+  const tiers = TIERS.map((tier) =>
+    tier.product === "founder"
+      ? {
+          ...tier,
+          note:
+            left > 0
+              ? `${left} of ${FOUNDER_SEATS} founder seats left · $149 from 30 Sep`
+              : "Founder seats are gone · $149 from 30 Sep",
+        }
+      : tier.product === "lifetime"
+        ? { ...tier, note: "$299 from 20 Oct" }
+        : tier,
+  );
 
   return (
     <GalleryFrame>
@@ -99,7 +149,7 @@ export default async function PricingPage() {
 
         <div className="mt-8">
           <PricingPlans
-            tiers={TIERS}
+            tiers={tiers}
             signedIn={Boolean(session?.user)}
             currentPlan={plan}
           />
