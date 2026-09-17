@@ -720,31 +720,6 @@
           "target": "components/snap-cn/card-rail.tsx"
         }
       ]
-    },
-    {
-      "name": "launch-video",
-      "type": "registry:block",
-      "docs": "Docs and props: https://snapcn.dev/docs/scenes/launch-video?ref=cli — change the copy props (headline, highlight, screenSrc, followerCount, wordmark) and register <LaunchVideo /> as a 1280x720, 30fps composition LAUNCH_VIDEO_DURATION frames long. Each beat was installed as its own component too, so any one of them can be swapped for another snapcn component.",
-      "title": "Launch Video",
-      "description": "Product launch video template: a title, a highlighted claim, your app on a phone, a follower count and a wordmark outro — five snapcn components composed into one 21-second Remotion video, in one install.",
-      "dependencies": [
-        "remotion"
-      ],
-      "registryDependencies": [
-        "https://snapcn.dev/r/snap-cn-ui.json",
-        "https://snapcn.dev/r/text-reveal.json",
-        "https://snapcn.dev/r/text-highlight.json",
-        "https://snapcn.dev/r/phone-frame.json",
-        "https://snapcn.dev/r/follower-rush.json",
-        "https://snapcn.dev/r/block-wordmark.json"
-      ],
-      "files": [
-        {
-          "path": "launch-video/index.tsx",
-          "type": "registry:component",
-          "target": "components/snap-cn/launch-video.tsx"
-        }
-      ]
     }
   ]
 }

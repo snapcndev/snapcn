@@ -57,11 +57,6 @@ export const RENDERED_DEMOS: readonly string[] = [
   // this list exists to avoid.
   "block-wordmark",
   "text-reveal",
-  // Five demos in one: it opens on `text-reveal`, ends on `block-wordmark` and
-  // has `follower-rush` in the middle — three entries already here for their own
-  // reasons — and a live Player would have to mount all five scenes' fonts and
-  // images to show it.
-  "launch-video",
   // The opening is `text-reveal` itself, so it inherits that entry's reason —
   // and then adds its own: after the reveal, a whole line is carried across the
   // frame on a 16-frame bezier, morphed letter by letter, and pulled out on an

@@ -94,7 +94,6 @@ const COMPONENT_QUERY: Record<string, string> = {
   "cursor-track": "Remotion cursor click animation",
   "screen-recording": "Remotion screen recording zoom",
   "follower-rush": "Remotion follower count animation",
-  "launch-video": "Remotion product launch video template",
   "scatter-bloom": "Remotion scatter plot animation",
   "ticker-climb": "Remotion line chart animation",
   "metric-morph": "Remotion bar chart animation",
