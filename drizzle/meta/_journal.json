@@ -50,6 +50,13 @@
       "when": 1788859119932,
       "tag": "0006_email_double_opt_in",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789639053883,
+      "tag": "0007_api_keys",
+      "breakpoints": true
     }
   ]
 }

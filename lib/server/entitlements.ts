@@ -2,7 +2,7 @@ import "server-only";
 import { and, count, eq, lt, sql } from "drizzle-orm";
 import { billingSubscriptions, renderUsage } from "@/lib/db/schema";
 import { ANONYMOUS, PLANS, type PlanLimits, type PlanName } from "@/lib/plans";
-import { newApiKey } from "@/lib/server/api-key";
+import { ensureApiKey } from "@/lib/server/api-key";
 import { getDb, isDbConfigured } from "@/lib/server/db";
 
 /**
@@ -364,27 +364,11 @@ export async function activatePlan(args: {
   status: string;
   currentPeriodEnd: Date | null;
 }): Promise<void> {
-  /**
-   * Minted here and never rotated. `coalesce` rather than a plain assignment
-   * because both paths have to end with a key and only one of them may write:
-   * a brand-new row gets this one, an existing row keeps whatever it already
-   * handed out. Overwriting on renewal would silently break every MCP config
-   * the customer has pasted on every machine, once a month, for as long as
-   * they pay — the failure mode is a support ticket that reads like a bug in
-   * the gate.
-   *
-   * A free row upgrading to paid takes the same branch and mints for the first
-   * time, which is why the null case has to be handled in SQL and not in a
-   * read-then-write above.
-   */
-  const mintedKey = newApiKey();
-
   const row = {
     plan: args.plan,
     status: args.status,
     dodoSubscriptionId: args.subscriptionId,
     currentPeriodEnd: args.currentPeriodEnd,
-    apiKey: sql`coalesce(${billingSubscriptions.apiKey}, ${mintedKey})`,
     updatedAt: new Date(),
     // Spread, so an event without a customer leaves the stored one alone —
     // `undefined` in a drizzle `set` omits the column, `null` would erase it.
@@ -393,8 +377,14 @@ export async function activatePlan(args: {
 
   await getDb()
     .insert(billingSubscriptions)
-    .values({ userId: args.userId, ...row, apiKey: mintedKey })
+    .values({ userId: args.userId, ...row })
     .onConflictDoUpdate({ target: billingSubscriptions.userId, set: row });
+
+  // A buyer lands on `/account` with a key already waiting. Only when the plan
+  // installs components, and only if they hold none — see `ensureApiKey`.
+  if (args.status === "active" && PLANS[args.plan].components) {
+    await ensureApiKey(args.userId);
+  }
 }
 
 /**
@@ -427,5 +417,30 @@ export async function seatsTaken(): Promise<number> {
   } catch (err) {
     console.warn("[entitlements] seat count failed, showing none taken", err);
     return 0;
+  }
+}
+
+/**
+ * The owner's billing row, for describing their plan back to them on
+ * `/account` — renewal date, one-time or not. Null for no row or no database.
+ * Access decisions go through `planFor`, never through this.
+ */
+export async function billingFor(userId: string) {
+  if (!isDbConfigured) return null;
+  try {
+    const [row] = await getDb()
+      .select({
+        plan: billingSubscriptions.plan,
+        status: billingSubscriptions.status,
+        currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
+        subscriptionId: billingSubscriptions.dodoSubscriptionId,
+      })
+      .from(billingSubscriptions)
+      .where(eq(billingSubscriptions.userId, userId))
+      .limit(1);
+    return row ?? null;
+  } catch (err) {
+    console.warn("[entitlements] billing read failed", err);
+    return null;
   }
 }
