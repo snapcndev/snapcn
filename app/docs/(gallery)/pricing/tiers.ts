@@ -268,6 +268,18 @@ export function pricingFor(
     return { ...tier, cta: cta(tier.price), note: listNote };
   });
 
+  // India: Lifetime first, and it is the featured card. Indian cards are
+  // routinely declined on recurring international charges (RBI e-mandate
+  // rules), and the one live Pro subscription attempted from India ended in
+  // `requires_payment_method` — a one-time payment is the plan that goes
+  // through there.
+  const shown =
+    country === "IN"
+      ? tiers
+          .map((t) => ({ ...t, featured: t.name === "Lifetime" }))
+          .sort((a, b) => rank(a.name) - rank(b.name))
+      : tiers;
+
   const how =
     source === "test"
       ? "set by ?country= (development only)"
@@ -281,8 +293,12 @@ export function pricingFor(
         : `Prices for ${place}, ${how}. Checkout confirms them from your billing country.`
       : REGIONAL_NOTE;
 
-  return { tiers, footnote };
+  return { tiers: shown, footnote };
 }
+
+/** Card order with Lifetime moved ahead of Pro; everything else keeps its place. */
+const rank = (name: string) =>
+  name === "Lifetime" ? 1 : name === "Pro" ? 2 : name === "Free" ? 0 : 3;
 
 /**
  * `pricingFor` for this request: the seat count read live, the country from
