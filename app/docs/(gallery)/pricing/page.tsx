@@ -74,13 +74,7 @@ export default async function PricingPage({
             docs pages and the old `/pro` links all land on them. This is the
             one pricing page — `/pro` forwards here. */}
         <div id="plans" className="mt-10 scroll-mt-24 lg:mt-20">
-          <PricingPlans
-            tiers={tiers}
-            signedIn={Boolean(session?.user)}
-            currentPlan={plan}
-            returnTo="/docs/pricing#plans"
-            footnote={footnote}
-          />
+          <PricingPlans tiers={tiers} currentPlan={plan} footnote={footnote} />
         </div>
 
         {/* The second exit, for everyone who will not buy today: one Pro

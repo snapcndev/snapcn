@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { oneTimePlanFor, planForProduct } from "@/lib/plans";
 import { isDbConfigured } from "@/lib/server/db";
 import { type DodoEvent, verifyWebhookSignature } from "@/lib/server/dodo";
-import { activatePlan } from "@/lib/server/entitlements";
+import { proReadyEmail, sendEmail } from "@/lib/server/email";
+import { activatePlan, userIdForEmail } from "@/lib/server/entitlements";
 
 // Node runtime: the signature check is an HMAC through `node:crypto` and a
 // `timingSafeEqual`, neither of which exists on the Edge runtime.
@@ -71,9 +72,18 @@ export async function POST(request: Request) {
   const type = typeof event.type === "string" ? event.type : "";
   const data = event.data ?? {};
   const metadata = (data.metadata ?? {}) as Record<string, unknown>;
-  const userId = str(metadata.user_id);
+  // A guest checkout carries no user id — only the email typed on Dodo's page,
+  // which is the account (`userIdForEmail`). Only for our own products: this
+  // endpoint also hears the other brand on the Dodo account, and its events
+  // must never create a snapcn user.
+  const guestEmail = str(
+    (data.customer as { email?: unknown } | undefined)?.email,
+  );
+  const ours = Boolean(
+    planForProduct(metadata.product) || oneTimePlanFor(metadata.product),
+  );
 
-  if (!userId) {
+  if (!str(metadata.user_id) && !(ours && guestEmail)) {
     // 200, deliberately, on an event this app cannot use. A 4xx would put it
     // back in Dodo's retry queue and it would return for days — but no number
     // of redeliveries will ever add a `user_id` that was never set. Events
@@ -94,6 +104,34 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+
+  // Activation creates a guest's account; any other event only finds one, so a
+  // failed first payment does not leave an empty account behind.
+  let resolved = str(metadata.user_id);
+  if (!resolved && guestEmail) {
+    const activates =
+      type === "subscription.active" ||
+      type === "subscription.renewed" ||
+      type === "payment.succeeded";
+    try {
+      resolved = await userIdForEmail(guestEmail, { create: activates });
+    } catch (err) {
+      console.error(`[dodo] ${type} could not resolve the buyer:`, err);
+      return NextResponse.json({ error: "Retry." }, { status: 500 });
+    }
+  }
+  if (!resolved) {
+    console.warn(`[dodo] ${type} for a guest with no account, ignored`);
+    return NextResponse.json({ ok: true });
+  }
+  const userId = resolved;
+  // A guest has no session to land in, so the address they paid with is told
+  // where the plan is. `sendEmail` never throws.
+  const tellGuest = async () => {
+    if (!str(metadata.user_id) && guestEmail) {
+      await sendEmail(proReadyEmail(guestEmail));
+    }
+  };
 
   try {
     switch (type) {
@@ -129,6 +167,7 @@ export async function POST(request: Request) {
           // the end of the whole term, which is a different question.
           currentPeriodEnd: date(data.next_billing_date),
         });
+        if (type === "subscription.active") await tellGuest();
         break;
       }
 
@@ -192,6 +231,7 @@ export async function POST(request: Request) {
             status: "active",
             currentPeriodEnd: null,
           });
+          await tellGuest();
           console.info(`[dodo] ${metadata.product} granted to ${userId}`);
           break;
         }

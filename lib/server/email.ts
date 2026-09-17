@@ -596,6 +596,40 @@ Rendering the components locally with your own Remotion setup was never watermar
 }
 
 /**
+ * Sent when a guest checkout activates. They paid without an account, so the
+ * plan sits on the address they typed at checkout; if they closed the tab
+ * before signing in, this is the only thing that tells them how to reach it.
+ */
+export function proReadyEmail(to: string): Email {
+  const url = `${SITE}/signin?paid=1&callbackUrl=${encodeURIComponent("/account?checkout=done")}`;
+  const text = `Your snapcn Pro is ready.
+
+Sign in with this address (${to}) to get your API key and the install steps:
+
+${url}
+
+— Sri`;
+
+  return {
+    to,
+    subject: "Your snapcn Pro is ready",
+    text,
+    html: shell({
+      chrome: "plain",
+      preheader: "Sign in with this address to get your API key.",
+      heading: "Your snapcn Pro is ready",
+      body: [
+        p(
+          `Sign in with this address (<strong>${esc(to)}</strong>) to get your API key and the install steps.`,
+        ),
+        `<div style="margin:22px 0 18px;">${button("Sign in and get your key", url)}</div>`,
+        p("— Sri", `margin:18px 0 0;color:${C.muted};`),
+      ].join("\n      "),
+    }),
+  };
+}
+
+/**
  * Escape user-supplied text before it enters an HTML mail body.
  *
  * For any text we did not write ourselves — configuration included — before

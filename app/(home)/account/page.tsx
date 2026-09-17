@@ -38,7 +38,11 @@ export default async function AccountPage({
   const { checkout } = await searchParams;
   const session = await auth().catch(() => null);
   const user = session?.user;
-  if (!user?.id) redirect("/signin?callbackUrl=/account");
+  if (!user?.id) {
+    redirect(
+      `/signin?callbackUrl=${encodeURIComponent(checkout === "done" ? "/account?checkout=done" : "/account")}`,
+    );
+  }
 
   const [{ limits }, billing, keys] = await Promise.all([
     planFor(user.id),
@@ -100,7 +104,7 @@ export default async function AccountPage({
               <p className="mt-1 text-muted-foreground text-sm">
                 Your plan and first key appear here as soon as the payment is
                 confirmed, usually within a minute. Refresh this page, and make
-                sure you are signed in with the account you paid from.
+                sure you are signed in with the email you paid with.
               </p>
             </div>
           ) : null}

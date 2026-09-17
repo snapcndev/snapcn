@@ -1,6 +1,6 @@
 import "server-only";
 import { and, count, eq, lt, sql } from "drizzle-orm";
-import { billingSubscriptions, renderUsage } from "@/lib/db/schema";
+import { billingSubscriptions, renderUsage, users } from "@/lib/db/schema";
 import { ANONYMOUS, PLANS, type PlanLimits, type PlanName } from "@/lib/plans";
 import { ensureApiKey } from "@/lib/server/api-key";
 import { getDb, isDbConfigured } from "@/lib/server/db";
@@ -385,6 +385,48 @@ export async function activatePlan(args: {
   if (args.status === "active" && PLANS[args.plan].components) {
     await ensureApiKey(args.userId);
   }
+}
+
+/**
+ * The account a checkout's email belongs to — created, when `create` is set and
+ * there is none yet.
+ *
+ * Checkout does not need sign-in: a guest types an email into Dodo's page, and
+ * that email is the account. It is written as a bare Auth.js user row, so
+ * signing in with the address later — a magic link, or Google/GitHub on the
+ * same verified address (`allowDangerousEmailAccountLinking`) — lands on the
+ * account the plan is already on.
+ *
+ * Handing a plan to an address the buyer only typed is safe: the worst case is
+ * paying for someone else's address, which gives its owner a free plan.
+ * Signing in still proves the address.
+ *
+ * Matched case-insensitively, stored lowercased — the form Auth.js's email
+ * provider signs in with.
+ */
+export async function userIdForEmail(
+  email: string,
+  { create }: { create: boolean },
+): Promise<string | null> {
+  const address = email.trim().toLowerCase();
+  const find = async () =>
+    (
+      await getDb()
+        .select({ id: users.id })
+        .from(users)
+        .where(sql`lower(${users.email}) = ${address}`)
+        .limit(1)
+    )[0]?.id ?? null;
+
+  const existing = await find();
+  if (existing || !create) return existing;
+  // `subscription.active` and `payment.succeeded` can land together; the
+  // unique email makes the second insert a no-op rather than a second account.
+  await getDb()
+    .insert(users)
+    .values({ email: address })
+    .onConflictDoNothing({ target: users.email });
+  return find();
 }
 
 /**

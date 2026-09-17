@@ -6,8 +6,9 @@ import {
   isCheckoutProduct,
   PLANS,
 } from "@/lib/plans";
+import { clientIp } from "@/lib/server/client-ip";
+import { isDbConfigured } from "@/lib/server/db";
 import { createCheckout, dodoConfigured } from "@/lib/server/dodo";
-import { requireUser } from "@/lib/server/projects";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 
 /**
@@ -22,12 +23,13 @@ import { checkRateLimit } from "@/lib/server/rate-limit";
  * `/api/webhooks/dodo`. Trusting this response instead would sell Pro to
  * anyone who can POST and then abandon the card form.
  *
- * Sign-in is required *before* the card rather than after, which is the one
- * decision in this file worth defending: `metadata.user_id`, set below, is the
- * webhook's only link from a payment back to a person. Let someone pay first
- * and the payment arrives carrying an email address that may match no account,
- * a different account, or one they create later — and reconciling that is
- * manual work on the money path, forever.
+ * Sign-in is **not** required. It was, so `metadata.user_id` would link every
+ * payment to a person — and half of everyone who opened sign-in never finished
+ * it, which put the wall in front of the card at exactly the wrong moment. A
+ * signed-in buyer still gets `user_id`; a guest's payment carries the email
+ * they typed on Dodo's page, and the webhook puts the plan on that address's
+ * account, creating it if needed (`userIdForEmail`). Signing in with the same
+ * address finds it.
  */
 
 export async function POST(request: Request) {
@@ -42,13 +44,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const guard = await requireUser();
-  if ("response" in guard) return guard.response;
+  // The webhook has to write the plan somewhere, guest or not.
+  if (!isDbConfigured) {
+    return NextResponse.json(
+      { error: "Checkout isn't configured yet." },
+      { status: 503 },
+    );
+  }
 
-  // Keyed on the user rather than the IP, because a checkout is per-account
-  // work: an office behind one NAT should not share a purchase budget, and a
-  // signed-in id is the harder thing to rotate anyway.
-  if (!checkRateLimit(guard.userId, "checkout")) {
+  const user = (await auth().catch(() => null))?.user;
+  const userId = user?.id ?? null;
+
+  // Keyed on the user when there is one: an office behind one NAT should not
+  // share a purchase budget. A guest has only the address.
+  if (!checkRateLimit(userId ?? `ip:${clientIp(request)}`, "checkout")) {
     return NextResponse.json(
       { error: "Too many checkout attempts. Please wait and retry." },
       { status: 429 },
@@ -91,12 +100,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // A second session read, not a second auth check: `requireUser` owns the
-  // 401/503 and gives the id, this only supplies the name and email Dodo puts
-  // on the receipt and prefills into the card form. Once per purchase — the
-  // cheapest possible place to spend an extra session lookup.
-  const user = (await auth().catch(() => null))?.user;
-
   try {
     const { checkoutUrl } = await createCheckout({
       productId,
@@ -107,7 +110,7 @@ export async function POST(request: Request) {
       // whose plan to activate — and `product` is what tells a one-time pack
       // payment apart from a subscription payment on the way back in. Values
       // must be strings; Dodo silently drops anything it does not understand.
-      metadata: { user_id: guard.userId, product },
+      metadata: userId ? { user_id: userId, product } : { product },
       // Through the sync route, not straight to the editor. Dodo's redirect is
       // the earliest moment we can be certain the payment happened, and routing
       // it through a reconcile means the plan is already live on the page they
@@ -119,11 +122,12 @@ export async function POST(request: Request) {
       // the lines that put one in `components.json` live — it used to land in
       // the editor, which left somebody who had just paid for components with
       // no key and no way to install one.
-      returnUrl: `${publicOrigin(request)}/api/billing/sync?next=${encodeURIComponent(
-        buysComponents(product)
-          ? "/account?checkout=done"
-          : "/docs/video-editor?checkout=done",
-      )}`,
+      //
+      // A guest has no session for the sync route to reconcile, so they land on
+      // sign-in, told to use the address they paid with.
+      returnUrl: userId
+        ? `${publicOrigin(request)}/api/billing/sync?next=${encodeURIComponent(next(product))}`
+        : `${publicOrigin(request)}/signin?paid=1&callbackUrl=${encodeURIComponent(next(product))}`,
     });
     return NextResponse.json({ checkoutUrl });
   } catch (err) {
@@ -138,6 +142,12 @@ export async function POST(request: Request) {
 }
 
 /** Whether a product's plan carries the pro components. A pack has no plan. */
+function next(product: CheckoutProduct): string {
+  return buysComponents(product)
+    ? "/account?checkout=done"
+    : "/docs/video-editor?checkout=done";
+}
+
 function buysComponents(product: CheckoutProduct): boolean {
   const plan = CHECKOUT_PRODUCTS[product].plan;
   return plan ? PLANS[plan].components : false;
