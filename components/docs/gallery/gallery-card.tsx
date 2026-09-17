@@ -1,17 +1,18 @@
 "use client";
 
-import { Player } from "@remotion/player";
 import { ArrowUpRight } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { type MouseEvent, useMemo, useRef } from "react";
-import { AbsoluteFill, Img } from "remotion";
+import { type MouseEvent, useRef } from "react";
 import {
   type GalleryItem,
   resolveTile,
   slugFromHref,
   TILE_RATIOS,
 } from "@/lib/gallery-data";
-import { resolvePreview } from "@/lib/gallery-preview";
+import { CATALOGUE_PRICE } from "@/lib/plans";
+import { previewMeta } from "@/lib/preview-meta";
+import { proDemoSrc } from "@/lib/pro-demos";
 import {
   RenderedDemo,
   renderedDemoPoster,
@@ -19,6 +20,12 @@ import {
 } from "@/lib/rendered-demos";
 import { useLazyPlayer } from "../use-lazy-player";
 import { cardAttr, morphFromCard } from "./shared-media-transition";
+
+/**
+ * Remotion, only if a card has no rendered demo — see `live-preview.tsx`. None
+ * do today, so this chunk is never fetched and the gallery ships no player.
+ */
+const LivePreview = dynamic(() => import("./live-preview"), { ssr: false });
 
 /**
  * A single reference-style gallery card: a live Remotion preview that fills the
@@ -44,11 +51,17 @@ export function GalleryCard({
   const { containerRef, playerRef, mounted } = useLazyPlayer();
   const cardRef = useRef<HTMLAnchorElement>(null);
 
-  const preview = useMemo(() => resolvePreview(slug), [slug]);
+  // Shape and length only — never the component. A paid component has no
+  // registry entry at all (the pro barrel is gitignored and never enters the
+  // client bundle, which is the point), and a free one does not need its source
+  // here either: the card is a video.
+  const meta = item.pro ? null : previewMeta(slug);
   // Cards only ever show the default scene, so a rendered demo is always the
   // right picture for the slugs that have one. See lib/rendered-demos.tsx.
-  const demoSrc = renderedDemoSrc(slug);
-  const demoPoster = renderedDemoPoster(slug);
+  const demoSrc = item.pro ? proDemoSrc(slug) : renderedDemoSrc(slug);
+  // No poster for a paid card: it autoplays the moment it is on screen and a
+  // still in front of it is a frame of the video shown as a photograph.
+  const demoPoster = item.pro ? null : renderedDemoPoster(slug);
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     // No handler (e.g. the pre-hydration server fallback) → navigate normally.
@@ -70,42 +83,14 @@ export function GalleryCard({
     morphFromCard(cardRef.current, () => onOpen(slug));
   };
 
-  // Blocks paint their own full-bleed backdrop fill, exactly like PreviewStage
-  // — memoized so the Player's `component` identity stays stable across renders
-  // (a changing identity would remount the Player and restart playback).
-  const Composition = useMemo(() => {
-    if (!preview) return null;
-    if (!preview.previewBackdrop) return preview.Component;
-    const backdrop = preview.previewBackdrop;
-    const Inner = preview.Component;
-    const Wrapped = (props: Record<string, unknown>) => (
-      <AbsoluteFill>
-        {backdrop.type === "image" ? (
-          <AbsoluteFill>
-            <Img
-              src={backdrop.src}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: backdrop.fit ?? "cover",
-              }}
-            />
-          </AbsoluteFill>
-        ) : (
-          <AbsoluteFill style={{ background: backdrop.value }} />
-        )}
-        <Inner {...props} />
-      </AbsoluteFill>
-    );
-    return Wrapped;
-  }, [preview]);
-
   // The card adopts the preview's own aspect ratio so the video fills it edge to
   // edge — no mat, no letterbox. Falls back to the deterministic tile shape only
   // when a card has no live preview.
-  const aspectRatio = preview
-    ? `${preview.width} / ${preview.height}`
-    : TILE_RATIOS[resolveTile(item)];
+  const aspectRatio = meta
+    ? `${meta.width} / ${meta.height}`
+    : item.pro
+      ? "16 / 9"
+      : TILE_RATIOS[resolveTile(item)];
 
   return (
     <Link
@@ -143,36 +128,31 @@ export function GalleryCard({
       style={{ aspectRatio }}
     >
       <div ref={containerRef} className="absolute inset-0">
-        {preview && Composition && mounted ? (
-          demoSrc ? (
-            <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
-          ) : (
-            <Player
-              ref={playerRef}
-              component={Composition}
-              inputProps={preview.inputProps}
-              durationInFrames={preview.durationInFrames}
-              fps={preview.fps}
-              compositionWidth={preview.width}
-              compositionHeight={preview.height}
-              style={{
-                width: "100%",
-                height: "100%",
-                backgroundColor: "transparent",
-              }}
-              controls={false}
-              loop
-              // Remotion starts playback itself as soon as the player is ready,
-              // with no time limit — so a slow-loading card never gets stranded
-              // on its first frame the way the rAF play() poll (which gives up
-              // after ~2s under a heavy concurrent mount) can leave it. The
-              // useLazyPlayer visibility effect still pauses off-screen cards.
-              autoPlay
-              acknowledgeRemotionLicense
-            />
-          )
+        {mounted && demoSrc ? (
+          <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
+        ) : mounted && !item.pro ? (
+          <LivePreview slug={slug} name={item.name} playerRef={playerRef} />
         ) : null}
       </div>
+
+      {/* The price, at rest rather than on hover.
+          47 people had reached a price page in this site's entire history, and
+          2,436 a month reach this grid — so the number has to be ON the card,
+          not one click behind a badge that says "Pro" and nothing else. A badge
+          that only appears under the pointer is one they meet after deciding.
+          Same chip as the hover arrow, so it reads as card furniture rather
+          than a sticker on the video.
+
+          "all for" is load-bearing and is not padding. A bare `Pro · $99` on a
+          tile showing ONE animation reads as the price OF that animation, which
+          is an absurd price for one and hides the only offer there is — there
+          is no per-component sale, the catalogue is sold whole. Naming the unit
+          turns the same number from a deterrent into the value statement. */}
+      {item.pro ? (
+        <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-gallery-chip px-2.5 py-1 text-xs font-medium text-foreground backdrop-blur-md">
+          Pro · all for {CATALOGUE_PRICE.annual}/yr
+        </span>
+      ) : null}
 
       {/* Hover footer — hidden until the card is hovered/focused so the resting
           card is pure video. A blur rises from the bottom (mask fades it up) and

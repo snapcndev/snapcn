@@ -1,5 +1,9 @@
 import type { MetadataRoute } from "next";
-import { GALLERY_ITEMS, galleryItemByHref } from "@/lib/gallery-data";
+import {
+  GALLERY_ITEMS,
+  galleryItemByHref,
+  PRO_GALLERY_ITEMS,
+} from "@/lib/gallery-data";
 import { source } from "@/source";
 
 const SITE_URL = "https://snapcn.dev";
@@ -33,10 +37,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
    * including `/docs/video-editor`, a free tool and the highest-intent page on
    * the site.
    */
-  // `/docs/templates` and `/docs/marketplace` are deliberately absent: both are
-  // `ComingSoonPage`s, thirty words of placeholder each, and a sitemap is a
-  // request to index. They stay crawlable from the rail; they are just not
-  // something to ask for a ranking on until they exist.
+  // `/docs/templates` is deliberately absent: it is a `ComingSoonPage`, thirty
+  // words of placeholder, and a sitemap is a request to index. It stays
+  // crawlable from the rail; it is just not something to ask a ranking for
+  // until it exists.
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
@@ -56,9 +60,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${SITE_URL}/docs/showcase`,
-      changeFrequency: "weekly",
-      priority: 0.7,
+      url: `${SITE_URL}/docs/mcp`,
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
     {
       url: `${SITE_URL}/docs/changelog`,
@@ -87,5 +91,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     };
   });
 
-  return [...staticRoutes, ...docRoutes];
+  // The paid components' pages, which have no MDX for `source` to find. Dated
+  // the day each one went into the catalogue, same as the changelog.
+  const proRoutes: MetadataRoute.Sitemap = PRO_GALLERY_ITEMS.map((item) => ({
+    url: `${SITE_URL}${item.href}`,
+    ...(item.added
+      ? { lastModified: new Date(`${item.added}T00:00:00Z`) }
+      : {}),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...docRoutes, ...proRoutes];
 }

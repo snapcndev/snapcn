@@ -1,5 +1,11 @@
 import Link from "next/link";
 import { FOOTER_COLUMNS } from "@/config/site";
+import {
+  CATALOGUE_COUNT,
+  CATALOGUE_ITEMS,
+  GALLERY_CATEGORIES,
+  GALLERY_COUNT,
+} from "@/lib/gallery-data";
 import { cn } from "@/lib/utils";
 
 /**
@@ -54,7 +60,48 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border">
       <div className="section pt-14 pb-12 sm:pt-16">
-        <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+        {/* Every component by name, under its category.
+            CSS columns rather than a grid: the categories run from 2 entries to
+            22, and a grid of seven blocks with those heights leaves a column of
+            white space beside Captions. `break-inside-avoid` keeps a category
+            whole. Derived from CATALOGUE_ITEMS, so a component cannot ship and
+            be missing from here. */}
+        <div className="columns-1 gap-x-8 sm:columns-2 lg:columns-3 xl:columns-4">
+          {GALLERY_CATEGORIES.map((category) => {
+            const items = CATALOGUE_ITEMS.filter(
+              (item) => item.category === category.id,
+            );
+            if (items.length === 0) return null;
+            return (
+              <div key={category.id} className="mb-10 break-inside-avoid">
+                <Link
+                  href={`/docs/${category.id}`}
+                  className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {category.label}
+                </Link>
+                <ul className="mt-4 flex flex-col gap-3">
+                  {items.map((item) => (
+                    <li key={item.href}>
+                      {/* Paid ones too: each has its own page now, and this is
+                          the one link to it on every page of the site. */}
+                      <Link href={item.href} className={LINK}>
+                        {item.name}
+                      </Link>
+                      {item.pro ? (
+                        <span className="ml-1.5 align-middle font-mono text-[0.625rem] uppercase tracking-[0.1em] text-muted-foreground">
+                          Pro
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-border pt-12 sm:grid-cols-3">
           {FOOTER_COLUMNS.map(({ title, links }) => (
             <div key={title}>
               <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -94,7 +141,11 @@ export function SiteFooter() {
           className="mt-14 text-sm text-muted-foreground sm:mt-16"
           suppressHydrationWarning
         >
-          © {new Date().getFullYear()} snapcn — MIT licensed
+          {/* Not a bare "MIT licensed" any more: the grid this page sends
+              people to is 46% paid, and a licence line that covers half of it
+              is the kind of small untruth a reader notices later. */}
+          © {new Date().getFullYear()} snapcn — {GALLERY_COUNT} components MIT
+          licensed, {CATALOGUE_COUNT - GALLERY_COUNT} Pro
         </p>
       </div>
     </footer>

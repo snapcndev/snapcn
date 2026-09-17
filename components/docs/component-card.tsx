@@ -3,6 +3,7 @@
 import { ArrowUpRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { proDemoSrc } from "@/lib/pro-demos";
 import {
   RenderedDemo,
   renderedDemoPoster,
@@ -54,6 +55,19 @@ function CardPreview({ item }: { item: CardItem }) {
   const slug = slugFromHref(item.href);
   const config = slug ? CONFIGS[slug] : undefined;
   const { containerRef, playerRef, mounted } = useLazyPlayer();
+
+  if (item.pro && slug) {
+    const src = proDemoSrc(slug);
+    return (
+      <div ref={containerRef} className="size-full">
+        {mounted && src ? (
+          <RenderedDemo src={src} className="bg-card" />
+        ) : (
+          <PreviewPlaceholder />
+        )}
+      </div>
+    );
+  }
 
   if (!slug || !config) {
     return (

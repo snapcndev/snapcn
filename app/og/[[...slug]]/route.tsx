@@ -7,6 +7,8 @@ import {
   INSTALL_COMMAND,
   installCommand,
 } from "@/config/site";
+import { proItemBySlugs } from "@/lib/gallery-data";
+import { firstSentence } from "@/lib/structured-data";
 import { source } from "@/source";
 
 export const revalidate = 3600;
@@ -112,12 +114,18 @@ export async function GET(
   // the generic site card. They are the pages most likely to be shared.
   const bespoke =
     !page && slug?.length === 1 ? DOCS_PAGE_META[slug[0]] : undefined;
+  // A paid component's page has no MDX either; its catalogue entry is the card.
+  const pro = page ? null : proItemBySlugs(slug);
 
   const title =
-    data?.title ?? bespoke?.title ?? "Product demo videos, in React.";
+    data?.title ??
+    bespoke?.title ??
+    pro?.name ??
+    "Product demo videos, in React.";
   const description =
     data?.description ??
     bespoke?.description ??
+    (pro ? firstSentence(pro.description) : undefined) ??
     "Copy-paste Remotion components for the shots a software demo is made of — streaming AI answers, terminals, device frames, captions.";
 
   // The category's own index page owns its label, so the card cannot drift from
@@ -132,7 +140,7 @@ export async function GET(
   // shared component link then carries the line that installs it.
   const name = slug?.at(-1);
   const command =
-    name && INSTALL_ALL_NAMES.includes(name)
+    name && (INSTALL_ALL_NAMES.includes(name) || pro)
       ? installCommand(name)
       : INSTALL_COMMAND;
 
