@@ -75,6 +75,18 @@
       "@/components/snap-cn/text-reveal": [
         "./registry/snap-cn/text-reveal/index.tsx"
       ],
+      "@/components/snap-cn/text-highlight": [
+        "./registry/snap-cn/text-highlight/index.tsx"
+      ],
+      "@/components/snap-cn/phone-frame": [
+        "./registry/snap-cn/phone-frame/index.tsx"
+      ],
+      "@/components/snap-cn/follower-rush": [
+        "./registry/snap-cn/follower-rush/index.tsx"
+      ],
+      "@/components/snap-cn/block-wordmark": [
+        "./registry/snap-cn/block-wordmark/index.tsx"
+      ],
       "@/components/snap-cn/*": [
         "./registry/snap-cn-ui/*/index.tsx"
       ],
@@ -92,6 +104,7 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "test/next-app"
   ]
 }

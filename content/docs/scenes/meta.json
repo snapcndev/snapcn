@@ -3,6 +3,7 @@
   "collapsible": false,
   "pages": [
     "index",
+    "launch-video",
     "count-grid",
     "roster-grant",
     "wordmark-cut",

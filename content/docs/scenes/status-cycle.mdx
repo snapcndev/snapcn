@@ -37,7 +37,7 @@ export const RemotionRoot = () => (
   <Composition
     id="StatusCycle"
     component={Cycle}
-    durationInFrames={150}
+    durationInFrames={198}
     fps={30}
     width={1280}
     height={720}
@@ -46,8 +46,8 @@ export const RemotionRoot = () => (
 ```
 
 `durationInFrames` has to cover the whole arc: the intro, one `statusHold` per
-status, the crossfade, and one `chipStagger` per chip. The default 150 fits the
-default content with a hold at the end; add roughly 18 frames per extra status
+status, the crossfade, and one `chipStagger` per chip. The default 198 fits the
+default content with a hold at the end; add 30 frames per extra status
 and 8 per extra chip.
 
 ## How the swap works
@@ -58,7 +58,9 @@ most of the effect.
 **The label rolls.** The outgoing label translates up and out through the pill's
 top edge while the incoming one arrives from below, both hard-clipped by the
 pill's rounded box. There is no crossfade — the label's ink never dims — and the
-travel is one pill height.
+travel is one pill height, over 0.5s on `cubic-bezier(0.45, 0, 0.55, 1)`: slower
+than the reference's 8-frame roll, whose middle frame jumps a third of the pill
+and reads as a flicker at 30fps.
 
 **The pill's width springs past its target.** Not a spring, though: the curve is
 `cubic-bezier(0.65, 0.2, 0.3, 1.5)`, and the `y2 > 1` control value *is* the
@@ -237,7 +239,7 @@ import { Easing } from "remotion";
       type: "Partial<StatusCycleMotion>",
       default: "STATUS_CYCLE_MOTION",
       description:
-        "Curve and timing overrides: widthEase, widthSeconds, rollEase, rollSeconds, rollTravel, fadeSeconds, exitSeconds, scrollTau, letterSpring, letterStagger. Every default is fitted from frame data, so overriding one is a departure rather than a tweak",
+        "Curve and timing overrides: widthEase, widthSeconds, rollEase, rollSeconds, rollTravel, fadeSeconds, exitSeconds, scrollTau, letterSpring, letterStagger. Every default but the roll is fitted from frame data, so overriding one is a departure rather than a tweak",
     },
     {
       name: "fontSize",
@@ -268,9 +270,9 @@ import { Easing } from "remotion";
     {
       name: "statusHold",
       type: "number",
-      default: "18",
+      default: "30",
       description:
-        "Frames from one status swap to the next. Shorter than the 18-frame width morph on purpose — the next swap starts while the last is still settling",
+        "Frames from one status swap to the next: the 15-frame roll, then 15 frames to read the label. Keep it above the roll, or every label is read mid-flight",
     },
     {
       name: "chipStagger",
