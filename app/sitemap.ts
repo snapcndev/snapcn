@@ -37,10 +37,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
    * including `/docs/video-editor`, a free tool and the highest-intent page on
    * the site.
    */
-  // `/docs/templates` is deliberately absent: it is a `ComingSoonPage`, thirty
-  // words of placeholder, and a sitemap is a request to index. It stays
-  // crawlable from the rail; it is just not something to ask a ranking for
-  // until it exists.
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
@@ -58,6 +54,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/docs/video-editor`,
       changeFrequency: "monthly",
       priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/docs/templates`,
+      changeFrequency: "weekly",
+      priority: 0.7,
     },
     {
       url: `${SITE_URL}/docs/mcp`,

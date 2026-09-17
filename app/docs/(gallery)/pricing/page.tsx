@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { ComponentCardGrid } from "@/components/docs/component-card-grid";
 import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
+import { EarlyBirdStrip } from "@/components/early-bird";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { DOCS_PAGE_META } from "@/config/site";
 import { GALLERY_COUNT, PRO_GALLERY_ITEMS } from "@/lib/gallery-data";
@@ -66,6 +67,7 @@ export default async function PricingPage({
           <p className="mt-4 max-w-md text-balance text-center text-lg text-muted-foreground md:text-xl">
             {PRICING_INTRO.description}
           </p>
+          <EarlyBirdStrip className="mt-6" withLockIn />
         </div>
 
         {/* `#plans` and `#free` are addresses, not decoration: the 402, the

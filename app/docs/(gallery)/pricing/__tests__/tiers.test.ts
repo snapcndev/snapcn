@@ -10,25 +10,36 @@
 import { describe, expect, it } from "vitest";
 import { pricingFor } from "../tiers";
 
-type Card = { price: string; caption: string; badge?: string; note?: string };
+type Card = {
+  price: string;
+  caption: string;
+  badge?: string;
+  note?: string;
+  cta: string;
+};
+
+/** Mid-window, so the dated rise shows whatever day the suite runs. */
+const DAYS_LEFT = 33;
 
 const card = (
   country: string | null,
   name: string,
   quotes: Parameters<typeof pricingFor>[3] = null,
 ) =>
-  pricingFor(country, 50, "ip", quotes).tiers.find((t) => t.name === name) as
-    | Card
-    | undefined;
+  pricingFor(country, 50, "ip", quotes, DAYS_LEFT).tiers.find(
+    (t) => t.name === name,
+  ) as Card | undefined;
 
 describe("pricingFor", () => {
   it("shows the list price, the saving and the rises where there is no regional price", () => {
     for (const country of ["US", "DE", null]) {
       expect(card(country, "Pro")?.price, String(country)).toBe("$129");
       expect(card(country, "Pro")?.badge).toBe("Save $50");
-      expect(card(country, "Pro")?.note).toContain("then $179");
+      expect(card(country, "Pro")?.note).toBe("Goes to $179/yr on 20 Oct");
+      expect(card(country, "Pro")?.cta).toBe("Lock in $129/yr");
       expect(card(country, "Lifetime")?.price).toBe("$249");
-      expect(card(country, "Lifetime")?.note).toBe("$299 from 20 Oct");
+      expect(card(country, "Lifetime")?.note).toBe("Goes to $299 on 20 Oct");
+      expect(card(country, "Lifetime")?.cta).toBe("Own it for $249");
     }
     expect(pricingFor("US", 50).footnote).toMatch(
       /^Lower prices for Pro and Lifetime in/,
@@ -55,7 +66,8 @@ describe("pricingFor", () => {
     const pro = card("IN", "Pro");
     expect(pro?.badge).toBeUndefined();
     expect(pro?.caption).toBe("Per year · your price in India");
-    expect(pro?.note).toBe("50 of 50 seats left");
+    expect(pro?.note).toBe("Renews at this price");
+    expect(pro?.cta).toBe("Lock in ₹4,699/yr");
     expect(card("IN", "Lifetime")?.note).toBeUndefined();
     expect(pricingFor("IN", 50).footnote).toBe(
       "Prices for India, from your connection. Checkout confirms them from your billing country.",
@@ -63,6 +75,19 @@ describe("pricingFor", () => {
     expect(pricingFor("BR", 50, "accept-language").footnote).toContain(
       "from your browser's language",
     );
+  });
+
+  it("shows seats only once one has sold, and drops the rise once the window closes", () => {
+    const tier = (seatsLeft: number, days: number, name: string) =>
+      pricingFor("US", seatsLeft, "ip", null, days).tiers.find(
+        (t) => t.name === name,
+      ) as Card | undefined;
+    expect(tier(42, DAYS_LEFT, "Pro")?.note).toBe(
+      "42 of 50 left at this price",
+    );
+    expect(tier(0, DAYS_LEFT, "Pro")?.note).toBe("Goes to $179/yr on 20 Oct");
+    expect(tier(50, 0, "Pro")?.note).toBeUndefined();
+    expect(tier(50, 0, "Lifetime")?.note).toBeUndefined();
   });
 
   it("never regionalises Commercial or Free", () => {
@@ -135,7 +160,7 @@ describe("pricingFor", () => {
     it("keeps the list price, the saving and the rises where Dodo charges the list price", () => {
       expect(card("US", "Pro", us)?.price).toBe("$129");
       expect(card("US", "Pro", us)?.badge).toBe("Save $50");
-      expect(card("US", "Pro", us)?.note).toContain("then $179");
+      expect(card("US", "Pro", us)?.note).toBe("Goes to $179/yr on 20 Oct");
       expect(pricingFor("US", 50, "ip", us).footnote).toMatch(
         /^Lower prices for Pro and Lifetime in/,
       );

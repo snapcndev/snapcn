@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -104,7 +104,20 @@ export function PricingPlans({
         <FrameLines columns={tiers.length} visible={layout.frame} />
         {tiers.map((tier) => {
           const current = tier.name.toLowerCase() === currentPlan;
-          const ctaClass = "h-11 w-full rounded-xl text-base lg:h-9 lg:text-sm";
+          /**
+           * Taller than a toolbar button and solid on every paid card: the
+           * outline buttons read as "cancel" beside the one blue button. The
+           * arrow nudges on hover and the button gives on press — 150ms,
+           * transform only, so it answers the pointer without animating layout.
+           */
+          const ctaClass =
+            "group/cta h-12 w-full gap-2 rounded-xl text-base font-medium transition-[background-color,transform] duration-150 ease-out active:scale-[0.97] lg:h-11";
+          const arrow = (
+            <ArrowRight
+              aria-hidden
+              className="size-4 transition-transform duration-150 ease-out group-hover/cta:translate-x-0.5"
+            />
+          );
           return (
             <div
               key={tier.name}
@@ -166,15 +179,30 @@ export function PricingPlans({
               <div className="mt-5 flex flex-col items-stretch lg:mt-8">
                 {tier.product ? (
                   <Button
-                    className={ctaClass}
-                    variant={tier.featured ? "default" : "outline"}
+                    className={cn(
+                      ctaClass,
+                      // Featured: the accent. Other paid tiers: the foreground,
+                      // inverted — as solid as the featured one, without
+                      // competing with it for the eye.
+                      !tier.featured &&
+                        !current &&
+                        "bg-foreground text-background hover:bg-foreground/85",
+                    )}
+                    variant={
+                      current
+                        ? "outline"
+                        : tier.featured
+                          ? "default"
+                          : undefined
+                    }
                     disabled={current || pending !== null}
                     onClick={() => buy(tier.product as UpgradeProduct)}
                   >
-                    {pending === tier.product && (
+                    {pending === tier.product ? (
                       <Loader2 className="size-4 animate-spin" />
-                    )}
+                    ) : null}
                     {current ? "Your plan" : tier.cta}
+                    {current || pending === tier.product ? null : arrow}
                   </Button>
                 ) : (
                   <Link
@@ -185,6 +213,7 @@ export function PricingPlans({
                     )}
                   >
                     {current ? "Your plan" : tier.cta}
+                    {current ? null : arrow}
                   </Link>
                 )}
                 {/* Always rendered, so a card without a note keeps its button

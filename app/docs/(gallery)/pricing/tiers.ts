@@ -6,6 +6,8 @@ import {
   CATALOGUE_PRICE,
   CATALOGUE_PROMISE,
   CHECKOUT_PRODUCTS,
+  EARLY_BIRD,
+  earlyBirdDaysLeft,
   FOUNDER_SEATS,
   PPP_PRICES,
 } from "@/lib/plans";
@@ -36,17 +38,9 @@ import { seatsTaken } from "@/lib/server/entitlements";
  * Starter and the $29 MCP tier are gone; neither sold, and the MCP only serves
  * the catalogue it would have been sold without.
  */
-/**
- * The dated rises, announced with the price rather than on the day — a reason
- * to decide this month instead of next is the whole point of them. In cents, so
- * the "Save $50" chip on each card is arithmetic rather than a second number to
- * keep in step.
- */
-const RISE = { annual: 17900, lifetime: 29900 } as const;
-const LIFETIME_RISE_DATE = "20 Oct";
-
+/** "Save $50": what the early-bird price saves on the price it rises to. */
 const saving = (product: "everything_annual" | "lifetime") =>
-  `Save $${(RISE[product === "lifetime" ? "lifetime" : "annual"] - CHECKOUT_PRODUCTS[product].cents) / 100}`;
+  `Save $${(EARLY_BIRD.risesTo[product] - CHECKOUT_PRODUCTS[product].cents) / 100}`;
 
 const TIERS = [
   {
@@ -61,7 +55,7 @@ const TIERS = [
       "Saved projects once you sign in",
     ],
     href: "/docs/components",
-    cta: "Browse free components",
+    cta: "Start free",
   },
   // `name` is compared with the user's plan to mark "Your plan", so the annual
   // tier is the one called "Pro".
@@ -119,7 +113,7 @@ const TIERS = [
 /** The headline over the cards on `/docs/pricing`. */
 export const PRICING_INTRO = {
   title: "Own the whole catalogue.",
-  description: `${PRO_ITEMS.length} Pro components today, growing to ${CATALOGUE_PROMISE.components}, and ${CATALOGUE_PROMISE.templates} video templates — installed with the shadcn CLI you already use.`,
+  description: `${PRO_ITEMS.length} Pro components today, growing to ${CATALOGUE_PROMISE.components}, and ${CATALOGUE_PROMISE.templates} video templates — installed with the shadcn CLI you already use, or by your agent through the snapcn MCP server, which Pro includes.`,
 };
 
 const regionName = (country: string) =>
@@ -184,27 +178,48 @@ export function pricingFor(
   seatsLeft: number,
   source: CountrySource | null = "ip",
   quotes: Quotes | null = null,
+  daysLeft: number = earlyBirdDaysLeft(),
 ) {
   const place = country ? regionName(country) : null;
   const regional =
     country && Object.hasOwn(PPP_PRICES, country)
       ? PPP_PRICES[country as keyof typeof PPP_PRICES]
       : null;
+  // The seat count only once one has sold: "50 of 50 left" tells a reader
+  // nobody has bought yet, which is the opposite of the point.
   const seats =
-    seatsLeft > 0 ? `${seatsLeft} of ${FOUNDER_SEATS} seats left` : "";
+    seatsLeft > 0 && seatsLeft < FOUNDER_SEATS
+      ? `${seatsLeft} of ${FOUNDER_SEATS} left at this price`
+      : null;
   let localised = false;
 
   const tiers = TIERS.map((tier) => {
     const product = tier.product;
     if (!product) return tier;
     const annual = product === "everything_annual";
-    const listNote = annual
-      ? seats
-        ? `${seats} · then $${RISE.annual / 100}`
-        : `Rises to $${RISE.annual / 100} a year`
-      : product === "lifetime"
-        ? `$${RISE.lifetime / 100} from ${LIFETIME_RISE_DATE}`
-        : undefined;
+
+    /**
+     * The button says what the click buys, at the price on the card — "Lock in
+     * $129/yr", "Own it for ₹9,499" — rather than a generic verb. "Lock in" is
+     * literal for the subscription: renewals stay at the price it started at.
+     */
+    const cta = (price: string) =>
+      annual
+        ? `Lock in ${price}/yr`
+        : product === "lifetime"
+          ? `Own it for ${price}`
+          : "Get it for your team";
+
+    // The dated rise, while there is one. USD list cards only: the rise is a
+    // USD fact, and a regional card instead says its renewal stays put.
+    const risesTo =
+      daysLeft > 0 && (annual || product === "lifetime")
+        ? `$${EARLY_BIRD.risesTo[product] / 100}${annual ? "/yr" : ""}`
+        : null;
+    const listNote =
+      (annual && seats) ||
+      (risesTo ? `Goes to ${risesTo} on ${EARLY_BIRD.endsOnShort}` : undefined);
+    const localNote = annual ? (seats ?? "Renews at this price") : undefined;
 
     const quote = quotes?.[product];
     if (quote) {
@@ -217,35 +232,40 @@ export function pricingFor(
           : `your price in ${place}`;
       if (list) {
         // The list price. Only the tax line is news.
-        return quote.tax > 0
-          ? {
-              ...tier,
-              caption: `${CADENCE[product]} · ${tail}`,
-              note: listNote,
-            }
-          : { ...tier, note: listNote };
+        return {
+          ...tier,
+          ...(quote.tax > 0
+            ? { caption: `${CADENCE[product]} · ${tail}` }
+            : {}),
+          cta: cta(tier.price),
+          note: listNote,
+        };
       }
       localised = true;
+      const price = money(quote.subtotal, quote.currency);
       return {
         ...tier,
-        price: money(quote.subtotal, quote.currency),
+        price,
         caption: `${CADENCE[product]} · ${tail}`,
         badge: undefined,
-        note: annual ? seats : undefined,
+        cta: cta(price),
+        note: localNote,
       };
     }
 
     if (regional && place && (annual || product === "lifetime")) {
       localised = true;
+      const price = money(regional[product], regional.currency);
       return {
         ...tier,
-        price: money(regional[product], regional.currency),
+        price,
         caption: `${CADENCE[product]} · your price in ${place}`,
         badge: undefined,
-        note: annual ? seats : undefined,
+        cta: cta(price),
+        note: localNote,
       };
     }
-    return { ...tier, note: listNote };
+    return { ...tier, cta: cta(tier.price), note: listNote };
   });
 
   const how =
