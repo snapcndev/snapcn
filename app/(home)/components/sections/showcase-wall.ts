@@ -126,6 +126,28 @@ export function wallGeometry(stageWidth: number, cards: number): WallGeometry {
   };
 }
 
+export const mod = (n: number, m: number) => ((n % m) + m) % m;
+
+/**
+ * Card `i`'s offset inside the track, when the track has travelled `travel`
+ * (`mod(travelled, span)`) to the left. `offset - travel` is the card's stage x,
+ * `mod(-travelled - i·pitch, span) - pitch`: one pitch of slack on the left, so a
+ * card wraps to the far right while still fully off screen.
+ *
+ * Split this way because the track moves every frame and the offset only
+ * changes when the card wraps — see `paint` in `showcase-carousel.tsx` for what
+ * a per-card write every frame cost.
+ */
+export function wallOffset(
+  i: number,
+  pitch: number,
+  span: number,
+  travel: number,
+): number {
+  const c = mod(-i * pitch, span);
+  return c - pitch + (c < travel ? span : 0);
+}
+
 /** Vertical scale of the surface, `u` fractions of the way across the stage. */
 export function wallScale(u: number, foldStart: number): number {
   if (foldStart >= 1) return 1;

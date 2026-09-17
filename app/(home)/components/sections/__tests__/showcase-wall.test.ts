@@ -14,7 +14,13 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { WALL, wallGeometry, wallScale } from "../showcase-wall";
+import {
+  mod,
+  WALL,
+  wallGeometry,
+  wallOffset,
+  wallScale,
+} from "../showcase-wall";
 
 const LAPTOP = 1512;
 const CARDS = 11;
@@ -125,5 +131,38 @@ describe("the surface", () => {
       expect(s).toBeGreaterThanOrEqual(last);
       last = s;
     }
+  });
+});
+
+describe("wallOffset", () => {
+  const { pitch, span } = wallGeometry(LAPTOP, CARDS);
+
+  it("puts every card where moving each card on its own did", () => {
+    for (let k = 0; k < 500; k++) {
+      const travelled = k * 37.77 * pitch; // several cycles, off the seams
+      const travel = mod(travelled, span);
+      for (let i = 0; i < CARDS; i++) {
+        expect(wallOffset(i, pitch, span, travel) - travel).toBeCloseTo(
+          mod(-travelled - i * pitch, span) - pitch,
+          6,
+        );
+      }
+    }
+  });
+
+  it("only changes when a card wraps", () => {
+    // The whole point: the track moves every frame, a card is written about
+    // twice a cycle (its own wrap, and the track's).
+    const last: number[] = [];
+    let writes = 0;
+    for (let f = 0; f < 2000; f++) {
+      const travel = mod((f * span) / 1000, span); // two cycles
+      for (let i = 0; i < CARDS; i++) {
+        const o = wallOffset(i, pitch, span, travel);
+        if (last[i] !== o) writes++;
+        last[i] = o;
+      }
+    }
+    expect(writes).toBeLessThanOrEqual(CARDS * 5);
   });
 });

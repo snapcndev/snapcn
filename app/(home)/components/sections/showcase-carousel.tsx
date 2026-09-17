@@ -6,7 +6,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTrackEvent } from "@/lib/analytics";
 import { GALLERY_ITEMS } from "@/lib/gallery-data";
 import { RENDERED_DEMOS, renderedDemoSrc } from "@/lib/rendered-demos";
-import { drawWallCard, WALL, wallGeometry } from "./showcase-wall";
+import {
+  drawWallCard,
+  mod,
+  WALL,
+  wallGeometry,
+  wallOffset,
+} from "./showcase-wall";
 
 /**
  * Slides are the components that already have a **rendered mp4** — not live
@@ -32,12 +38,14 @@ const SLIDES = RENDERED_DEMOS.flatMap((slug) => {
   ];
 });
 
-const mod = (n: number, m: number) => ((n % m) + m) % m;
-
 export function ShowcaseCarousel() {
   const stageRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cards = useRef<(HTMLElement | null)[]>([]);
+  /** Each card's last-written offset within the track, so `paint` skips the
+      style write on the ~every frame it has not changed. */
+  const offsets = useRef<number[]>([]);
   /** One card's surface, to read the radius the stylesheet actually gave it. */
   const surfaceRef = useRef<HTMLDivElement>(null);
   const cardVideos = useRef<(HTMLVideoElement | null)[]>([]);
@@ -147,14 +155,27 @@ export function ShowcaseCarousel() {
       const cy = (cardHeight * geo.headroom) / 2 + cardHeight / 2;
       ctx?.clearRect(0, 0, stageWidth, height);
 
+      // The row moves as ONE element. Writing an inline transform on every card
+      // every frame recalculated 82 elements' style a frame — 3.15ms on a desktop
+      // Mac, and 88% of a 4×-throttled phone's main thread (production build,
+      // CDP metrics). One element a frame is 0.05ms. So the track carries the
+      // travel, and a card is only written when it wraps.
+      const r = mod(travelled.current, span);
+      if (trackRef.current) {
+        trackRef.current.style.transform = `translate3d(${-r}px, 0, 0)`;
+      }
+
       for (let i = 0; i < SLIDES.length; i++) {
         const el = cards.current[i];
         if (!el) continue;
 
-        // One pitch of slack on the left, so a card wraps back to the far right
-        // while it is still fully off screen. The seam is never on camera.
-        const x = mod(-travelled.current - i * pitch, span) - pitch;
-        el.style.transform = `translate3d(${x}px, 0, 0)`;
+        // The seam is never on camera: see `wallOffset`.
+        const offset = wallOffset(i, pitch, span, r);
+        if (offsets.current[i] !== offset) {
+          offsets.current[i] = offset;
+          el.style.transform = `translate3d(${offset}px, 0, 0)`;
+        }
+        const x = offset - r;
         if (flat) continue;
 
         // The card art, drawn on the real curve — but only for the cards that
@@ -348,7 +369,7 @@ export function ShowcaseCarousel() {
           No `perspective` here — nothing in the wall is projected by the
           compositor; the curve is drawn. */}
       <div ref={stageRef} className="wall relative w-full overflow-hidden">
-        <div className="wall-track absolute inset-0">
+        <div ref={trackRef} className="wall-track absolute inset-0">
           {SLIDES.map((slide, i) => (
             <article
               key={slide.slug}
@@ -359,6 +380,9 @@ export function ShowcaseCarousel() {
             >
               <Link
                 href={slide.href}
+                // A moving row walks every card through the viewport, so
+                // viewport prefetch fetched ~5 RSC payloads per card, forever.
+                prefetch={false}
                 aria-label={`${slide.name} — ${slide.description}`}
                 onFocus={() => focusCard(i)}
                 onBlur={() => {
