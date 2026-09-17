@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import {
+  type DemoState,
+  type DemoView,
+  planDemos,
+  SETTLE_MS,
+} from "@/lib/demo-governor";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,48 +26,45 @@ export {
  * controls, no audio, no download — because it is a picture of the component,
  * not a video the reader is meant to interact with.
  *
- * It plays on its own, once it is on screen, and pauses the moment it is not.
+ * It plays while it is the part of the page you are looking at, and does
+ * nothing at all when it is not. *Which* demos those are is not decided here:
+ * every element on the page registers with one shared observer and `planDemos`
+ * ranks them together, because "should this play" is a question about the page
+ * and cannot be answered by a card looking only at itself. That is what 24
+ * simultaneous decoders and 18.7MB of mp4 per visit were — 76 cards each
+ * answering it correctly on its own. See `lib/demo-governor.ts`.
  *
- * The gate matters more than it looks. This was `autoPlay preload="auto"` with
- * nothing gating it at all, and `/docs/components` renders one card per
- * component — so the grid pulled every demo in full on load and left all of
- * them decoding and looping forever, on a page that never went idle. An
- * `IntersectionObserver` keeps the *behaviour* (a grid that moves) and drops
- * the part that hurt: a demo scrolled past is paused, and one never scrolled to
- * is never fetched, because `preload="none"` means the bytes arrive with the
- * first `play()` and not before.
+ * The src is attached by the governor rather than rendered, so that releasing
+ * a scrolled-past demo is not something React puts straight back.
  *
- * The poster still does the waiting — 164KB for all 22 against 9.9MB of video —
- * so a card is never an empty box, and for a reader who has asked for reduced
- * motion it is *all* they get: no autoplay, and hover or focus to see it move.
+ * For a reader who has asked for reduced motion none of this runs: nothing
+ * autoplays, and hover or focus is the only thing that moves a demo.
  */
 export function RenderedDemo({
   src,
   poster,
   className,
+  priority = false,
 }: {
   src: string;
   /** Still frame shown until the reader asks for motion. */
   poster?: string;
   className?: string;
+  /** The demo the reader opened — plays ahead of the grid. See `planDemos`. */
+  priority?: boolean;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
 
   // `.catch()` on every play: a browser can refuse (a background tab, an
   // autoplay policy, a pause landing mid-promise) and an unhandled rejection
   // from a decorative preview must not reach the console.
-  const play = () => ref.current?.play().catch(() => {});
+  const play = () => {
+    const el = ref.current;
+    if (!el) return;
+    if (!el.getAttribute("src")) el.setAttribute("src", src);
+    el.play().catch(() => {});
+  };
   const stop = () => ref.current?.pause();
-
-  /**
-   * Whether this reader asked for reduced motion — and so the only reader for
-   * whom the pointer drives playback at all.
-   *
-   * A ref, not state: nothing in the render depends on it, it is read inside
-   * the handlers, and making it state would cost every card on the page a
-   * re-render to learn something that never changes.
-   */
-  const reduced = useRef(false);
 
   /**
    * Pointer and focus move the video for a reduced-motion reader **only**.
@@ -74,63 +77,39 @@ export function RenderedDemo({
    * pointer across a card is not a request to stop the video under it.
    */
   const pointerPlay = () => {
-    if (reduced.current) play();
+    if (prefersReducedMotion()) play();
   };
   const pointerStop = () => {
-    if (reduced.current) stop();
+    if (prefersReducedMotion()) stop();
   };
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-
-    // Read once, at mount: a preference change mid-session is not worth a
-    // listener per card, and the reader still has hover.
-    reduced.current =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    if (reduced.current) return;
-
-    // Every demo on screen plays. `isIntersecting` rather than a ratio: a card
-    // half-cut by the fold is still a card the reader is looking at, and it
-    // looked broken sitting frozen next to seven that were moving.
-    //
-    // 200px of margin so a card is already running by the time it is scrolled
-    // to — the same margin `components/docs/use-lazy-player.ts` uses for the
-    // live-Player tier.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) playWhenLoaded(el);
-          else el.pause();
-        }
-      },
-      { rootMargin: "200px 0px" },
-    );
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      el.pause();
-    };
-  }, []);
+    if (prefersReducedMotion()) {
+      // Hover is the only thing that starts it, so the src has to be there.
+      el.setAttribute("src", src);
+      return;
+    }
+    register(el, src, priority);
+    return () => unregister(el);
+  }, [src, priority]);
 
   return (
     <video
       ref={ref}
-      src={src}
       poster={poster}
       loop
       muted
       playsInline
-      // `none`, still. The observer above starts the fetch when the card is
-      // actually on screen; `auto` would tell the browser to pull every demo on
-      // the page at once — 22 files and 16.6MB before a single pixel of the
-      // grid had been looked at, which is the bug this whole mechanism exists
-      // to prevent.
+      // `none`, still, and no `src` until the governor gives it one. The bytes
+      // arrive when the card is actually being looked at and not before —
+      // `auto` would tell the browser to pull every demo on the page at once.
       preload="none"
       // Reduced-motion readers only — see `pointerPlay`. For them hover, or
       // focus (the card is a link, so the keyboard tabs through the grid), is
       // the only way to see the thing move. For everyone else these are inert
-      // and the IntersectionObserver owns playback.
+      // and the governor owns playback.
       onMouseEnter={pointerPlay}
       onMouseLeave={pointerStop}
       onFocus={pointerPlay}
@@ -140,6 +119,186 @@ export function RenderedDemo({
       className={cn("size-full object-contain", className)}
     />
   );
+}
+
+/* ── The shared observer ──────────────────────────────────────────────────── */
+
+interface Entry {
+  el: HTMLVideoElement;
+  src: string;
+  view: DemoView;
+  state: DemoState | null;
+  settle: ReturnType<typeof setTimeout> | null;
+}
+
+const entries = new Map<number, Entry>();
+const idOf = new WeakMap<HTMLVideoElement, number>();
+let nextId = 0;
+let onScreen: IntersectionObserver | null = null;
+let nearby: IntersectionObserver | null = null;
+let queued = false;
+
+/**
+ * Read once, lazily, and cached: a preference change mid-session is not worth a
+ * listener per card, and the reader still has hover.
+ */
+let reduced: boolean | null = null;
+function prefersReducedMotion(): boolean {
+  if (reduced === null) {
+    reduced =
+      typeof window === "undefined"
+        ? false
+        : (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
+          false);
+  }
+  return reduced;
+}
+
+function observers() {
+  if (onScreen && nearby) return;
+  // Thresholds, not a bare `isIntersecting`: the ranking needs to know *how
+  // much* of each card is showing, or the cap would drop whichever card
+  // happened to register last rather than the sliver at the edge of the fold.
+  onScreen = new IntersectionObserver(
+    (list) => {
+      for (const e of list) {
+        const entry = entries.get(idOf.get(e.target as HTMLVideoElement) ?? -1);
+        if (entry)
+          entry.view.ratio = e.isIntersecting ? e.intersectionRatio : 0;
+      }
+      schedule();
+    },
+    { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
+  );
+  // Half a viewport either side keeps its src; past that the element is
+  // emptied. 150% sounds generous and is not: this grid is nineteen rows, so a
+  // band that wide is the whole page and nothing was ever released.
+  nearby = new IntersectionObserver(
+    (list) => {
+      for (const e of list) {
+        const entry = entries.get(idOf.get(e.target as HTMLVideoElement) ?? -1);
+        if (entry) entry.view.near = e.isIntersecting;
+      }
+      schedule();
+    },
+    { rootMargin: "50% 0px" },
+  );
+  document.addEventListener("visibilitychange", schedule);
+}
+
+function register(el: HTMLVideoElement, src: string, priority: boolean) {
+  if (typeof IntersectionObserver === "undefined") {
+    el.setAttribute("src", src);
+    el.play().catch(() => {});
+    return;
+  }
+  observers();
+  const id = nextId++;
+  idOf.set(el, id);
+  entries.set(id, {
+    el,
+    src,
+    view: { ratio: 0, near: false, priority },
+    state: null,
+    settle: null,
+  });
+  onScreen?.observe(el);
+  nearby?.observe(el);
+}
+
+function unregister(el: HTMLVideoElement) {
+  const id = idOf.get(el);
+  if (id === undefined) return;
+  const entry = entries.get(id);
+  if (entry?.settle) clearTimeout(entry.settle);
+  entries.delete(id);
+  onScreen?.unobserve(el);
+  nearby?.unobserve(el);
+  el.pause();
+}
+
+/** Coalesce a scroll's worth of observer callbacks into one decision. */
+function schedule() {
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => {
+    queued = false;
+    apply();
+  });
+}
+
+function apply() {
+  // A hidden tab decodes nothing. Chrome throttles it anyway; this makes it
+  // certain, and makes coming back a re-rank rather than a resume of whatever
+  // was running an hour ago.
+  const hidden = typeof document !== "undefined" && document.hidden;
+  const views = new Map<number, DemoView>();
+  for (const [id, entry] of entries) {
+    views.set(id, hidden ? { ratio: 0, near: entry.view.near } : entry.view);
+  }
+  const plan = planDemos(views);
+
+  for (const [id, state] of plan) {
+    const entry = entries.get(id);
+    if (!entry || entry.state === state) continue;
+    entry.state = state;
+    if (entry.settle) {
+      clearTimeout(entry.settle);
+      entry.settle = null;
+    }
+    applyState(entry, state);
+  }
+}
+
+/** Addressed, but told to fetch nothing until somebody settles on it. */
+function attach(el: HTMLVideoElement, src: string) {
+  el.preload = "none";
+  if (!el.getAttribute("src")) el.setAttribute("src", src);
+}
+
+function applyState(entry: Entry, state: DemoState) {
+  const { el, src } = entry;
+  switch (state) {
+    case "play":
+      // Wait, THEN fetch, then start. A flick to the bottom of the grid sweeps
+      // every card through "on screen" for a few frames each; the settle is
+      // what makes that free, and it only is if `preload` stays `none` until it
+      // fires — deferring `play()` alone still had `auto` pulling all 76 files,
+      // which measured 22.4MB for a scroll nobody looked at.
+      attach(el, src);
+      entry.settle = setTimeout(() => {
+        el.preload = "auto";
+        playWhenLoaded(el);
+      }, SETTLE_MS);
+      break;
+    case "hold":
+      // On screen, over the cap. Fetched — so it shows a frame rather than a
+      // hole — but never decoded; it becomes "play" the moment a card above it
+      // leaves. Same settle, for the same reason.
+      attach(el, src);
+      el.pause();
+      entry.settle = setTimeout(() => {
+        el.preload = "auto";
+      }, SETTLE_MS);
+      break;
+    case "ready":
+      // Addressed but not fetched. `metadata` here cost 76 range requests and
+      // 7MB on a page where nothing had been looked at yet — Chrome's idea of
+      // "metadata" for an mp4 is the first chunk of it, not the moov box. The
+      // src is attached so arriving is one state change and not a React render.
+      attach(el, src);
+      el.pause();
+      break;
+    case "release":
+      el.pause();
+      if (el.getAttribute("src")) {
+        el.removeAttribute("src");
+        el.preload = "none";
+        // The only way to make a browser let go of the buffer and the decoder.
+        el.load();
+      }
+      break;
+  }
 }
 
 /**
