@@ -1,10 +1,10 @@
 import { DocsBody, DocsDescription, DocsTitle } from "fumadocs-ui/page";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Fragment } from "react";
 import { InstallBlock } from "@/components/docs/install-block";
 import { DocsNewsletterCta } from "@/components/docs/newsletter-cta";
+import { ProCta } from "@/components/docs/pro-cta";
 import { RelatedComponents } from "@/components/docs/related-components";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import {
@@ -411,31 +411,17 @@ function ProComponentPage({
             <RenderedDemo src={demoSrc} />
           </div>
         ) : null}
-        {/* `/pro?c=` rather than the pricing page: it opens on this component
-            with the two catalogue plans under it and the free sample beside
-            them, and sign-in returns there — one page between wanting it and
-            paying, not three. */}
-        <div className="not-prose mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link
-            href="/docs/pricing#plans"
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90"
-          >
-            Get {item.name} with Pro
-          </Link>
-          <Link
-            href="/docs/pricing#free"
-            className="text-muted-foreground text-sm underline underline-offset-4 hover:text-foreground"
-          >
-            or get {PRO_SAMPLE.title} free
-          </Link>
-          <span className="w-full text-muted-foreground text-xs">
-            {PRO_GALLERY_ITEMS.length} Pro components · {CATALOGUE_PRICE.annual}{" "}
-            a year or {CATALOGUE_PRICE.lifetime} once
-            {installers && installers >= MIN_SHOWN
+        {/* Pricing for a reader without Pro, the install for one with it —
+            decided in the browser, since this page is static. */}
+        <ProCta
+          name={item.name}
+          sampleTitle={PRO_SAMPLE.title}
+          meta={`${PRO_GALLERY_ITEMS.length} Pro components · ${CATALOGUE_PRICE.annual} a year or ${CATALOGUE_PRICE.lifetime} once${
+            installers && installers >= MIN_SHOWN
               ? ` · ${installers.toLocaleString("en-US")} developers installed snapcn components this month`
-              : ""}
-          </span>
-        </div>
+              : ""
+          }`}
+        />
         {rest ? (
           <>
             <h2 id="how-it-moves">How it moves</h2>

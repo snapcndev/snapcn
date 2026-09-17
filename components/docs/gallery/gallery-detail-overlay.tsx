@@ -7,6 +7,7 @@ import {
   CheckIcon,
   Clapperboard,
   CopyIcon,
+  KeyRound,
   Lock,
   XIcon,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import {
   useState,
 } from "react";
 import { installCommand as buildInstallCommand } from "@/config/site";
+import { useOwnsCatalogue } from "@/hooks/use-owns-catalogue";
 import { useTrackEvent } from "@/lib/analytics";
 import {
   GALLERY_CATEGORIES,
@@ -203,9 +205,9 @@ function OverlayBody({
   const slug = slugFromHref(item.href);
   // Shape and length only, never the component — see `lib/preview-meta.ts`. A
   // paid component has neither: the pro barrel is gitignored and never reaches
-  // the client bundle, so there is no source here to mount and no install
-  // command that would answer anything but 402. The overlay shows the video and
-  // points at the price.
+  // the client bundle, so there is no source here to mount. The overlay shows
+  // the video, and the price — or, to someone whose plan includes Pro, the
+  // install command, which their API key turns from a 402 into files.
   const meta = item.pro ? null : previewMeta(slug);
   /**
    * The overlay shows the default scene, exactly like the card does — the
@@ -236,6 +238,10 @@ function OverlayBody({
   const [copied, setCopied] = useState(false);
   const hasDocs = hasDoc;
   const trackEvent = useTrackEvent();
+  // A paid card sells Pro only to someone without it. An owner gets the install
+  // row and a way to their key instead. `null` while the session loads.
+  const owns = useOwnsCatalogue();
+  const locked = item.pro && !owns;
 
   const copyInstall = () => {
     navigator.clipboard.writeText(installCommand);
@@ -338,7 +344,7 @@ function OverlayBody({
                 {(meta.durationInFrames / meta.fps).toFixed(1)}s
               </MetaRow>
             ) : null}
-            {item.pro ? (
+            {locked ? (
               // The price, spelled both ways, because the two products are the
               // decision: a year of everything, or the same catalogue outright.
               <MetaRow label="Price">
@@ -371,34 +377,47 @@ function OverlayBody({
               the timeline. `?clip=` carries this component straight onto it, so
               the first thing they see is the shot they were already looking at,
               with their own words waiting to be typed into it. */}
-          <Link
-            href={
-              item.pro
-                ? "/docs/pricing#plans"
-                : `/docs/video-editor?clip=${slug}`
-            }
-            onClick={() =>
-              trackEvent("cta_clicked", {
-                cta: item.pro ? "gallery_pro" : "gallery_make_video",
-                destination: item.pro
+          {item.pro && owns ? (
+            <Link
+              href="/account"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90 xl:mt-5"
+            >
+              <KeyRound className="size-4" aria-hidden="true" />
+              Your API key and setup
+            </Link>
+          ) : (
+            <Link
+              href={
+                item.pro
                   ? "/docs/pricing#plans"
-                  : `/docs/video-editor?clip=${slug}`,
-              })
-            }
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90 xl:mt-5"
-          >
-            {item.pro ? (
-              <>
-                <Lock className="size-4" aria-hidden="true" />
-                Get the pro catalogue
-              </>
-            ) : (
-              <>
-                <Clapperboard className="size-4" aria-hidden="true" />
-                Make a video with this
-              </>
-            )}
-          </Link>
+                  : `/docs/video-editor?clip=${slug}`
+              }
+              onClick={() =>
+                trackEvent("cta_clicked", {
+                  cta: item.pro ? "gallery_pro" : "gallery_make_video",
+                  destination: item.pro
+                    ? "/docs/pricing#plans"
+                    : `/docs/video-editor?clip=${slug}`,
+                })
+              }
+              className={cn(
+                "inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90 xl:mt-5",
+                item.pro && owns === null && "invisible",
+              )}
+            >
+              {item.pro ? (
+                <>
+                  <Lock className="size-4" aria-hidden="true" />
+                  Get the pro catalogue
+                </>
+              ) : (
+                <>
+                  <Clapperboard className="size-4" aria-hidden="true" />
+                  Make a video with this
+                </>
+              )}
+            </Link>
+          )}
         </div>
       </div>
 
