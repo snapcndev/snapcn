@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth, getConfiguredProviders, isEmailSignInConfigured } from "@/auth";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
+import { ProBanner } from "@/components/pro-banner";
 import { VideoEditor } from "@/components/video-editor/video-editor";
 import { DOCS_PAGE_META } from "@/config/site";
 import { planFor } from "@/lib/server/entitlements";
@@ -100,13 +101,18 @@ export default async function VideoEditorPage({
   return (
     <GalleryFrame fill>
       <JsonLd graph={jsonLd} />
-      <VideoEditor
-        signedIn={Boolean(session?.user)}
-        canRemoveWatermark={!limits.watermark}
-        initialClip={initialClip}
-        providers={getConfiguredProviders()}
-        emailEnabled={isEmailSignInConfigured()}
-      />
+      <div className="flex h-full flex-col">
+        <ProBanner className="shrink-0 border-x-0 border-t-0" />
+        <div className="min-h-0 flex-1">
+          <VideoEditor
+            signedIn={Boolean(session?.user)}
+            canRemoveWatermark={!limits.watermark}
+            initialClip={initialClip}
+            providers={getConfiguredProviders()}
+            emailEnabled={isEmailSignInConfigured()}
+          />
+        </div>
+      </div>
     </GalleryFrame>
   );
 }

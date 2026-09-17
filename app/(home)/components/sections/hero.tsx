@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { ProBanner } from "@/components/pro-banner";
 import { Button } from "@/components/ui/button";
 import { useTrackEvent } from "@/lib/analytics";
 import { FeaturedQuote } from "./featured-quote";
@@ -126,6 +127,10 @@ export function Hero() {
                 Browse components
               </Button>
             </div>
+          </div>
+
+          <div className={`${RISE} delay-[240ms]`}>
+            <ProBanner className="mt-6 rounded-2xl sm:rounded-full" />
           </div>
         </div>
       </div>

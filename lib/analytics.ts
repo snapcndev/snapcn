@@ -68,6 +68,14 @@ export type CtaId =
    */
   | "gallery_pro"
   /**
+   * The Pro banner on the home hero, the gallery and the editor, to pricing.
+   *
+   * 74 of 2,175 visitors reached the pricing page in the first half of
+   * September, while the three busiest pages never mentioned Pro. Does naming
+   * it there send anyone?
+   */
+  | "pro_banner"
+  /**
    * "Upgrade" beside the plan in the account menu, to `/docs/pricing`.
    *
    * The only upsell a signed-in free user sees outside the editor. Does anyone
