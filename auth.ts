@@ -176,7 +176,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // `planFor` fails soft, so a billing outage cannot log anybody out.
         session.user.plan = (await planFor(user.id)).plan as PlanName;
       }
-      return session;
+      // Two fields, not `session`: with database sessions that object is the
+      // adapter row, and returning it put `sessionToken` in the JSON of
+      // `/api/auth/session` — the HttpOnly cookie's value, readable by any
+      // script on the page.
+      return { user: session.user, expires: session.expires };
     },
   },
 });

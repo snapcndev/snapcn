@@ -21,20 +21,32 @@ export const metadata: Metadata = {
  * The defaults are written for whoever configured the app, not for whoever is
  * trying to get in — "There is a problem with the server configuration" tells a
  * visitor nothing they can act on. Each of these ends with the next move.
+ *
+ * Keyed by the codes Auth.js **v5** sends (`isClientError` in @auth/core). This
+ * table used v4's `OAuthSignin`/`OAuthCallback`, which v5 never sends, so a
+ * cancelled consent screen (`OAuthCallbackError`) or a stale page
+ * (`MissingCSRF`) fell through to the generic line.
+ *
+ * `Configuration` is every error v5 will not name to a client, and on a working
+ * deployment the usual one is a callback that arrived without the PKCE cookie
+ * its start set: the page reloaded mid-flow, or an app's in-app browser handed
+ * the provider off to a different browser. So it tells the reader how to finish,
+ * not that the site is broken; the real reason is `[auth][error]` in the logs.
  */
 const ERROR_COPY: Record<string, string> = {
   Configuration:
-    "Sign-in isn't set up correctly on this deployment. That's on us, not you — try again shortly.",
+    "That sign-in didn't finish. Start again here and finish in the same browser — an app that opens links in its own browser can break the hand-off.",
   AccessDenied:
     "That account can't sign in. If you're using Google, the app is still in testing and only approved addresses are allowed.",
   Verification:
     "That link has expired or was already used. Sign-in links work once — request a fresh one below.",
   OAuthAccountNotLinked:
     "That email is already on an account created with a different provider. Use the same one you signed up with, or the email option below.",
-  OAuthSignin:
-    "Couldn't reach that provider. Try again, or use another option.",
-  OAuthCallback:
-    "That provider didn't complete the sign-in. Try again, or use another option.",
+  AccountNotLinked:
+    "That email is already on an account created with a different provider. Use the same one you signed up with, or the email option below.",
+  OAuthCallbackError:
+    "The provider didn't complete the sign-in — it may have been cancelled. Try again, or use another option.",
+  MissingCSRF: "This page had gone stale. Try again below.",
   Default: "Something went wrong signing you in. Try again below.",
 };
 
