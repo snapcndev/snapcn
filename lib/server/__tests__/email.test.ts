@@ -168,7 +168,6 @@ describe("templates", () => {
       confirmSubscriptionEmail,
       welcomeUserEmail,
       magicLinkEmail,
-      showcaseReviewEmail,
     } = await load({});
     return [
       welcomeSubscriberEmail("a@b.c", TOKEN),
@@ -179,19 +178,6 @@ describe("templates", () => {
         "a@b.c",
         "https://snapcn.dev/api/auth/callback/resend?t=x",
       ),
-      showcaseReviewEmail("a@b.c", {
-        title: "Launch teaser",
-        authorName: "Ada Lovelace",
-        postUrl: "/api/showcase/video/3f2504e0-4f89-11d3-9a0c-0305e82c3301",
-        description: "Built from four components.",
-        hosted: true,
-      }),
-      showcaseReviewEmail("a@b.c", {
-        title: "My post",
-        authorName: "Ada",
-        postUrl: "https://x.com/ada/status/1",
-        hosted: false,
-      }),
     ];
   }
 
@@ -401,21 +387,11 @@ describe("the list's mail", () => {
 describe("transactional mail", () => {
   it("carries no unsubscribe header — there is nothing to leave", async () => {
     // And offering it would let somebody opt out of their own sign-in link.
-    const {
-      magicLinkEmail,
-      welcomeUserEmail,
-      showcaseReviewEmail,
-      confirmSubscriptionEmail,
-    } = await load({});
+    const { magicLinkEmail, welcomeUserEmail, confirmSubscriptionEmail } =
+      await load({});
     for (const email of [
       magicLinkEmail("a@b.c", "https://x.test"),
       welcomeUserEmail("a@b.c", null),
-      showcaseReviewEmail("a@b.c", {
-        title: "t",
-        authorName: "n",
-        postUrl: "https://x.com/a/1",
-        hosted: false,
-      }),
       // The confirm mail included: the address is not on any list yet, so an
       // unsubscribe link would be a second way to mail somebody about a list
       // they are not on.
@@ -468,83 +444,5 @@ describe("confirmSubscriptionEmail", () => {
     expect(new Set(hrefs)).toEqual(
       new Set(["https://snapcn.dev", subscriptionUrls(TOKEN).confirm]),
     );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// showcaseReviewEmail — the first template carrying text a stranger typed
-// ---------------------------------------------------------------------------
-
-describe("showcaseReviewEmail", () => {
-  it("escapes a title instead of letting it become markup", async () => {
-    const { showcaseReviewEmail } = await load({});
-    const email = showcaseReviewEmail("admin@snapcn.dev", {
-      title: "<script>alert(1)</script>",
-      authorName: "Ada & Co",
-      postUrl: "/api/showcase/video/3f2504e0-4f89-11d3-9a0c-0305e82c3301",
-      hosted: true,
-    });
-
-    expect(email.html).not.toContain("<script>alert(1)</script>");
-    expect(email.html).toContain("&lt;script&gt;");
-    expect(email.html).toContain("Ada &amp; Co");
-  });
-
-  it("keeps the subject on one line — a newline there is header injection", async () => {
-    const { showcaseReviewEmail } = await load({});
-    const email = showcaseReviewEmail("admin@snapcn.dev", {
-      title: "line one\nBcc: someone@evil.test",
-      authorName: "Ada",
-      postUrl: "https://x.com/ada/status/1",
-      hosted: false,
-    });
-
-    expect(email.subject).not.toMatch(/[\r\n]/);
-    expect(email.subject).toContain("line one Bcc:");
-  });
-
-  it("makes a hosted path absolute, and leaves a real link alone", async () => {
-    const { showcaseReviewEmail } = await load({});
-    const hosted = showcaseReviewEmail("a@b.c", {
-      title: "t",
-      authorName: "n",
-      postUrl: "/api/showcase/video/3f2504e0-4f89-11d3-9a0c-0305e82c3301",
-      hosted: true,
-    });
-    const linked = showcaseReviewEmail("a@b.c", {
-      title: "t",
-      authorName: "n",
-      postUrl: "https://x.com/ada/status/1",
-      hosted: false,
-    });
-
-    // A relative path in a mail body resolves against nothing.
-    expect(hosted.text).toContain("https://snapcn.dev/api/showcase/video/");
-    expect(linked.text).toContain("https://x.com/ada/status/1");
-  });
-
-  it("never embeds a remote image — a mail body is not a place for a read beacon", async () => {
-    const { showcaseReviewEmail } = await load({});
-    const email = showcaseReviewEmail("a@b.c", {
-      title: "t",
-      authorName: "n",
-      postUrl: "https://evil.test/track.png",
-      hosted: false,
-    });
-
-    // The URL is printed, never used as an <img src>.
-    expect(email.html).not.toMatch(/<img[^>]+evil\.test/);
-  });
-
-  it("points the admin at the review queue", async () => {
-    const { showcaseReviewEmail } = await load({});
-    const email = showcaseReviewEmail("a@b.c", {
-      title: "t",
-      authorName: "n",
-      postUrl: "https://x.com/a/1",
-      hosted: false,
-    });
-    expect(email.html).toContain("https://snapcn.dev/docs/showcase/admin");
-    expect(email.text).toContain("https://snapcn.dev/docs/showcase/admin");
   });
 });

@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 const WAYS_OUT = [
   { href: "/docs/components", label: "Browse all components" },
   { href: "/docs/getting-started/introduction", label: "Read the docs" },
-  { href: "/docs/showcase", label: "See the showcase" },
+  { href: "/docs/pricing", label: "See pricing" },
 ];
 
 export default function NotFound() {

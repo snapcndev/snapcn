@@ -44,6 +44,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    // Turbopack's on-disk dev cache is never pruned on 16.2 (vercel/next.js#94915).
+    // Ours reached 27 GB, and from that state an idle `next dev` spun at ~600% CPU
+    // until React's dev async hook overflowed ("RangeError: Map maximum size
+    // exceeded") and killed the server ~3 min after the first page load. With no
+    // cache the same pages sat at 0% CPU, and cold compiles were no slower
+    // (/docs/components 5.3s without it, 8.4s with). Re-enable once Next prunes it.
+    turbopackFileSystemCacheForDev: false,
+  },
   // One canonical host. `www.` and the apex both served a 200, so Google saw two
   // copies of every page and split the ranking signal between them — while the
   // sitemap, the `<link rel=canonical>` and `SITE_URL` in lib/llms.ts +
@@ -55,6 +64,23 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         has: [{ type: "host", value: "www.snapcn.dev" }],
         destination: "https://snapcn.dev/:path*",
+        permanent: true,
+      },
+      // The URL people guess from 21st.dev/mcp. The page lives in the docs
+      // chrome, so this is the short link, not a second copy to index.
+      { source: "/mcp", destination: "/docs/mcp", permanent: true },
+      // Pages removed 2026-09-17. They were indexed and linked from outside, so
+      // they forward rather than 404: the showcase to the work itself, the
+      // marketplace (a "coming soon" for paid scenes) to where paid scenes are
+      // sold now.
+      {
+        source: "/docs/showcase/:path*",
+        destination: "/docs/components",
+        permanent: true,
+      },
+      {
+        source: "/docs/marketplace",
+        destination: "/docs/pricing",
         permanent: true,
       },
     ];
