@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { CHECKOUT_PRODUCTS, isCheckoutProduct } from "@/lib/plans";
+import {
+  CHECKOUT_PRODUCTS,
+  type CheckoutProduct,
+  isCheckoutProduct,
+  PLANS,
+} from "@/lib/plans";
 import { createCheckout, dodoConfigured } from "@/lib/server/dodo";
 import { requireUser } from "@/lib/server/projects";
 import { checkRateLimit } from "@/lib/server/rate-limit";
@@ -8,12 +13,13 @@ import { checkRateLimit } from "@/lib/server/rate-limit";
 /**
  * POST /api/checkout — hand back a Dodo checkout URL for one product.
  *
- * Payload: `{ product: "starter" | "pack" }`. Response: `{ checkoutUrl }`.
+ * Payload: `{ product: "everything_annual" | "lifetime" | … }` — any
+ * `CHECKOUT_PRODUCTS` key. Response: `{ checkoutUrl }`.
  *
  * Nothing here grants anything. What comes back is a link to a page on Dodo's
  * domain, and a subscription created through it is `pending` until the money
  * actually moves — so the only thing that ever moves a user onto a paid plan is
- * `/api/webhooks/dodo`. Trusting this response instead would sell Starter to
+ * `/api/webhooks/dodo`. Trusting this response instead would sell Pro to
  * anyone who can POST and then abandon the card form.
  *
  * Sign-in is required *before* the card rather than after, which is the one
@@ -107,8 +113,16 @@ export async function POST(request: Request) {
       // it through a reconcile means the plan is already live on the page they
       // land on — rather than depending on a webhook that may still be in
       // flight, or may never have been registered.
+      //
+      // Where they land depends on what they bought. The editor plans land in
+      // the editor. The catalogue lands on `/account`, where a buyer's keys and
+      // the lines that put one in `components.json` live — it used to land in
+      // the editor, which left somebody who had just paid for components with
+      // no key and no way to install one.
       returnUrl: `${publicOrigin(request)}/api/billing/sync?next=${encodeURIComponent(
-        "/docs/video-editor?checkout=done",
+        buysComponents(product)
+          ? "/account?checkout=done"
+          : "/docs/video-editor?checkout=done",
       )}`,
     });
     return NextResponse.json({ checkoutUrl });
@@ -121,6 +135,12 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
+}
+
+/** Whether a product's plan carries the pro components. A pack has no plan. */
+function buysComponents(product: CheckoutProduct): boolean {
+  const plan = CHECKOUT_PRODUCTS[product].plan;
+  return plan ? PLANS[plan].components : false;
 }
 
 /**

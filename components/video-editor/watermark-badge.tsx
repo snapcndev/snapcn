@@ -12,14 +12,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useTrackEvent } from "@/lib/analytics";
 import type { AuthProviderId } from "@/lib/auth-providers";
+import { CATALOGUE_PRICE } from "@/lib/plans";
 import { startCheckout } from "@/lib/upgrade";
 
 /**
  * Written once. The signed-out pill and the signed-in one are the same offer,
  * and a price that changes as someone signs in reads as a bait price.
  */
-const STARTER_PRICE = "$19";
-const REMOVE_LABEL = `Watermark — remove for ${STARTER_PRICE}/mo`;
+const PRO_PRICE = `${CATALOGUE_PRICE.annual}/yr`;
+const REMOVE_LABEL = `Watermark — remove with Pro, ${PRO_PRICE}`;
 
 /**
  * Says what the export will contain, and offers the one thing that changes it.
@@ -30,7 +31,7 @@ const REMOVE_LABEL = `Watermark — remove for ${STARTER_PRICE}/mo`;
  * is still on — this badge is the only place in the editor the paid tier is
  * ever mentioned, so a reader who never opens the pricing page learns here or
  * nowhere. Signed out it used to offer sign-in and claim that removed the mark;
- * since Starter exists that was simply false, and the funnel ended in a free
+ * since a paid plan exists that was simply false, and the funnel ended in a free
  * account that still exported marked.
  *
  * The mark is not a nag either. A local `npx remotion render` of the same
@@ -65,7 +66,7 @@ export function WatermarkBadge({
     setStarting(true);
     trackEvent("upgrade_started", { from: "watermark_badge" });
     try {
-      await startCheckout("starter");
+      await startCheckout("everything_annual");
       // No `setStarting(false)` on success — `startCheckout` navigates away,
       // and clearing the spinner first would flash the old label during the
       // page teardown.
@@ -136,12 +137,12 @@ export function WatermarkBadge({
 
       <PopoverContent align="end" className="w-80">
         <p className="text-sm font-medium text-foreground">
-          Remove the watermark — {STARTER_PRICE}/mo
+          Remove the watermark — {PRO_PRICE}
         </p>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Rendering an MP4 runs Chromium on our machines, so the free export
-          carries a small snapcn mark at 720p. Starter drops the mark and
-          renders at 1080p.
+          carries a small snapcn mark at 720p. Pro drops the mark, renders at
+          1080p, and comes with every Pro component and the MCP server.
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
           Rendering the same components locally with{" "}

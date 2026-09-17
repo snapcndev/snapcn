@@ -159,6 +159,76 @@ export async function createCheckout(opts: {
   return { sessionId: json.session_id, checkoutUrl: json.checkout_url };
 }
 
+/**
+ * What one product costs a buyer in `country`, as Dodo's own checkout will
+ * charge it: the regional price or the currency conversion, and the tax, in the
+ * currency's minor units.
+ *
+ * `POST /checkouts/preview` — the same calculation the hosted checkout runs,
+ * without creating a session. This is the number the pricing page shows, so
+ * the page cannot say one thing and the card form another: a price edited in
+ * the Dodo dashboard is on the page without a deploy.
+ *
+ * Null on anything but a clean answer — no key, a country Dodo will not
+ * price, a network blip. The caller falls back to the price table.
+ */
+export interface CheckoutQuote {
+  currency: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+}
+
+export async function previewCheckout(
+  productId: string,
+  country: string,
+): Promise<CheckoutQuote | null> {
+  const apiKey = process.env.DODO_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(`${baseUrl()}/checkouts/preview`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "User-Agent": "snapcn-server/1.0 (+https://snapcn.dev)",
+      },
+      body: JSON.stringify({
+        product_cart: [{ product_id: productId, quantity: 1 }],
+        billing_address: { country },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as {
+      currency?: unknown;
+      current_breakup?: {
+        subtotal?: unknown;
+        tax?: unknown;
+        total_amount?: unknown;
+      };
+    };
+    const b = body.current_breakup;
+    // Silently-ignored fields cut both ways here too: a renamed field must read
+    // as "no quote", never as a price of zero.
+    if (
+      typeof body.currency !== "string" ||
+      typeof b?.subtotal !== "number" ||
+      typeof b.total_amount !== "number"
+    ) {
+      return null;
+    }
+    return {
+      currency: body.currency,
+      subtotal: b.subtotal,
+      tax: typeof b.tax === "number" ? b.tax : 0,
+      total: b.total_amount,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Dodo's maximum page size for the subscriptions list, which is 0-indexed. */
 const PAGE_SIZE = 100;
 /**

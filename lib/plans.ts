@@ -140,33 +140,46 @@ export function limitsFor(plan: PlanName | null): PlanLimits {
  * one-time purchase that entitles nothing in this app.
  */
 export const CHECKOUT_PRODUCTS = {
-  starter: {
-    env: "DODO_PRODUCT_STARTER",
-    plan: "starter",
-    kind: "subscription",
-  },
-  // Annual is a separate Dodo product, not a flag on the monthly one — Dodo
-  // snapshots the billing interval onto the subscription at creation. Same
-  // plan, different cart.
-  starter_annual: {
-    env: "DODO_PRODUCT_STARTER_ANNUAL",
-    plan: "starter",
-    kind: "subscription",
-  },
-  // The catalogue, annually. `pro` is the only plan whose `components` is true,
-  // so this row is the entire difference between paying for the editor and
-  // paying for the registry.
-  founder: {
-    env: "DODO_PRODUCT_FOUNDER",
+  // Shape D (PLAN_SEP09_NOV20, 2026-09-12): three ways to buy the same thing,
+  // all of them `pro` — the catalogue, the MCP, and the editor without its
+  // mark. The $19 Starter and the $29 MCP tier are gone: both measured $0, and
+  // the MCP only transports the catalogue, so it cannot be sold without it.
+  //
+  // `cents` is the USD list price and the one copy of it: the pricing copy
+  // formats it and `scripts/dodo-products.mts` writes it to Dodo.
+  //
+  // A year at a time. Annual and not monthly because shadcn copies files, so a
+  // second month delivers nothing a first one did not.
+  everything_annual: {
+    env: "DODO_PRODUCT_EVERYTHING_ANNUAL",
     plan: "pro",
     kind: "subscription",
+    cents: 12900,
   },
-  // The catalogue, bought outright. Same plan, no renewal — see `kind`.
-  lifetime: { env: "DODO_PRODUCT_LIFETIME", plan: "pro", kind: "once" },
+  // The same, bought outright, and everything that ships later.
+  lifetime: {
+    env: "DODO_PRODUCT_LIFETIME",
+    plan: "pro",
+    kind: "once",
+    cents: 24900,
+  },
+  // Company use, five seats. The same plan — what it buys is the licence, not
+  // a bigger catalogue — so it needs no gate of its own.
+  commercial: {
+    env: "DODO_PRODUCT_COMMERCIAL",
+    plan: "pro",
+    kind: "once",
+    cents: 49900,
+  },
   pack: { env: "DODO_PRODUCT_PACK", plan: null, kind: "once" },
 } as const satisfies Record<
   string,
-  { env: string; plan: PlanName | null; kind: "subscription" | "once" }
+  {
+    env: string;
+    plan: PlanName | null;
+    kind: "subscription" | "once";
+    cents?: number;
+  }
 >;
 
 export type CheckoutProduct = keyof typeof CHECKOUT_PRODUCTS;
@@ -228,3 +241,67 @@ export function oneTimePlanFor(value: unknown): PlanName | null {
  * card, which is a worse outcome than selling a fifty-first seat.
  */
 export const FOUNDER_SEATS = 50;
+
+/**
+ * What the pro catalogue costs, as the buyer reads it.
+ *
+ * Here rather than on the pricing page because the pricing page is no longer
+ * the only surface that quotes a price: the gallery puts it on every paid card,
+ * which is the whole of item 32 — 47 people had reached a price page in the
+ * site's entire history because no buy button existed anywhere, against 2,436 a
+ * month on /docs/components. Formatted from `CHECKOUT_PRODUCTS`, so the page
+ * and what Dodo charges are one number.
+ */
+const usd = (cents: number) => `$${cents / 100}`;
+
+export const CATALOGUE_PRICE = {
+  annual: usd(CHECKOUT_PRODUCTS.everything_annual.cents),
+  lifetime: usd(CHECKOUT_PRODUCTS.lifetime.cents),
+  commercial: usd(CHECKOUT_PRODUCTS.commercial.cents),
+} as const;
+
+/**
+ * What the catalogue grows into. A promise, so it is written once: the pricing
+ * cards and the Dodo product descriptions a buyer reads at checkout both quote
+ * it, and the two must never name different numbers.
+ */
+export const CATALOGUE_PROMISE = {
+  components: "500+",
+  templates: "10+",
+  /** The day the first templates land — the same day the early-bird prices end. */
+  templatesOn: "20 October",
+} as const;
+
+/**
+ * Regional prices, charged by Dodo's Localized Pricing on the billing country.
+ *
+ * Not a nicety: 61% of installers are Brazilian and $129 is about a week of a
+ * Brazilian developer's pay. Roughly $49 a year and $99 outright, set in the
+ * local currency so the card is not charged abroad — except Argentina, in USD,
+ * because Dodo does not settle ARS. Commercial has no regional price.
+ *
+ * Amounts in each currency's minor unit, as Dodo takes them: IDR has cents,
+ * VND does not. `scripts/dodo-products.mts` writes these; the pricing page
+ * only names the countries.
+ */
+export const PPP_PRICES = {
+  BR: { currency: "BRL", everything_annual: 24900, lifetime: 49900 },
+  IN: { currency: "INR", everything_annual: 469900, lifetime: 949900 },
+  AR: { currency: "USD", everything_annual: 4900, lifetime: 9900 },
+  TR: { currency: "TRY", everything_annual: 239900, lifetime: 479900 },
+  VN: { currency: "VND", everything_annual: 1249000, lifetime: 2549000 },
+  ID: { currency: "IDR", everything_annual: 84900000, lifetime: 174900000 },
+} as const;
+
+/**
+ * The one pro component a confirmed subscriber gets for nothing.
+ *
+ * The paywall used to have one exit, which was paying: 96 people hit it in 21
+ * days and one of them clicked through. A free component for an address gives
+ * the other 95 a second exit that keeps them — and it has to be one they would
+ * actually use, so it is the one most of them were trying to install.
+ *
+ * The 402 body promises it, and that string lives on in terminals, so changing
+ * which component this is is fine; removing the sample is not.
+ */
+export const PRO_SAMPLE = { name: "manifesto", title: "Manifesto" } as const;

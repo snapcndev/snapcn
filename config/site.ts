@@ -1,3 +1,5 @@
+import { CATALOGUE_PRICE, CATALOGUE_PROMISE } from "@/lib/plans";
+import proCatalogue from "@/lib/pro-catalogue.json";
 import builtRegistry from "@/public/r/registry.json";
 import snapCnRegistry from "@/registry/snap-cn/registry.json";
 import snapCnUiRegistry from "@/registry/snap-cn-ui/registry.json";
@@ -37,30 +39,45 @@ export interface ProItem {
   name: string;
   title: string;
   description: string;
+  /** Day it joined the catalogue, when that was after the tier was first listed. */
+  added?: string;
 }
 
 /**
  * The paid components.
  *
- * Read off the *built* index rather than the pro manifest, and that is the
- * whole point: `registry/snap-cn-pro/` is gitignored, so a public checkout does
- * not have it and an import of it would not compile. `public/r/registry.json`
- * is committed, carries a `meta.access` on every pro row, and is produced by the
- * same `registry:build` — so the list is correct in both checkouts and there is
- * no second thing to keep in step.
+ * Read off two committed files, never off the pro manifest: `registry/snap-cn-pro/`
+ * is gitignored, so a public checkout does not have it and an import of it would
+ * not compile.
+ *
+ * `lib/pro-catalogue.json` is written by `scripts/pro-demos.mts` and lists every
+ * paid component that has a demo video — that is the live list. `public/r/registry.json`
+ * is the older source: correct, but only as current as the last build that ran
+ * with `SNAPCN_PRO_PUBLIC=1`, which is how this came to advertise 14 of 35.
  *
  * Title and description come along because `/pro` has to describe what somebody
  * just failed to install. Carrying them is safe for the same reason listing the
  * row is: the built index has no `files[].content`, so this is the
  * advertisement and not the source.
  */
-export const PRO_ITEMS: ProItem[] = builtRegistry.items
-  .filter((i) => (i as { meta?: { access?: string } }).meta?.access === "pro")
-  .map((i) => ({
-    name: i.name,
-    title: (i as { title?: string }).title ?? i.name,
-    description: (i as { description?: string }).description ?? "",
-  }));
+export const PRO_ITEMS: ProItem[] = (() => {
+  const byName = new Map<string, ProItem>();
+  // The catalogue first: it is written from the pro manifest itself and is the
+  // only list that is current. The built index is a snapshot of whichever build
+  // last ran with SNAPCN_PRO_PUBLIC=1, and it had drifted to 14 of 35 — so it
+  // fills gaps here rather than deciding the set.
+  for (const item of proCatalogue as ProItem[]) byName.set(item.name, item);
+  for (const i of builtRegistry.items) {
+    if ((i as { meta?: { access?: string } }).meta?.access !== "pro") continue;
+    if (byName.has(i.name)) continue;
+    byName.set(i.name, {
+      name: i.name,
+      title: (i as { title?: string }).title ?? i.name,
+      description: (i as { description?: string }).description ?? "",
+    });
+  }
+  return [...byName.values()];
+})();
 
 /** The same list, as bare names — what every gate and lookup actually wants. */
 export const PRO_NAMES: string[] = PRO_ITEMS.map((i) => i.name);
@@ -133,7 +150,6 @@ export const NAV_LINKS: NavLink[] = [
   // announcement. **Take it off once the editor stops being news** — a "New"
   // that outlives its release teaches people to stop reading flags.
   { href: "/docs/video-editor", label: "Video Editor", badge: "New" },
-  { href: "/docs/showcase", label: "Showcase" },
   { href: "/docs/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
 ];
@@ -161,14 +177,14 @@ export const DOCS_PAGE_META: Record<string, DocsPageMeta> = {
     description:
       "Compose a video from snapcn components — add clips, edit text and images, and export an MP4.",
   },
+  mcp: {
+    title: "MCP Server",
+    description:
+      "Add the snapcn MCP server to Claude Code, Cursor, VS Code, Codex, Windsurf or Gemini CLI. Your agent searches the registry, reads real props and plans a Remotion video from a one-line brief. Included with snapcn Pro.",
+  },
   pricing: {
     title: "Pricing",
-    description:
-      "The components are free and the editor exports without limit. $19 a month removes the watermark and doubles the resolution to 1080p.",
-  },
-  showcase: {
-    title: "Showcase",
-    description: "Videos built with snapcn, submitted by the community.",
+    description: `The free components stay free and MIT. Pro is every Pro component, the MCP server and watermark-free 1080p exports — ${CATALOGUE_PRICE.annual} a year, ${CATALOGUE_PRICE.lifetime} once, or ${CATALOGUE_PRICE.commercial} for a team.`,
   },
   changelog: {
     title: "Changelog",
@@ -181,13 +197,7 @@ export const DOCS_PAGE_META: Record<string, DocsPageMeta> = {
   },
   templates: {
     title: "Templates",
-    description:
-      "Whole videos, composed from the registry and ready to render — drop in your copy and export.",
-  },
-  marketplace: {
-    title: "Marketplace",
-    description:
-      "Premium blocks and full scenes from the community, installed with the same shadcn CLI as everything else.",
+    description: `Around ten finished videos land on ${CATALOGUE_PROMISE.templatesOn} — a launch film, a feature walkthrough, a changelog clip — composed from the registry and ready to render with your own copy. Every one is included in Pro, and the early-bird prices run until then.`,
   },
 };
 
@@ -201,45 +211,44 @@ export const DOCS_PAGE_META: Record<string, DocsPageMeta> = {
  */
 export type FooterColumn = { title: string; links: NavLink[] };
 
+/**
+ * The site-level footer columns.
+ *
+ * No "Components" column any more: the footer lists every component by name
+ * above these, under its category, and a column of seven category links sat
+ * directly above the same seven categories as headings.
+ */
 export const FOOTER_COLUMNS: FooterColumn[] = [
-  {
-    title: "Components",
-    links: [
-      { href: "/docs/text", label: "Text & Titles" },
-      { href: "/docs/captions", label: "Captions" },
-      { href: "/docs/logos", label: "Logos" },
-      { href: "/docs/screens", label: "Screens & Devices" },
-      { href: "/docs/social", label: "Social Proof" },
-      { href: "/docs/scenes", label: "Scenes" },
-      { href: "/docs/ai-input", label: "AI Chat Input" },
-    ],
-  },
   {
     title: "Documentation",
     links: [
+      { href: "/docs", label: "All docs" },
       { href: "/docs/getting-started/introduction", label: "Introduction" },
       { href: "/docs/getting-started/installation", label: "Installation" },
       { href: "/docs/getting-started/agent-skill", label: "Agent skill" },
+      { href: "/docs/mcp", label: "MCP server" },
     ],
   },
   {
-    title: "Browse",
+    // Was "Browse", and it held the docs index next to the editor while the
+    // pricing page — the only page on this site that takes money — was in no
+    // column at all. These are the things you can go and use.
+    title: "Product",
     links: [
-      { href: "/docs", label: "Documentation" },
       { href: "/docs/components", label: "All components" },
-      // The editor shipped; the note that used to sit here calling it a
-      // coming-soon page outlived the page it described. Templates and
-      // Marketplace are the ones still unbuilt, and they are still absent.
+      { href: "/docs/pricing", label: "Pricing" },
       { href: "/docs/video-editor", label: "Video editor" },
-      { href: "/docs/showcase", label: "Showcase" },
+      { href: "/docs/templates", label: "Templates" },
     ],
   },
   {
     title: "Project",
     links: [
+      { href: "/docs/roadmap", label: "Roadmap" },
+      { href: "/docs/changelog", label: "Changelog" },
       { href: GITHUB_URL, label: "GitHub" },
-      { href: `${GITHUB_URL}/blob/main/LICENSE`, label: "MIT license" },
       { href: `${GITHUB_URL}/issues`, label: "Issues" },
+      { href: `${GITHUB_URL}/blob/main/LICENSE`, label: "MIT license" },
       { href: X_URL, label: "X" },
     ],
   },
