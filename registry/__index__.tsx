@@ -14,7 +14,6 @@ import { FollowerRush } from "@/registry/snap-cn/follower-rush";
 import { HeroLaunch } from "@/registry/snap-cn/hero-launch";
 import { KaraokeCaptions } from "@/registry/snap-cn/karaoke-captions";
 import { LaptopFrame } from "@/registry/snap-cn/laptop-frame";
-import { LaunchVideo } from "@/registry/snap-cn/launch-video";
 import { LogoAssemble } from "@/registry/snap-cn/logo-assemble";
 import { LogoCollapse } from "@/registry/snap-cn/logo-collapse";
 import { LogoDrift } from "@/registry/snap-cn/logo-drift";
@@ -129,10 +128,6 @@ const registry: Record<string, RegistryEntry> = {
     config: CONFIGS["channel-thread"],
   },
   "card-rail": { Component: CardRail, config: CONFIGS["card-rail"] },
-  "launch-video": {
-    Component: LaunchVideo,
-    config: CONFIGS["launch-video"],
-  },
   "logo-collapse": {
     Component: LogoCollapse,
     config: CONFIGS["logo-collapse"],

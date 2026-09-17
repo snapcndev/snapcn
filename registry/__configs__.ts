@@ -12,7 +12,6 @@ import { followerRushConfig } from "@/registry/snap-cn/follower-rush/config";
 import { heroLaunchConfig } from "@/registry/snap-cn/hero-launch/config";
 import { karaokeCaptionsConfig } from "@/registry/snap-cn/karaoke-captions/config";
 import { laptopFrameConfig } from "@/registry/snap-cn/laptop-frame/config";
-import { launchVideoConfig } from "@/registry/snap-cn/launch-video/config";
 import { logoAssembleConfig } from "@/registry/snap-cn/logo-assemble/config";
 import { logoCollapseConfig } from "@/registry/snap-cn/logo-collapse/config";
 import { logoDriftConfig } from "@/registry/snap-cn/logo-drift/config";
@@ -67,7 +66,6 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "type-morph": typeMorphConfig,
   "karaoke-captions": karaokeCaptionsConfig,
   "laptop-frame": laptopFrameConfig,
-  "launch-video": launchVideoConfig,
   "logo-assemble": logoAssembleConfig,
   "logo-drift": logoDriftConfig,
   "logo-flicker": logoFlickerConfig,
@@ -129,9 +127,6 @@ const MIN_SPEED_ONE = [
   // The letters only resolve from frame 94, and the last swap lands at ~109 of
   // 150; under speed < 1 the wordmark never stops being blocks.
   "block-wordmark",
-  // Five beats cut at fixed frames; under speed < 1 each cut lands before its
-  // beat's payoff and the wordmark never resolves inside the composition.
-  "launch-video",
   "text-build",
   "text-swell",
   "karaoke-captions",

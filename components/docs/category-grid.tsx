@@ -24,7 +24,7 @@ export function CategoryGrid({ category }: { category: CategoryId }) {
     name: item.name,
     description: item.description,
     // Everything in the catalogue has shipped — the gallery is the list of
-    // what exists. Unbuilt things live in `ComingSoonPage`, not here.
+    // what exists. Unbuilt things are not listed here.
     status: "stable" as const,
     href: item.href,
     pro: item.pro,

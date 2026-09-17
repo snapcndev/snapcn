@@ -99,14 +99,6 @@ export interface GalleryItem {
 
 export const GALLERY_ITEMS: GalleryItem[] = [
   {
-    name: "Launch Video",
-    description:
-      "A whole product launch video in one install — a title, a highlighted claim, your app on a phone, a follower count and a wordmark outro, five components cut together into 21 seconds",
-    category: "scenes",
-    href: "/docs/scenes/launch-video",
-    added: "2026-09-15",
-  },
-  {
     name: "Card Rail",
     description:
       "A rail of cards flicked sideways across a tilted plane — pushed three times, each flick leaving at speed and decelerating for over a second into the next, while the plane's foot runs a fifth wider than its head",

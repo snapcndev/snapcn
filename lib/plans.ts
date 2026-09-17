@@ -261,6 +261,30 @@ export const CATALOGUE_PRICE = {
 } as const;
 
 /**
+ * The early-bird window: today's prices end the day the templates land.
+ *
+ * Announced on the pricing and templates pages, so it is a promise with a date
+ * on it — on that day run `scripts/dodo-products.mts` with `cents` raised to
+ * `risesTo`. A subscriber keeps what they signed up at: Dodo never reprices an
+ * existing subscription ("each keeps the price it was created with"), which is
+ * what makes "lock in" true rather than a slogan.
+ */
+export const EARLY_BIRD = {
+  endsAt: "2026-10-20T00:00:00Z",
+  endsOn: "20 October",
+  endsOnShort: "20 Oct",
+  risesTo: { everything_annual: 17900, lifetime: 29900 },
+} as const;
+
+/** Whole days left at early-bird prices; 0 once the window has closed. */
+export function earlyBirdDaysLeft(now: number = Date.now()): number {
+  return Math.max(
+    0,
+    Math.ceil((Date.parse(EARLY_BIRD.endsAt) - now) / 86_400_000),
+  );
+}
+
+/**
  * What the catalogue grows into. A promise, so it is written once: the pricing
  * cards and the Dodo product descriptions a buyer reads at checkout both quote
  * it, and the two must never name different numbers.
@@ -269,7 +293,7 @@ export const CATALOGUE_PROMISE = {
   components: "500+",
   templates: "10+",
   /** The day the first templates land — the same day the early-bird prices end. */
-  templatesOn: "20 October",
+  templatesOn: EARLY_BIRD.endsOn,
 } as const;
 
 /**
