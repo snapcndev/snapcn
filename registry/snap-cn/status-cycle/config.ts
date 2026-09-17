@@ -101,10 +101,10 @@ export const statusCycleConfig: ComponentConfig = {
     },
     statusHold: {
       type: "number",
-      // 14 frames on the reference's 24fps clock. The width morph alone is 18
-      // frames at 30, so the next swap starts while the last one is still
-      // settling — that overlap is the reference's cadence, not a mistake.
-      default: 18,
+      // 1s: the 15-frame roll, then 15 frames to read the label.
+      // The reference swaps every 14 frames of 24fps, before the last swap has
+      // settled; at 30fps every label was read mid-roll and the cycle flickered.
+      default: 30,
       min: 10,
       max: 60,
       step: 1,
@@ -139,9 +139,10 @@ export const statusCycleConfig: ComponentConfig = {
     },
     fontFamily: FONT_FAMILY_CONTROL,
   },
-  // The last chip lands at frame 115 and its step settles by ~124; the rest is
-  // the hold the field needs to read as finished rather than cut.
-  durationInFrames: 150,
+  // Four swaps of 30 end act 1 at 144; the crossfade's midpoint (148.5) is the
+  // first chip, so the fifth lands at 180.5 and its step settles by ~190. The
+  // rest is the hold the field needs to read as finished rather than cut.
+  durationInFrames: 198,
   fps: FPS,
   compositionWidth: W,
   compositionHeight: H,

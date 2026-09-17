@@ -23,7 +23,7 @@ import {
 export function SignInButtons({
   providers,
   emailEnabled = false,
-  callbackUrl = "/docs/showcase",
+  callbackUrl = "/",
 }: {
   providers: AuthProviderId[];
   emailEnabled?: boolean;

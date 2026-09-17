@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { GALLERY_ITEMS } from "@/lib/gallery-data";
+import { CATALOGUE_ITEMS } from "@/lib/gallery-data";
+import { firstSentence } from "@/lib/structured-data";
 
 /**
  * The other components in this one's category, linked.
@@ -21,10 +22,12 @@ import { GALLERY_ITEMS } from "@/lib/gallery-data";
  * only thing on the page that tells them.
  */
 export function RelatedComponents({ slug }: { slug: string }) {
-  const current = GALLERY_ITEMS.find((i) => i.href.endsWith(`/${slug}`));
+  // Free and paid alike: a pro component has a page now, and the rail is the
+  // only link into it from the pages beside it.
+  const current = CATALOGUE_ITEMS.find((i) => i.href.endsWith(`/${slug}`));
   if (!current) return null;
 
-  const siblings = GALLERY_ITEMS.filter(
+  const siblings = CATALOGUE_ITEMS.filter(
     (i) => i.category === current.category && i.href !== current.href,
   ).slice(0, 6);
   if (siblings.length === 0) return null;
@@ -47,7 +50,8 @@ export function RelatedComponents({ slug }: { slug: string }) {
                 {item.name}
               </span>
               <span className="mt-0.5 block text-muted-foreground text-xs leading-relaxed">
-                {item.description}
+                {/* A pro description is a paragraph; the rail wants a line. */}
+                {item.pro ? firstSentence(item.description) : item.description}
               </span>
             </Link>
           </li>

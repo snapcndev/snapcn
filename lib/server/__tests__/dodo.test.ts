@@ -1,6 +1,10 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { findActiveSubscription, verifyWebhookSignature } from "../dodo";
+import {
+  findActiveSubscription,
+  previewCheckout,
+  verifyWebhookSignature,
+} from "../dodo";
 
 vi.mock("server-only", () => ({}));
 
@@ -167,15 +171,15 @@ describe("findActiveSubscription", () => {
   });
 
   it("returns the user's own snapcn subscription", async () => {
-    pages([sub({ user_id: UID, product: "starter" }, "sub_ours")]);
+    pages([sub({ user_id: UID, product: "everything_annual" }, "sub_ours")]);
     expect((await findActiveSubscription(UID))?.subscription_id).toBe(
       "sub_ours",
     );
   });
 
-  it("honours an annual subscription, not just the monthly product", async () => {
-    pages([sub({ user_id: UID, product: "starter_annual" }, "sub_yr")]);
-    expect((await findActiveSubscription(UID))?.subscription_id).toBe("sub_yr");
+  it("ignores a subscription to the retired Starter tier", async () => {
+    pages([sub({ user_id: UID, product: "starter" }, "sub_old")]);
+    expect(await findActiveSubscription(UID)).toBeNull();
   });
 
   it("never grants on a foreign product with a colliding user_id", async () => {
@@ -189,7 +193,7 @@ describe("findActiveSubscription", () => {
   it("steps over a foreign subscription instead of stopping at it", async () => {
     pages([
       sub({ user_id: UID, product: "ruixen-pro" }, "sub_theirs"),
-      sub({ user_id: UID, product: "starter" }, "sub_ours"),
+      sub({ user_id: UID, product: "everything_annual" }, "sub_ours"),
     ]);
     expect((await findActiveSubscription(UID))?.subscription_id).toBe(
       "sub_ours",
@@ -199,15 +203,80 @@ describe("findActiveSubscription", () => {
   it("keeps paging while pages come back full", async () => {
     const full = Array.from({ length: 100 }, () => sub({ user_id: "someone" }));
     const calls = pages(full, [
-      sub({ user_id: UID, product: "starter" }, "p2"),
+      sub({ user_id: UID, product: "everything_annual" }, "p2"),
     ]);
     expect((await findActiveSubscription(UID))?.subscription_id).toBe("p2");
     expect(calls).toHaveLength(2);
   });
 
   it("stops at the first short page", async () => {
-    const calls = pages([sub({ user_id: "someone", product: "starter" })]);
+    const calls = pages([
+      sub({ user_id: "someone", product: "everything_annual" }),
+    ]);
     expect(await findActiveSubscription(UID)).toBeNull();
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe("previewCheckout", () => {
+  const reply = (status: number, body: unknown) =>
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
+      calls.push({ url, body: JSON.parse(String(init.body)) });
+      return { ok: status < 300, status, json: async () => body };
+    });
+  let calls: { url: string; body: unknown }[] = [];
+  beforeEach(() => {
+    calls = [];
+    vi.stubEnv("DODO_API_KEY", "sk_test");
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("asks Dodo for the product in that billing country and reads the breakup", async () => {
+    reply(200, {
+      currency: "INR",
+      current_breakup: {
+        subtotal: 469900,
+        tax: 84582,
+        total_amount: 554482,
+        discount: 0,
+      },
+    });
+    expect(await previewCheckout("pdt_x", "IN")).toEqual({
+      currency: "INR",
+      subtotal: 469900,
+      tax: 84582,
+      total: 554482,
+    });
+    expect(calls[0].url).toBe(
+      "https://test.dodopayments.com/checkouts/preview",
+    );
+    expect(calls[0].body).toEqual({
+      product_cart: [{ product_id: "pdt_x", quantity: 1 }],
+      billing_address: { country: "IN" },
+    });
+  });
+
+  it("reads a missing tax as none — Dodo sends null where it charges none", async () => {
+    reply(200, {
+      currency: "BRL",
+      current_breakup: { subtotal: 24900, tax: null, total_amount: 24900 },
+    });
+    expect((await previewCheckout("pdt_x", "BR"))?.tax).toBe(0);
+  });
+
+  it("answers null, never a zero price, when Dodo does not answer cleanly", async () => {
+    reply(400, { code: "INVALID_COUNTRY" });
+    expect(await previewCheckout("pdt_x", "ZZ")).toBeNull();
+    reply(200, { currency: "USD", current_breakup: { tax: 0 } });
+    expect(await previewCheckout("pdt_x", "US")).toBeNull();
+    vi.stubGlobal("fetch", async () => {
+      throw new Error("offline");
+    });
+    expect(await previewCheckout("pdt_x", "US")).toBeNull();
+    vi.stubEnv("DODO_API_KEY", "");
+    expect(await previewCheckout("pdt_x", "US")).toBeNull();
   });
 });

@@ -195,7 +195,7 @@ export function buildSpec(
 ): RenderSpec {
   const { clips, font, audio } = parseVideoTimelineInput(body);
   // The composition is authored at CANVAS but rendered at whatever size the
-  // spec carries — `render.ts` spreads these over the composition — so the
+  // spec carries — `render.ts` reaches it with `scale`, not a bigger page — so the
   // plan's ceiling *is* the output size, and the same clips come out 720p on
   // free and 1080p on a paid plan with no second composition to keep in sync.
   // The aspect comes from CANVAS rather than a hardcoded 16:9 so a change to

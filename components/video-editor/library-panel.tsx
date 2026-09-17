@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   type CategoryId,
-  GALLERY_CATEGORIES,
+  FREE_CATEGORIES,
   GALLERY_ITEMS,
   slugFromHref,
 } from "@/lib/gallery-data";
@@ -200,7 +200,7 @@ export function LibraryPanel({
           >
             All
           </FilterPill>
-          {GALLERY_CATEGORIES.map((c) => (
+          {FREE_CATEGORIES.map((c) => (
             <FilterPill
               key={c.id}
               active={category === c.id}

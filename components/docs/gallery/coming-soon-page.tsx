@@ -15,9 +15,15 @@ import { DocsTopBar } from "./docs-top-bar";
 export function ComingSoonPage({
   title,
   description,
+  eyebrow = "Coming soon",
+  children,
 }: {
   title: string;
   description: string;
+  /** "Coming soon", or a date once there is one. */
+  eyebrow?: string;
+  /** Under the description — the one thing to do while waiting. */
+  children?: React.ReactNode;
 }) {
   return (
     <GalleryFrame>
@@ -25,7 +31,7 @@ export function ComingSoonPage({
 
       <div className="flex min-h-[55vh] flex-col items-start justify-center">
         <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          Coming soon
+          {eyebrow}
         </p>
         <h1 className="mt-3 max-w-[24ch] text-pretty font-sans text-[clamp(1.75rem,3.6vw,2.75rem)] font-normal leading-[1.08] tracking-[-0.03em] text-foreground">
           {title}
@@ -33,6 +39,7 @@ export function ComingSoonPage({
         <p className="mt-4 max-w-md text-pretty text-body-lg text-current/70">
           {description}
         </p>
+        {children}
       </div>
     </GalleryFrame>
   );

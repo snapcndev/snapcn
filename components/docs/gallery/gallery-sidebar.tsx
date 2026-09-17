@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { GITHUB_URL, X_URL } from "@/config/site";
 import { DOCS_NAV } from "@/lib/docs-nav";
-import { GALLERY_COUNT } from "@/lib/gallery-data";
+import { CATALOGUE_COUNT, GALLERY_COUNT } from "@/lib/gallery-data";
 import { cn } from "@/lib/utils";
 import { DOCS_SECTIONS, sectionBadge, useSectionActive } from "./section-nav";
 
@@ -99,7 +99,10 @@ function SidebarBody({
               className="size-1.5 rounded-full bg-primary"
               aria-hidden="true"
             />
-            {GALLERY_COUNT} components
+            {/* The grid's own count, free and paid. It sits directly above the
+                cards and said 41 over 76 of them. `GALLERY_COUNT` is the free,
+                MIT, installable number and stays that — see the footer. */}
+            {CATALOGUE_COUNT} components
           </span>
           <button
             type="button"
@@ -198,7 +201,7 @@ function SidebarBody({
         </div>
         <p className="text-[13px] leading-relaxed text-muted-foreground">
           Production-ready Remotion animations, transitions and backgrounds —
-          you own the code.
+          you own the code, free or paid.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <a
@@ -223,8 +226,12 @@ function SidebarBody({
         <div className="my-1 h-px w-full bg-border">
           <div className="h-px w-[13px] bg-foreground" />
         </div>
+        {/* Split, because "MIT licensed" over a grid that is now 46% paid is a
+            claim about half of it. Both halves are copied into your repo; only
+            one of them is free. */}
         <p className="text-[13px] text-muted-foreground">
-          MIT licensed · own your code.
+          {GALLERY_COUNT} MIT · {CATALOGUE_COUNT - GALLERY_COUNT} Pro · own your
+          code.
         </p>
         <p className="text-[13px] text-muted-foreground">© {year} snapcn</p>
       </div>

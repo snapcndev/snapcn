@@ -57,6 +57,11 @@ export const RENDERED_DEMOS: readonly string[] = [
   // this list exists to avoid.
   "block-wordmark",
   "text-reveal",
+  // Five demos in one: it opens on `text-reveal`, ends on `block-wordmark` and
+  // has `follower-rush` in the middle — three entries already here for their own
+  // reasons — and a live Player would have to mount all five scenes' fonts and
+  // images to show it.
+  "launch-video",
   // The opening is `text-reveal` itself, so it inherits that entry's reason —
   // and then adds its own: after the reveal, a whole line is carried across the
   // frame on a 16-frame bezier, morphed letter by letter, and pulled out on an
@@ -195,6 +200,28 @@ export const RENDERED_DEMOS: readonly string[] = [
   "answer-highlight",
   "cursor-track",
   "screen-recording",
+
+  // ── The five measured off recordings ──────────────────────────────────────
+  // All five are the failure case this list exists for, and each for a reason
+  // that was measured rather than felt:
+  //
+  //   word-wheel      a reel of type moving 15px a frame at its peak, scaling
+  //                   about its baseline. The Player's dropped frames read as
+  //                   the exact judder the baseline pivot exists to remove.
+  //   word-gather     a dozen words travelling at once on two clocks, and a
+  //                   block that eases back to size under all of them.
+  //   channel-thread  arrivals that are byte-identical between beats, so any
+  //                   frame the Player shows for the wrong length is the only
+  //                   movement on screen.
+  //   logo-collapse   cuts one frame apart and two frames of overshoot on the
+  //                   mark. A Player that misses one shows neither.
+  //   card-rail       a rail crossing the frame at 29px a frame on a
+  //                   perspective plane, re-rasterised every frame.
+  "word-wheel",
+  "word-gather",
+  "channel-thread",
+  "logo-collapse",
+  "card-rail",
 ];
 
 /**

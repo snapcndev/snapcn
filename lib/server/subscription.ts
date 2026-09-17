@@ -19,9 +19,13 @@ export const TOKEN_RE =
 
 export type ConfirmOutcome =
   /** This request flipped the row. The caller owes them a welcome mail. */
-  | { outcome: "confirmed"; email: string; token: string }
-  /** A real token, but the row was already confirmed. Send nothing. */
-  | { outcome: "already" }
+  | { outcome: "confirmed"; id: string; email: string; token: string }
+  /**
+   * A real token, but the row was already confirmed. Send nothing. The id is
+   * there so the page can still hand back the free-component link — a second
+   * click on the confirm mail is usually somebody looking for it.
+   */
+  | { outcome: "already"; id: string }
   /** No such token, a malformed one, or no database. */
   | { outcome: "unknown" };
 
@@ -56,19 +60,25 @@ export async function confirmSubscription(
         ),
       ),
     )
-    .returning({ email: subscribers.email, token: subscribers.token });
+    .returning({
+      id: subscribers.id,
+      email: subscribers.email,
+      token: subscribers.token,
+    });
 
   const row = flipped[0];
-  if (row) return { outcome: "confirmed", email: row.email, token: row.token };
+  if (row) return { outcome: "confirmed", ...row };
 
   // Zero rows means one of two very different things and the reader deserves to
   // be told which. Only this branch pays for the extra query.
-  const existing = await db
-    .select({ email: subscribers.email })
+  const [existing] = await db
+    .select({ id: subscribers.id })
     .from(subscribers)
     .where(eq(subscribers.token, token))
     .limit(1);
-  return existing.length > 0 ? { outcome: "already" } : { outcome: "unknown" };
+  return existing
+    ? { outcome: "already", id: existing.id }
+    : { outcome: "unknown" };
 }
 
 /**

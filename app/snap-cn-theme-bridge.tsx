@@ -2,7 +2,10 @@
 
 import { useTheme } from "next-themes";
 import type { ReactNode } from "react";
-import { SnapCnUIProvider } from "@/lib/snap-cn-ui";
+// The module, not the `@/lib/snap-cn-ui` barrel: the barrel re-exports `fonts`,
+// which calls `loadFont` for six Google families at import time — and this file
+// is in the root layout, so every page on the site fetched all six.
+import { SnapCnUIProvider } from "@/lib/snap-cn-ui/theme";
 
 /**
  * Hand the site's resolved light/dark down to every component we preview.

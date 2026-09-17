@@ -48,12 +48,10 @@ export const DOCS_SECTIONS = [
     // the same one and comes off at the same time.
     badge: "New",
   },
-  { label: "Showcase", href: "/docs/showcase", match: "/docs/showcase" },
-  {
-    label: "Marketplace",
-    href: "/docs/marketplace",
-    match: "/docs/marketplace",
-  },
+  // The coding-agent route in: Claude Code, Cursor, Codex and the rest. A
+  // section rather than a Getting Started page because it is not MDX, and
+  // `DOCS_NAV` is checked against the MDX on disk.
+  { label: "MCP", href: "/docs/mcp", match: "/docs/mcp" },
   { label: "Roadmap", href: "/docs/roadmap", match: "/docs/roadmap" },
   { label: "Changelog", href: "/docs/changelog", match: "/docs/changelog" },
 ] as const;

@@ -1,4 +1,4 @@
-import { type CategoryId, GALLERY_ITEMS } from "@/lib/gallery-data";
+import { CATALOGUE_ITEMS, type CategoryId } from "@/lib/gallery-data";
 import { ComponentCardGrid } from "./component-card-grid";
 
 /**
@@ -16,16 +16,19 @@ import { ComponentCardGrid } from "./component-card-grid";
  * the count in the sidebar, from the one edit.
  */
 export function CategoryGrid({ category }: { category: CategoryId }) {
-  const items = GALLERY_ITEMS.filter((item) => item.category === category).map(
-    (item) => ({
-      name: item.name,
-      description: item.description,
-      // Everything in `GALLERY_ITEMS` has shipped — the gallery is the list of
-      // what exists. Unbuilt things live in `ComingSoonPage`, not here.
-      status: "stable" as const,
-      href: item.href,
-    }),
-  );
+  // The paid work too, in the gallery's order: every pro component has a page
+  // to link to, and `/docs/charts` holds nothing else.
+  const items = CATALOGUE_ITEMS.filter(
+    (item) => item.category === category,
+  ).map((item) => ({
+    name: item.name,
+    description: item.description,
+    // Everything in the catalogue has shipped — the gallery is the list of
+    // what exists. Unbuilt things live in `ComingSoonPage`, not here.
+    status: "stable" as const,
+    href: item.href,
+    pro: item.pro,
+  }));
 
   return <ComponentCardGrid items={items} />;
 }

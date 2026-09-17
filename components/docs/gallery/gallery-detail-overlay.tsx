@@ -7,14 +7,15 @@ import {
   CheckIcon,
   Clapperboard,
   CopyIcon,
+  Lock,
   XIcon,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   type ReactNode,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -25,15 +26,20 @@ import {
   type GalleryItem,
   slugFromHref,
 } from "@/lib/gallery-data";
-import { resolvePreview } from "@/lib/gallery-preview";
+import { CATALOGUE_PRICE } from "@/lib/plans";
+import { previewMeta } from "@/lib/preview-meta";
+import { proDemoSrc } from "@/lib/pro-demos";
 import {
   RenderedDemo,
   renderedDemoPoster,
   renderedDemoSrc,
 } from "@/lib/rendered-demos";
-import { PreviewStage } from "@/lib/ui-preview-internals";
+import { cn } from "@/lib/utils";
 import { loadDocBody } from "./doc-body-action";
 import { morphToCard, SHARED_MEDIA } from "./shared-media-transition";
+
+/** Remotion, only for a component with no rendered demo — see `live-preview.tsx`. */
+const LivePreview = dynamic(() => import("./live-preview"), { ssr: false });
 
 const CATEGORY_LABEL = new Map(GALLERY_CATEGORIES.map((c) => [c.id, c.label]));
 
@@ -141,9 +147,13 @@ export function GalleryDetailOverlay({
       <Dialog.Portal>
         {/* Offset by the sidebar width on lg so the overlay opens BESIDE the
             fixed sidebar, never over it (the detail panel sits at the sidebar's
-            right edge). On mobile the sidebar is hidden, so it's full-width. */}
+            right edge). On mobile the sidebar is hidden, so it's full-width.
+
+            Below `xl` the popup is one opaque, scrolling sheet — see
+            `OverlayBody` for why. From `xl` it is transparent and click-through
+            around its two columns, so the backdrop still closes it. */}
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-background/70 backdrop-blur-md duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)]" />
-        <Dialog.Popup className="group/ov pointer-events-none fixed inset-0 z-50 flex flex-col outline-none duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 md:flex-row lg:left-[var(--gallery-sidebar-w)]">
+        <Dialog.Popup className="group/ov fixed inset-0 z-50 flex flex-col overflow-y-auto overscroll-contain bg-background outline-none duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)] xl:pointer-events-none xl:flex-row xl:overflow-hidden xl:bg-transparent">
           {shown ? (
             <OverlayBody
               item={shown}
@@ -191,7 +201,12 @@ function OverlayBody({
   onNext: () => void;
 }) {
   const slug = slugFromHref(item.href);
-  const preview = useMemo(() => resolvePreview(slug), [slug]);
+  // Shape and length only, never the component — see `lib/preview-meta.ts`. A
+  // paid component has neither: the pro barrel is gitignored and never reaches
+  // the client bundle, so there is no source here to mount and no install
+  // command that would answer anything but 402. The overlay shows the video and
+  // points at the price.
+  const meta = item.pro ? null : previewMeta(slug);
   /**
    * The overlay shows the default scene, exactly like the card does — the
    * customizer is the only surface that varies the props — so a slug with a
@@ -208,8 +223,10 @@ function OverlayBody({
    * and a fixed mp4 cannot show those. This is a default-props surface; that
    * one is not.
    */
-  const demoSrc = renderedDemoSrc(slug);
-  const demoPoster = renderedDemoPoster(slug);
+  const demoSrc = item.pro ? proDemoSrc(slug) : renderedDemoSrc(slug);
+  // No poster for a paid card: it autoplays the moment it is on screen and a
+  // still in front of it is a frame of the video shown as a photograph.
+  const demoPoster = item.pro ? null : renderedDemoPoster(slug);
   const category = CATEGORY_LABEL.get(item.category) ?? item.category;
   // One string for both the label and the clipboard. They used to be written out
   // separately, so the row showed a bare `@snapcn/text-reveal` — which is not a
@@ -236,10 +253,39 @@ function OverlayBody({
     return () => window.removeEventListener("keydown", onKey);
   }, [onPrev, onNext]);
 
+  const preview = demoSrc ? (
+    // A frame the size of the video before a byte of it arrives: a paid demo
+    // has no poster, and a bare <video> is 300x150 until its metadata loads,
+    // so the page used to jump when it did. Every demo is rendered 16:9, and
+    // `object-contain` letterboxes anything that is not.
+    <div className="aspect-video w-full overflow-hidden rounded-xl bg-gallery-card">
+      <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} priority />
+    </div>
+  ) : item.pro ? (
+    <div className="aspect-video w-full rounded-xl bg-gallery-card" />
+  ) : (
+    <LivePreview slug={slug} name={item.name} stage />
+  );
+
+  /**
+   * One tree, two layouts.
+   *
+   * Below `xl` it is a single scrolling sheet in reading order — controls, the
+   * video, the details, the docs. It used to be the desktop layout squeezed:
+   * the details column stacked on top at full width, so on a phone the video
+   * started 700px down, under a screen of prose, cut off by the bottom edge;
+   * and between 1024 and 1280 it was a 380px thumbnail beside a 360px column.
+   * The video is what somebody opened this for, so it comes first and full
+   * width.
+   *
+   * From `xl` the details are a column beside the video, each scrolling on its
+   * own, as before. The two column wrappers are `display: contents` below `xl`,
+   * so their children order as one list without rendering anything twice.
+   */
   return (
     <>
-      <aside className="pointer-events-auto relative z-10 flex w-full shrink-0 flex-col gap-6 overflow-y-auto border-border bg-background px-8 py-6 duration-300 ease-out group-data-[open]/ov:animate-in group-data-[open]/ov:fade-in-0 md:h-full md:w-[360px] md:border-r md:group-data-[open]/ov:slide-in-from-left-8">
-        <div className="flex items-center gap-2">
+      <div className="contents xl:pointer-events-auto xl:relative xl:z-10 xl:flex xl:h-full xl:w-[360px] xl:shrink-0 xl:flex-col xl:gap-6 xl:overflow-y-auto xl:border-border xl:border-r xl:bg-background xl:px-8 xl:py-6 xl:duration-300 xl:ease-out xl:group-data-[open]/ov:animate-in xl:group-data-[open]/ov:fade-in-0 xl:group-data-[open]/ov:slide-in-from-left-8">
+        <div className="sticky top-0 z-20 order-1 flex items-center gap-2 border-border border-b bg-background px-4 py-3 sm:px-6 xl:static xl:order-none xl:border-0 xl:p-0">
           <button
             type="button"
             onClick={onClose}
@@ -270,7 +316,7 @@ function OverlayBody({
 
         <div
           key={slug}
-          className="flex animate-in flex-col gap-5 fade-in duration-150"
+          className="order-3 mx-auto flex w-full max-w-3xl animate-in flex-col gap-5 px-4 pt-2 pb-8 fade-in duration-150 sm:px-6 xl:order-none xl:mx-0 xl:max-w-none xl:p-0"
         >
           <div>
             <p className="text-sm text-muted-foreground">{category}</p>
@@ -287,26 +333,35 @@ function OverlayBody({
             <MetaRow label="Source">snapcn</MetaRow>
             <MetaRow label="Category">{category}</MetaRow>
             <MetaRow label="Type">{typeLabel(item.href)}</MetaRow>
-            {preview ? (
+            {meta ? (
               <MetaRow label="Duration">
-                {(preview.durationInFrames / preview.fps).toFixed(1)}s
+                {(meta.durationInFrames / meta.fps).toFixed(1)}s
               </MetaRow>
             ) : null}
-            <MetaRow label="Install">
-              <button
-                type="button"
-                onClick={copyInstall}
-                className="inline-flex items-start gap-1.5 text-left font-mono text-xs break-all text-foreground transition-colors hover:text-muted-foreground"
-                title="Copy install command"
-              >
-                {installCommand}
-                {copied ? (
-                  <CheckIcon className="size-3.5" />
-                ) : (
-                  <CopyIcon className="size-3.5" />
-                )}
-              </button>
-            </MetaRow>
+            {item.pro ? (
+              // The price, spelled both ways, because the two products are the
+              // decision: a year of everything, or the same catalogue outright.
+              <MetaRow label="Price">
+                {CATALOGUE_PRICE.annual} a year · {CATALOGUE_PRICE.lifetime}{" "}
+                outright
+              </MetaRow>
+            ) : (
+              <MetaRow label="Install">
+                <button
+                  type="button"
+                  onClick={copyInstall}
+                  className="inline-flex items-start gap-1.5 text-left font-mono text-xs break-all text-foreground transition-colors hover:text-muted-foreground"
+                  title="Copy install command"
+                >
+                  {installCommand}
+                  {copied ? (
+                    <CheckIcon className="size-3.5" />
+                  ) : (
+                    <CopyIcon className="size-3.5" />
+                  )}
+                </button>
+              </MetaRow>
+            )}
           </dl>
 
           {/* The gallery's second exit, and the one that stays measurable.
@@ -317,105 +372,88 @@ function OverlayBody({
               the first thing they see is the shot they were already looking at,
               with their own words waiting to be typed into it. */}
           <Link
-            href={`/docs/video-editor?clip=${slug}`}
+            href={
+              item.pro
+                ? "/docs/pricing#plans"
+                : `/docs/video-editor?clip=${slug}`
+            }
             onClick={() =>
               trackEvent("cta_clicked", {
-                cta: "gallery_make_video",
-                destination: `/docs/video-editor?clip=${slug}`,
+                cta: item.pro ? "gallery_pro" : "gallery_make_video",
+                destination: item.pro
+                  ? "/docs/pricing#plans"
+                  : `/docs/video-editor?clip=${slug}`,
               })
             }
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90 xl:mt-5"
           >
-            <Clapperboard className="size-4" aria-hidden="true" />
-            Make a video with this
+            {item.pro ? (
+              <>
+                <Lock className="size-4" aria-hidden="true" />
+                Get the pro catalogue
+              </>
+            ) : (
+              <>
+                <Clapperboard className="size-4" aria-hidden="true" />
+                Make a video with this
+              </>
+            )}
           </Link>
         </div>
-      </aside>
+      </div>
 
-      {hasDocs ? (
-        // Docs mode: the right column scrolls — live preview pinned on top, the
-        // component's full documentation below. `pointer-events-auto` so it's
-        // readable/selectable (backdrop-to-close still works from the aside).
-        <div className="pointer-events-auto relative flex-1 overflow-y-auto md:h-full">
-          <div className="mx-auto w-full max-w-3xl px-6 py-8 md:px-10 md:py-12">
-            {/* Claims the name the clicked card just released, so the browser
-                treats the two as one element and flies it here. No zoom-in: the
-                morph *is* the entrance, and running both fights itself. */}
-            <div
-              key={slug}
-              style={{
-                viewTransitionName: holdsSharedName ? SHARED_MEDIA : undefined,
-              }}
-            >
-              {demoSrc ? (
-                <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
-              ) : preview ? (
-                <PreviewStage
-                  name={item.name}
-                  Component={preview.Component}
-                  inputProps={preview.inputProps}
-                  durationInFrames={preview.durationInFrames}
-                  fps={preview.fps}
-                  compositionWidth={preview.width}
-                  compositionHeight={preview.height}
-                  previewBackdrop={preview.previewBackdrop}
-                />
-              ) : (
-                <div className="aspect-video w-full bg-gallery-card" />
-              )}
-            </div>
-            <div className="mt-10">
-              {docBody ?? (
-                // One in-flight fetch's worth of placeholder. Sized off the
-                // shortest real doc, so the column does not collapse and then
-                // jump when the body lands.
-                <div className="space-y-3" aria-busy="true">
-                  <span className="sr-only">Loading documentation</span>
-                  {[80, 100, 92, 64].map((w) => (
-                    <span
-                      key={w}
-                      style={{ width: `${w}%` }}
-                      className="block h-4 animate-pulse rounded bg-gallery-card"
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        // The padding around the preview is pointer-events-none, so clicks there
-        // fall through to Base UI's backdrop and close the overlay natively;
-        // only the preview wrapper is interactive. Escape and × also close.
-        <div className="relative flex flex-1 items-center justify-center p-6 md:p-12">
-          {/* Same shared element as the docs-mode wrapper above — only one of
-              the two branches is ever mounted, so the name stays unique. */}
+      {/* From `xl`: with docs, a column that scrolls — the video pinned on top,
+          the documentation under it; without, the video centred, with the space
+          around it click-through to the backdrop so a click there closes. */}
+      <div
+        className={cn(
+          "contents",
+          hasDocs
+            ? "xl:pointer-events-auto xl:relative xl:block xl:h-full xl:flex-1 xl:overflow-y-auto"
+            : "xl:relative xl:flex xl:flex-1 xl:items-center xl:justify-center xl:p-12",
+        )}
+      >
+        <div
+          className={cn(
+            "order-2 mx-auto w-full max-w-3xl px-4 pt-4 pb-2 sm:px-6",
+            hasDocs
+              ? "xl:px-10 xl:pt-12 xl:pb-0"
+              : "xl:pointer-events-auto xl:p-0",
+          )}
+        >
+          {/* Claims the name the clicked card just released, so the browser
+              treats the two as one element and flies it here. No zoom-in: the
+              morph *is* the entrance, and running both fights itself. */}
           <div
             key={slug}
-            className="pointer-events-auto w-full max-w-3xl"
             style={{
               viewTransitionName: holdsSharedName ? SHARED_MEDIA : undefined,
             }}
           >
-            {demoSrc ? (
-              <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
-            ) : preview ? (
-              <PreviewStage
-                name={item.name}
-                Component={preview.Component}
-                inputProps={preview.inputProps}
-                durationInFrames={preview.durationInFrames}
-                fps={preview.fps}
-                compositionWidth={preview.width}
-                compositionHeight={preview.height}
-                previewBackdrop={preview.previewBackdrop}
-              />
-            ) : (
-              <div className="aspect-video w-full bg-gallery-card" />
-            )}
+            {preview}
           </div>
         </div>
-      )}
+
+        {hasDocs ? (
+          <div className="order-4 mx-auto w-full max-w-3xl px-4 pt-2 pb-12 sm:px-6 xl:px-10 xl:pt-10">
+            {docBody ?? (
+              // One in-flight fetch's worth of placeholder. Sized off the
+              // shortest real doc, so the column does not collapse and then
+              // jump when the body lands.
+              <div className="space-y-3" aria-busy="true">
+                <span className="sr-only">Loading documentation</span>
+                {[80, 100, 92, 64].map((w) => (
+                  <span
+                    key={w}
+                    style={{ width: `${w}%` }}
+                    className="block h-4 animate-pulse rounded bg-gallery-card"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </div>
     </>
   );
 }

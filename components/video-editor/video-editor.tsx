@@ -57,7 +57,6 @@ import { LibraryPanel } from "./library-panel";
 import { ProjectMenu } from "./project-menu";
 import { PropertiesPanel } from "./properties-panel";
 import { ShareLink } from "./share-link";
-import { SubmitToShowcase } from "./submit-to-showcase";
 import { TimelineStrip } from "./timeline-strip";
 import { useEditorExport } from "./use-editor-export";
 import { useProjects } from "./use-projects";
@@ -451,20 +450,7 @@ export function VideoEditor({
             removeWatermark={removeWatermark}
             onRemoveWatermarkChange={setRemoveWatermark}
           />
-          {/* Before Submit: a link is the thing most people want, and the
-              showcase is the small subset who want it reviewed and listed. */}
           <ShareLink
-            clips={clips}
-            font={font}
-            audio={audio}
-            signedIn={signedIn}
-            providers={providers}
-            emailEnabled={emailEnabled}
-            exporting={exporting}
-            progress={progress}
-            download={download}
-          />
-          <SubmitToShowcase
             clips={clips}
             font={font}
             audio={audio}

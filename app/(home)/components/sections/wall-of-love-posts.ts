@@ -54,7 +54,30 @@ export interface WallPost {
   quote: string;
   /** X's `user.is_blue_verified` at the time the post was added. */
   verified?: boolean;
+  /** Who they are, when that is the reason the quote matters. */
+  role?: string;
 }
+
+/**
+ * The quote above the hero and the pricing cards — from the person who made
+ * Remotion, which is the endorsement a Remotion registry can least argue with.
+ *
+ * Only the post's first sentence, and without a trailing `…`: it is a whole
+ * sentence, and the rest of the post ("We wanna collaborate, will reach out
+ * soon!") is a separate thought, not the end of this one. The reply's leading
+ * `@blessed_ux @Remotion` is dropped per the policy above. Not in `WALL_POSTS`,
+ * so the wall below keeps its own set.
+ */
+export const FEATURED_POST: WallPost = {
+  handle: "JNYBGR",
+  name: "Jonny Burger",
+  role: "Creator of Remotion",
+  lang: "en",
+  date: "2026-08-24",
+  url: "https://x.com/JNYBGR/status/2091908167370215696",
+  quote: "Snapcn actually has very nice components.",
+  verified: true,
+};
 
 export const WALL_POSTS: readonly WallPost[] = [
   {

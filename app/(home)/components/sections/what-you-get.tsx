@@ -3,7 +3,7 @@ import { INSTALL_COMMAND } from "@/config/site";
 import type { CategoryId } from "@/lib/gallery-data";
 import {
   CATEGORY_ICONS,
-  GALLERY_CATEGORIES,
+  FREE_CATEGORIES,
   GALLERY_COUNT,
   GALLERY_ITEMS,
 } from "@/lib/gallery-data";
@@ -45,6 +45,8 @@ const BLURBS: Record<CategoryId, string> = {
     "Logo stings: an assemble that snaps your mark together, and a flicker for the sign-on shot.",
   screens:
     "Phone, laptop and terminal mockups to put your actual product on screen without opening a design tool.",
+  charts:
+    "Scatter plots, unit charts and figures that count up to the number, for the metrics beat.",
   social:
     "Follower and metric counters that rush up to a number, for the social proof beat.",
   scenes:
@@ -100,7 +102,7 @@ export function WhatYouGet() {
 
         <FadeUp delay={0.08}>
           <ul className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-            {GALLERY_CATEGORIES.map(({ id, label }) => {
+            {FREE_CATEGORIES.map(({ id, label }) => {
               const Icon = CATEGORY_ICONS[id];
               return (
                 <li key={id} className="bg-background">

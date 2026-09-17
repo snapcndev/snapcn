@@ -46,26 +46,6 @@ export function isEmailSignInConfigured(): boolean {
 }
 
 /**
- * The comma-separated allow-list in `ADMIN_EMAILS`, normalised.
- *
- * Exported because nothing in the repo could *enumerate* admins — only ask
- * whether a given address was one — and a submission notification needs the
- * list. Empty when unset, which means no mail is sent rather than a crash.
- */
-export function adminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-/** Comma-separated allow-list of admin emails (`ADMIN_EMAILS`). */
-export function isAdmin(email?: string | null): boolean {
-  if (!email) return false;
-  return adminEmails().includes(email.toLowerCase());
-}
-
-/**
  * One provider, configured.
  *
  * A switch rather than a lookup table with an options object spread over it:
@@ -187,11 +167,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Database-session strategy: expose the user id to server code.
       if (session.user && user) {
         session.user.id = user.id;
-        // And whether they are an admin, which until now only the server could
-        // ask — so the review queue was a URL you had to know. It is derived
-        // from `ADMIN_EMAILS` on every session read, never stored, so removing
-        // an address from the list revokes it on the next request.
-        session.user.isAdmin = isAdmin(user.email);
         // The plan, on the session, because the account menu in the header
         // needs it on every page and prop-drilling it from each server
         // component that happens to render a header is not a thing that stays

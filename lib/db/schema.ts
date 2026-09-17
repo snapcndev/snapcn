@@ -269,6 +269,10 @@ export const billingSubscriptions = pgTable("billing_subscription", {
    *
    * Null until the first paid webhook mints one. A row with a null key is a
    * free or lapsed customer, which is the same answer the gate wants anyway.
+   *
+   * SUPERSEDED by the `api_key` table (migration 0007 copies these across) and
+   * no longer read or written. Kept only so the deploy before that migration
+   * does not select a column that is gone; drop it in a later migration.
    */
   apiKey: text("api_key").unique(),
   /**
@@ -286,6 +290,38 @@ export const billingSubscriptions = pgTable("billing_subscription", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * A customer's API keys — several, so a team can give each person their own and
+ * revoke one without breaking everyone else's install.
+ *
+ * The key is what turns `shadcn add @snapcn/<pro>` from a 402 into a file, and
+ * what the MCP server checks. Whether it works is not stored here: a key is
+ * worth whatever its owner's `billing_subscription` row is worth at the moment
+ * it is used, so a lapsed plan disables every key at once and a renewal brings
+ * them all back, with nothing to update.
+ *
+ * Plain text, for the reason on the old `billing_subscription.api_key`: it goes
+ * into a config file on every new machine, so the owner has to be able to read
+ * it back. The worst a leaked key buys is component source — and now the owner
+ * can delete that one key.
+ */
+export const apiKeys = pgTable(
+  "api_key",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    key: text("key").notNull().unique(),
+    /** The owner's label — "laptop", "CI", a teammate's name. */
+    name: text("name").notNull().default("Default"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("api_key_user_idx").on(t.userId, t.createdAt)],
+);
 
 /**
  * The meter. One row per meter key per calendar month, `period_month` as

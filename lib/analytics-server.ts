@@ -86,6 +86,12 @@ export type ServerEvent =
    * there was any way at all to pay.
    */
   | "registry_pro_blocked"
+  /**
+   * The free pro component installed from a subscriber's link. Answers whether
+   * the sample is a lead that becomes a buyer or a component that stays free:
+   * read it against `upgrade_started` for the same people.
+   */
+  | "registry_pro_sample_fetched"
   /** `/llms.txt` or `/llms-full.txt` — the size of the AI-agent channel. */
   | "llms_txt_fetched"
   /** A docs search, with its result count. Zero-result queries are the roadmap. */

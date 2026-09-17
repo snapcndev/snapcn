@@ -4,7 +4,8 @@ import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
 import {
-  GALLERY_COUNT,
+  CATALOGUE_COUNT,
+  CATALOGUE_ITEMS,
   itemsByReleaseDate,
   slugFromHref,
 } from "@/lib/gallery-data";
@@ -61,7 +62,9 @@ function formatDay(iso: string): string {
 }
 
 export default function ChangelogPage() {
-  const releases = itemsByReleaseDate();
+  // The whole catalogue, not just the free half: a changelog that omits the day
+  // thirty-five components appeared is not a record of what shipped.
+  const releases = itemsByReleaseDate(CATALOGUE_ITEMS);
   const dated = releases.reduce((n, r) => n + r.items.length, 0);
 
   /**
@@ -114,17 +117,18 @@ export default function ChangelogPage() {
           What shipped, and when
         </h1>
         <p className="mt-4 max-w-lg text-pretty text-body-lg text-current/70">
-          {DESCRIPTION} Every entry installs with one command — the source lands
-          in your repo and you own it from there.
+          {DESCRIPTION} Everything unmarked installs with one command — the
+          source lands in your repo and you own it from there. Entries marked
+          Pro are the paid catalogue.
         </p>
 
         {/* A count that does not match the registry is the signal that a
             component shipped without an `added` date. Say so on the page rather
             than quietly rendering a short list. */}
-        {dated < GALLERY_COUNT && (
+        {dated < CATALOGUE_COUNT && (
           <p className="mt-4 text-sm text-muted-foreground">
-            {GALLERY_COUNT - dated} of {GALLERY_COUNT} components are not dated
-            yet and are missing from this list.
+            {CATALOGUE_COUNT - dated} of {CATALOGUE_COUNT} components are not
+            dated yet and are missing from this list.
           </p>
         )}
 
@@ -153,6 +157,11 @@ export default function ChangelogPage() {
                     >
                       {item.name}
                     </Link>
+                    {item.pro ? (
+                      <span className="ml-2 rounded-full border border-border px-1.5 py-0.5 align-middle text-[11px] font-medium text-muted-foreground">
+                        Pro
+                      </span>
+                    ) : null}
                     <p className="mt-1 max-w-prose text-pretty text-sm text-muted-foreground">
                       {item.description}
                     </p>

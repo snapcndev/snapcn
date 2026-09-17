@@ -9,8 +9,8 @@ import {
 import { type ReactNode, useCallback, useEffect, useMemo } from "react";
 import { useTrackEvent } from "@/lib/analytics";
 import {
+  CATALOGUE_ITEMS,
   GALLERY_CATEGORIES,
-  GALLERY_ITEMS,
   type GalleryFilter,
   getFilteredItems,
   ITEM_BY_SLUG,
@@ -139,7 +139,7 @@ export function GalleryExplorer({
       void setActiveSlug((current) => {
         if (!current) return current;
         const inList = items.some((i) => slugFromHref(i.href) === current);
-        const list = inList ? items : GALLERY_ITEMS;
+        const list = inList ? items : CATALOGUE_ITEMS;
         const idx = list.findIndex((i) => slugFromHref(i.href) === current);
         if (idx === -1) return current;
         return slugFromHref(list[(idx + dir + list.length) % list.length].href);

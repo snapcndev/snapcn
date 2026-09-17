@@ -3,11 +3,15 @@ import path from "node:path";
 import { DOCS_PAGE_META, INSTALL_ALL_NAMES } from "@/config/site";
 import { CANVAS, MAX_CLIPS, MAX_TOTAL_FRAMES } from "@/lib/video-editor/types";
 import {
+  CATALOGUE_ITEMS,
+  FREE_CATEGORIES,
   GALLERY_CATEGORIES,
   GALLERY_ITEMS,
   itemsByReleaseDate,
 } from "./gallery-data";
+import { CLIENTS, JOBS, SERVER } from "./mcp-clients";
 import { ROADMAP, STAGE_LABEL } from "./roadmap-data";
+import { firstSentence } from "./structured-data";
 
 export const SITE_URL = "https://snapcn.dev";
 
@@ -29,8 +33,8 @@ const CATEGORY_ORDER = [
   "captions",
   "logos",
   "screens",
+  "charts",
   "overlays",
-  "data",
   "social",
   "scenes",
   "transitions",
@@ -84,15 +88,21 @@ function toPlainMarkdown(body: string, url: string): string {
  * the JSX-attribute residue the old MDX literals produced.
  */
 function componentsGalleryPage(): LlmsPage {
+  // Paid components are listed and marked. An agent asked for "a Remotion chart
+  // animation" should be able to find one; it should also know it costs money
+  // before it hands somebody an install that answers 402.
   const body = GALLERY_CATEGORIES.map((cat) => {
-    const lines = GALLERY_ITEMS.filter((item) => item.category === cat.id)
-      .map(
-        (item) =>
-          `- [${item.name}](${SITE_URL}${item.href}): ${item.description}`,
+    const lines = CATALOGUE_ITEMS.filter((item) => item.category === cat.id)
+      .map((item) =>
+        item.pro
+          ? `- [${item.name}](${SITE_URL}${item.href}) (Pro, paid): ${firstSentence(item.description)}`
+          : `- [${item.name}](${SITE_URL}${item.href}): ${item.description}`,
       )
       .join("\n");
-    return `## ${cat.label}\n\n${lines}`;
-  }).join("\n\n");
+    return lines ? `## ${cat.label}\n\n${lines}` : "";
+  })
+    .filter(Boolean)
+    .join("\n\n");
 
   return {
     url: "/docs/components",
@@ -115,9 +125,23 @@ function componentsGalleryPage(): LlmsPage {
  */
 function bespokePages(): LlmsPage[] {
   const editor = DOCS_PAGE_META["video-editor"];
-  const showcase = DOCS_PAGE_META.showcase;
   const changelog = DOCS_PAGE_META.changelog;
   const roadmap = DOCS_PAGE_META.roadmap;
+  const mcp = DOCS_PAGE_META.mcp;
+
+  // The same snippets the page renders — an agent reading this installs exactly
+  // what a person copying from the page does.
+  const mcpInstall = CLIENTS.map(
+    (client) =>
+      `### ${client.label}\n\n${client.where}\n\n${client.steps
+        .map(
+          (s) => `${s.label ? `${s.label}:\n\n` : ""}\`\`\`\n${s.code}\n\`\`\``,
+        )
+        .join("\n\n")}${client.note ? `\n\n${client.note}` : ""}`,
+  ).join("\n\n");
+  const mcpTools = JOBS.map(
+    (job) => `- \`${job.tool}\` — ${job.title}. ${job.description}`,
+  ).join("\n");
 
   const releases = itemsByReleaseDate()
     .map(
@@ -158,13 +182,19 @@ function bespokePages(): LlmsPage[] {
 - Signed in, every timeline is saved as a project you can reopen.`,
     },
     {
-      url: "/docs/showcase",
-      title: showcase.title,
-      description: showcase.description,
+      url: "/docs/mcp",
+      title: mcp.title,
+      description: mcp.description,
       category: "tools",
-      body: `Videos other people built with snapcn, at ${SITE_URL}/docs/showcase.
+      body: `A stdio MCP server that puts the snapcn registry inside a coding agent. Run with \`${SERVER.command} ${SERVER.args.join(" ")}\` — part of snapcn Pro: replace YOUR_KEY with the key on https://snapcn.dev/account. No env block.
 
-Sign in to submit one — either a link to where you posted it, or an export straight from the video editor, which is then hosted here. Submissions are reviewed before they appear.`,
+## Tools
+
+${mcpTools}
+
+## Install
+
+${mcpInstall}`,
     },
     {
       url: "/docs/changelog",
@@ -368,7 +398,7 @@ export function componentIndex(): string {
   const measured = measurements();
   const installable = new Set(INSTALL_ALL_NAMES);
 
-  const tables = GALLERY_CATEGORIES.map((cat) => {
+  const tables = FREE_CATEGORIES.map((cat) => {
     const rows = GALLERY_ITEMS.filter((item) => item.category === cat.id)
       .map((item) => ({ item, name: item.href.split("/").pop() ?? "" }))
       .filter(({ name }) => installable.has(name))

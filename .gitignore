@@ -66,3 +66,6 @@ registry/snap-cn-pro/
 # Billing runbook: test-mode ids, the brand setup, the going-live checklist.
 # Useful, and none of it belongs in a public repo.
 BILLING_LOCAL.md
+
+# local customer app for testing `shadcn add` + the MCP
+/test/next-app/

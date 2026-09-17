@@ -1,0 +1,100 @@
+---
+title: Launch Video
+description: A whole product launch video in one install — a title, a highlighted claim, your app on a phone, a follower count and a wordmark outro, five components cut together into 21 seconds
+---
+
+<ComponentPreview name="launch-video" />
+
+One command gives you a finished video instead of a part of one. It installs five
+snapcn components and a composition that cuts them together in the order a launch
+video is told in:
+
+1. **Title** — `text-reveal` opens on the product's name.
+2. **Claim** — `text-highlight` sweeps a marker under the one phrase that matters.
+3. **Product** — `phone-frame` puts your app on screen. Pass a screen recording or
+   a screenshot as `screenSrc`.
+4. **Proof** — `follower-rush` piles up followers until the count lands.
+5. **Outro** — `block-wordmark` shuffles blocks into your wordmark and holds.
+
+Change the copy props and it is your video. Everything else is the components'
+own defaults.
+
+## Swap a beat
+
+Every beat is a plain `<Series.Sequence>`, and each component was installed into
+`components/snap-cn/` on its own — so replacing one is an import and a line.
+Swap the phone for `laptop-frame` or `terminal-simulator`, the proof for
+`channel-thread`, the outro for `logo-assemble`. Inside a sequence
+`useCurrentFrame()` starts again at 0, so any snapcn component drops in as it is.
+
+Beat lengths live in `LAUNCH_VIDEO_BEATS`. Each is the component's own length, or
+the frame its payoff lands on plus a hold — the follower count lands on frame 140
+and the cut comes 40 frames later. Change one and `LAUNCH_VIDEO_DURATION` follows.
+
+## Theme
+
+The composition paints nothing but the page behind the transparent beats, and that
+is the theme's `background`. Pass `theme` or `mode="dark"` and it reaches every
+beat at once.
+
+## Installation
+
+<InstallBlock name="launch-video" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="launch-video" />
+
+## Usage
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import {
+  LAUNCH_VIDEO_DURATION,
+  LaunchVideo,
+} from "@/components/snap-cn/launch-video";
+
+const Launch = () => (
+  <LaunchVideo
+    headline="Meet Acme Billing"
+    claimBefore="Invoices that "
+    highlight="chase themselves"
+    screenSrc="https://example.com/app-recording.mp4"
+    followerCount={5000}
+    wordmark="acme"
+  />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="LaunchVideo"
+    component={Launch}
+    durationInFrames={LAUNCH_VIDEO_DURATION}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "headline", type: "string", description: "The opening title", default: '"Meet Acme Billing"' },
+    { name: "claimBefore", type: "string", description: "The claim, up to the highlighted phrase", default: '"Invoices that "' },
+    { name: "highlight", type: "string", description: "The phrase the marker sweeps under", default: '"chase themselves"' },
+    { name: "claimAfter", type: "string", description: "The claim, after the highlighted phrase", default: '""' },
+    { name: "screenSrc", type: "string", description: "Image or video shown on the phone. Omit it for the built-in placeholder screen" },
+    { name: "followerCount", type: "number", description: "The number the follower pile rushes up to", default: "5000" },
+    { name: "followers", type: "Follower[]", description: "Names and avatars in the pile", default: "SAMPLE_FOLLOWERS" },
+    { name: "wordmark", type: "string", description: "The wordmark the video ends on", default: '"acme"' },
+    { name: "theme", type: "Partial<SnapCnTheme>", description: "Design-system token overrides, passed to every beat" },
+    { name: "mode", type: '"light" | "dark"', description: "Which end of the design system every beat resolves against" },
+    { name: "fontFamily", type: "string", description: "Font family passed to every beat" },
+    { name: "speed", type: "number", description: "Playback speed. Shortens every beat by the same factor, so the cuts stay on the payoffs", default: "1" },
+  ]}
+/>

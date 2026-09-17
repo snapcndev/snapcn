@@ -14,6 +14,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.3.0
         version: 1.6.0(@date-fns/tz@1.5.0)(@types/react@19.2.17)(date-fns@4.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@ip-location-db/geo-whois-asn-country-mmdb':
+        specifier: ^2.3.2026061719
+        version: 2.3.2026061719
       '@paper-design/shaders-react':
         specifier: 0.0.76
         version: 0.0.76(@types/react@19.2.17)(react@19.2.4)
@@ -77,6 +80,9 @@ importers:
       lucide-react:
         specifier: ^1.7.0
         version: 1.23.0(react@19.2.4)
+      mmdb-lib:
+        specifier: ^3.0.3
+        version: 3.0.3
       motion:
         specifier: ^12.40.0
         version: 12.42.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1274,6 +1280,9 @@ packages:
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
+
+  '@ip-location-db/geo-whois-asn-country-mmdb@2.3.2026061719':
+    resolution: {integrity: sha512-xemBDNQl4mCYDuVbqe3jKGKsVDykZGkfvebhtOh/3VGLadq8vsp7t7ontpMUt3hH7sAGT0eLDyJ99SV+0waxZg==}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -4430,6 +4439,10 @@ packages:
   mitt@3.0.1:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
 
+  mmdb-lib@3.0.3:
+    resolution: {integrity: sha512-xQPoBXcNjjHiOvOraFBKtA++uNWF6aCVHL9dRKFXEov8eI3QJwtgiw3qApsonFT5SpoqsEVISUTg3HIDs2DiXw==}
+    engines: {node: '>=10', npm: '>=6'}
+
   modern-tar@0.8.4:
     resolution: {integrity: sha512-gN54ddmyzEg10orwZ2u4OOv+bjpMWdIl5jIkodK97bMq8QBSL5c0D7YX0lT1Ooz+99S7+PvFbnxzdjgHo1r41g==}
     engines: {node: '>=18.0.0'}
@@ -5272,6 +5285,9 @@ packages:
 
   third-party-web@0.29.2:
     resolution: {integrity: sha512-fegtha91tq2DHphyoiBXVHjVi2YG9zFaRnboT9C28tO1en9Y3wJsfspuy40F+u5wl3hHVbw7cnd1b67kEGHb8g==}
+
+  third-party-web@0.30.0:
+    resolution: {integrity: sha512-p+PfyL5U0ediGzvwPzMSdD9MnC8rHW6nWJJVLIQvqN7RsSqfaZ+7n4c9GILqH36EYR0eXB9CzAeCRnKFr/9uJg==}
 
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
@@ -6520,6 +6536,8 @@ snapshots:
   '@img/sharp-win32-x64@0.34.5':
     optional: true
 
+  '@ip-location-db/geo-whois-asn-country-mmdb@2.3.2026061719': {}
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -6746,7 +6764,7 @@ snapshots:
   '@paulirish/trace_engine@0.0.65':
     dependencies:
       legacy-javascript: 0.0.1
-      third-party-web: 0.29.2
+      third-party-web: 0.30.0
 
   '@posthog/browser-common@0.4.0':
     dependencies:
@@ -9855,6 +9873,8 @@ snapshots:
 
   mitt@3.0.1: {}
 
+  mmdb-lib@3.0.3: {}
+
   modern-tar@0.8.4: {}
 
   module-details-from-path@1.0.4: {}
@@ -10779,6 +10799,8 @@ snapshots:
       source-map-support: 0.5.21
 
   third-party-web@0.29.2: {}
+
+  third-party-web@0.30.0: {}
 
   tiny-invariant@1.3.3: {}
 

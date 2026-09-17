@@ -30,7 +30,7 @@ import { useCallback } from "react";
  *     launch day?               revenue channel in GTM_PLAN.md §3, and a list is
  *                               only warm if it started collecting months before
  *                               the ask. `source` says which surface earned it.
- *   • Community loop            showcase_submitted, signed_in.
+ *   • Community loop            signed_in.
  *
  * Deliberately NOT here: scroll depth, rage clicks, generic clicks, time on
  * page, and web vitals — PostHog's autocapture, `$pageleave` and web-vitals
@@ -56,13 +56,41 @@ export type CtaId =
    * pointing at the editor instead, and the gap between the two is the number
    * worth watching.
    */
-  | "gallery_make_video";
+  | "gallery_make_video"
+  /**
+   * "See what Pro is", from a paid card's detail overlay.
+   *
+   * The paid components are listed in the same grid as the free ones and the
+   * only thing their card can do is send someone to the waiting list. This over
+   * the number of people who opened a pro card is the whole question the
+   * interleaving was built to ask: does showing the paid work beside the free
+   * work sell it, or does it just annoy people.
+   */
+  | "gallery_pro"
+  /**
+   * "Upgrade" beside the plan in the account menu, to `/docs/pricing`.
+   *
+   * The only upsell a signed-in free user sees outside the editor. Does anyone
+   * who already has an account go and look at the price from there?
+   */
+  | "account_menu_upgrade";
 
 type AnalyticsEvents = {
   install_command_copied: {
     component: string;
     package_manager: "pnpm" | "npm" | "yarn" | "bun" | "prompt";
     surface: "docs" | "landing";
+  };
+  /**
+   * Anything copied or clicked on `/docs/mcp`. Which agent do people put snapcn in,
+   * and which job brought them? `target` is the client id for the install
+   * kinds and the tool name for `job_prompt`. The MCP's own traffic is invisible
+   * from here — it reads `/r/` like any other install — so this is the only
+   * place the choice of client is recorded at all.
+   */
+  mcp_copied: {
+    target: string;
+    kind: "install" | "install_prompt" | "one_click" | "job_prompt";
   };
   component_customized: {
     component: string;
@@ -138,7 +166,12 @@ type AnalyticsEvents = {
    * clean file are two different buyers and they should not be averaged.
    */
   upgrade_started: {
-    from: "watermark_badge" | "quota_toast" | "account_menu" | "pricing";
+    from:
+      | "watermark_badge"
+      | "quota_toast"
+      | "account_menu"
+      | "pricing"
+      | "pro_page";
   };
   editor_export_started: {
     clip_count: number;
@@ -175,7 +208,6 @@ type AnalyticsEvents = {
    * Answers whether the editor produces submissions the paste-a-link form
    * never would — the two surfaces ask for very different amounts of work.
    */
-  showcase_submitted: { source: "gallery" | "editor" };
   /**
    * Fired once per browser per account, at the moment `identifyUser` promotes
    * an anonymous visitor. No `provider` property: which OAuth button they used

@@ -1,8 +1,8 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { PRO_NAMES } from "@/config/site";
+import { GALLERY_COUNT, ITEM_BY_SLUG } from "@/lib/gallery-data";
 import { PLANS } from "@/lib/plans";
 import { bearer, planForApiKey } from "@/lib/server/api-key";
+import { readProItem } from "@/lib/server/pro-registry";
 
 /**
  * The pro half of the registry.
@@ -21,26 +21,6 @@ import { bearer, planForApiKey } from "@/lib/server/api-key";
 export const runtime = "nodejs";
 
 /**
- * Where the paid items live. Outside `public/`, deliberately.
- *
- * `split-pro` writes them to `registry/.private/` locally, which is the default
- * below and is what a dev checkout uses. **Production cannot use it.** The image
- * is built by Coolify from the public GitHub repo, and `registry/snap-cn-pro/`
- * is gitignored precisely because that repo is public — so the build context has
- * no pro source and this directory comes out empty. That is why every pro fetch
- * answered 404 in production and the 402 below had never fired.
- *
- * So production points `PRO_PRIVATE_DIR` at the persistent volume the container
- * already mounts (`-v /data:/data`, alongside renders/audio/showcase). The files
- * are copied there once with scp and survive every deploy, because a volume is
- * not part of the image. Pro source therefore never enters the public repo, the
- * build context, or an image layer. See DEPLOYMENT.md.
- */
-const PRIVATE_DIR = process.env.PRO_PRIVATE_DIR
-  ? path.resolve(process.env.PRO_PRIVATE_DIR)
-  : path.join(process.cwd(), "registry", ".private");
-
-/**
  * `shadcn add` fetches `/r/<name>.json`. Anything that is not exactly that
  * shape — a traversal, a nested path, a second extension — is not a component
  * name, and the safest thing to do with it is to not touch the filesystem.
@@ -57,12 +37,8 @@ export async function GET(
   const name = componentName((await params).file);
   if (!name) return new Response("Not found", { status: 404 });
 
-  let body: string | null = null;
-  try {
-    body = await readFile(path.join(PRIVATE_DIR, `${name}.json`), "utf8");
-  } catch {
-    // Absent is not the same as unknown — see `listed` below.
-  }
+  // Absent is not the same as unknown — see `listed` below.
+  const body = await readProItem(name);
 
   /**
    * Is this a paid component at all?
@@ -93,27 +69,29 @@ export async function GET(
   if (!plan || !PLANS[plan].components) {
     /**
      * 402, not 403. The shadcn CLI prints the body, so this string is the whole
-     * upsell — it is read in a terminal by someone who has already decided they
-     * want this component, which is the best moment this product ever gets.
+     * upsell — read in a terminal by someone who has already decided they want
+     * this component, which is the best moment this product ever gets.
      *
-     * The URL is `/pro` and carries no price and no promise about what is on
-     * the other side, because **a string printed into a terminal cannot be
-     * edited afterwards**. It is loose the moment it is printed, and it will be
-     * quoted back weeks later by a scrollback buffer or an agent's transcript.
-     * `/pro` is the right address for the pro tier before checkout exists (it
-     * takes an address) and after it does (it takes money), so nothing printed
-     * today goes stale on ship day. A `/pricing` link would have been a 404 for
-     * every one of them until then.
+     * It points at the component's own page (the video, the price, the free
+     * sample) and never names a price: **a string printed into a terminal
+     * cannot be edited afterwards**, and the price moves on a date. The older
+     * `/pro?c=` form still resolves — `/pro` forwards (see `proRedirect`).
      *
      * `?ref=cli` is read by `NewsletterForm` in preference to its own default,
      * so an address won here is attributable to a failed install rather than to
-     * somebody scrolling the landing page.
+     * somebody scrolling the landing page. The extra fields are for agents,
+     * which read the body rather than the CLI's one-line rendering of it.
      */
+    const page = ITEM_BY_SLUG.get(name)?.href ?? "/docs/pricing";
     return Response.json(
       {
         error: "pro_component",
         component: name,
-        message: `@snapcn/${name} is a Pro component — see https://snapcn.dev/pro?ref=cli`,
+        message: `@snapcn/${name} is a Pro component. Watch it, and see how to get it (or one Pro component free): https://snapcn.dev${page}?ref=cli`,
+        page: `https://snapcn.dev${page}?ref=cli`,
+        pricing: "https://snapcn.dev/docs/pricing?ref=cli#plans",
+        keys: "https://snapcn.dev/account",
+        free: `${GALLERY_COUNT} components are free and install without a key: https://snapcn.dev/docs/components`,
       },
       { status: 402 },
     );

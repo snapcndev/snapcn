@@ -1,4 +1,6 @@
 import "server-only";
+import { PRO_ITEMS } from "@/config/site";
+import { PRO_SAMPLE } from "@/lib/plans";
 import { isSuppressed } from "@/lib/server/suppression";
 
 /**
@@ -416,11 +418,28 @@ If it was not you, do nothing. This is the only message you will get.
  * The first and, for now, only bulk message, so it is the one that carries the
  * one-click unsubscribe header and the footer that goes with it.
  */
-export function welcomeSubscriberEmail(to: string, token: string): Email {
+export function welcomeSubscriberEmail(
+  to: string,
+  token: string,
+  /**
+   * The free pro component's install link (`sampleInstallUrl`), when the
+   * deployment can sign one. It leads the mail: it is what most people signed
+   * up for, and the mail they keep is the one with the command in it.
+   */
+  sampleUrl?: string | null,
+): Email {
   const { unsubscribe } = subscriptionUrls(token);
+  const sample = sampleUrl
+    ? `Your free Pro component, ${PRO_SAMPLE.title}:
+  npx shadcn@latest add ${sampleUrl}
+
+The other ${PRO_ITEMS.length - 1} Pro components, and what they cost: ${SITE}/docs/pricing?ref=welcome
+
+`
+    : "";
   const text = `You're on the list.
 
-New snapcn components as they ship — no more than one email a week, and never a sponsored one.
+${sample}New snapcn components as they ship — no more than one email a week, and never a sponsored one.
 
 Browse the components already in the registry: ${SITE}/docs/components
 What is coming next: ${SITE}/docs/roadmap
@@ -446,6 +465,18 @@ Unsubscribe: ${unsubscribe}`;
         "One email a week of new Remotion components. Never sponsored.",
       heading: "You're on the list.",
       body: [
+        ...(sampleUrl
+          ? [
+              p(
+                `Here is your free Pro component, <strong>${PRO_SAMPLE.title}</strong>. Run this in your Remotion project:`,
+              ),
+              code(`npx shadcn@latest add ${sampleUrl}`),
+              p(
+                `It installs like any snapcn component and is yours to edit. ${link(`See the other ${PRO_ITEMS.length - 1} Pro components`, `${SITE}/docs/pricing?ref=welcome`)}.`,
+                `color:${C.muted};font-size:14px;`,
+              ),
+            ]
+          : []),
         p(
           "New snapcn components as they ship — no more than one email a week, and never a sponsored one.",
         ),
@@ -531,8 +562,8 @@ export function welcomeUserEmail(to: string, name?: string | null): Email {
 
 Your snapcn account is live. Two things it unlocks:
 
-- Exports from the video editor come out without the snapcn watermark: ${SITE}/docs/video-editor
-- You can post what you build to the showcase: ${SITE}/docs/showcase
+- The video editor saves what you build as you go: ${SITE}/docs/video-editor
+- Your plan and your API keys live on your account page: ${SITE}/account
 
 Rendering the components locally with your own Remotion setup was never watermarked and never will be — that code is MIT and it is yours. The mark is only on videos our machines render.
 
@@ -546,13 +577,13 @@ Rendering the components locally with your own Remotion setup was never watermar
       // Transactional: it answers an action the reader just took, and it is not
       // a list. No unsubscribe, and no chrome that reads as a campaign.
       chrome: "plain",
-      preheader: "Your account is live — clean exports and showcase posting.",
+      preheader: "Your account is live — saved videos and your keys.",
       heading: greeting,
       body: [
         p("Your snapcn account is live. Two things it unlocks:"),
         `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">
-        <tr><td style="padding:0 0 10px;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};">— Exports from the ${link("video editor", `${SITE}/docs/video-editor`)} come out without the snapcn watermark.</td></tr>
-        <tr><td style="font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};">— You can post what you build to the ${link("showcase", `${SITE}/docs/showcase`)}.</td></tr>
+        <tr><td style="padding:0 0 10px;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};">— The ${link("video editor", `${SITE}/docs/video-editor`)} saves what you build as you go.</td></tr>
+        <tr><td style="font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};">— Your plan and your API keys live on your ${link("account page", `${SITE}/account`)}.</td></tr>
       </table>`,
         p(
           "Rendering the same components locally with your own Remotion setup was never watermarked and never will be — that code is MIT and it is yours. The mark is only on videos our machines render.",
@@ -567,9 +598,8 @@ Rendering the components locally with your own Remotion setup was never watermar
 /**
  * Escape user-supplied text before it enters an HTML mail body.
  *
- * The first template that carries text an untrusted person typed. The other
- * three interpolate an address we minted or a link we built; a submission title
- * is whatever the submitter felt like writing.
+ * For any text we did not write ourselves — configuration included — before
+ * it is interpolated into markup.
  */
 function esc(text: string): string {
   return text
@@ -578,82 +608,4 @@ function esc(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-/**
- * Sent to every `ADMIN_EMAILS` address the moment a submission lands.
- *
- * Nothing else in the product says a submission exists. Without this the
- * pending queue is a page somebody has to remember to visit, and the default
- * deployment silently swallows every submission it receives.
- *
- * The link is *printed*, never embedded, and the scraped thumbnail is left out
- * entirely: for a link submission both are attacker-chosen, and a remote image
- * in a mail body turns the admin's client into a read beacon.
- */
-export function showcaseReviewEmail(
-  to: string,
-  submission: {
-    title: string;
-    authorName: string;
-    /** Absolute for a link submission, site-relative for one we host. */
-    postUrl: string;
-    description?: string | null;
-    hosted: boolean;
-  },
-): Email {
-  // Collapsed because it reaches the Subject header, and a newline in a header
-  // is an injection.
-  const title = submission.title.replace(/\s+/g, " ").trim();
-  const author = submission.authorName.replace(/\s+/g, " ").trim();
-  const url = submission.postUrl.startsWith("/")
-    ? `${SITE}${submission.postUrl}`
-    : submission.postUrl;
-  const kind = submission.hosted
-    ? "made in the editor"
-    : "a link to their post";
-
-  const text = `New showcase submission — ${kind}
-
-${title}
-by ${author}${submission.description ? `\n\n${submission.description}` : ""}
-
-${url}
-
-Approve or reject it: ${SITE}/docs/showcase/admin
-
-It stays hidden until you do.`;
-
-  return {
-    to,
-    subject: `Showcase submission: ${title}`,
-    text,
-    html: shell({
-      // Internal mail to an operator, so it has no reason to carry a logo or a
-      // navigation footer — and every reason to arrive in Primary.
-      chrome: "plain",
-      // Escaped too: the preheader is HTML like everything else in the shell,
-      // and it was the one interpolation of an untrusted title that was not.
-      preheader: `${esc(title)} — waiting for review.`,
-      heading: "New showcase submission",
-      body: [
-        p(`<strong>${esc(title)}</strong><br>by ${esc(author)}`),
-        submission.description
-          ? p(esc(submission.description), `color:${C.muted};font-size:14px;`)
-          : "",
-        p(
-          submission.hosted ? "The video:" : "Their post:",
-          `color:${C.muted};font-size:14px;margin-bottom:8px;`,
-        ),
-        code(esc(url)),
-        `<div style="margin:22px 0 6px;">${button("Review it", `${SITE}/docs/showcase/admin`)}</div>`,
-        p(
-          "It stays hidden until you approve it.",
-          `margin:18px 0 0;color:${C.muted};font-size:14px;`,
-        ),
-      ]
-        .filter(Boolean)
-        .join("\n      "),
-    }),
-  };
 }

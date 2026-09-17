@@ -258,11 +258,29 @@ function retimeTo60(file: string, tag: string) {
  * Taken 60% of the way in, not at frame 0: most of these scenes animate *in*,
  * so their first frame is an empty stage.
  *
+ * `POSTER_AT` overrides that fraction for the scenes whose subject is not on
+ * screen at 60%. It is a short list on purpose — a scene that needs an override
+ * usually wants a look at its own pacing first — but the heuristic genuinely
+ * cannot serve a sting whose payoff is a small mark on an empty page: at 60%
+ * `logo-collapse` has already finished, and the card it earns is a logo, not the
+ * stack of shots the component is for.
+ *
  * webp via `cwebp` — the ffmpeg here has no libwebp encoder, and a PNG of the
  * same frame is roughly 6x the bytes. A missing `cwebp` is not fatal: the
  * poster is simply absent and the card is a blank box until hover, which is
  * exactly how it behaved before posters existed.
  */
+const POSTER_AT: Record<string, number> = {
+  // The stack runs out 40% in and the cards shrink the whole way, so even an
+  // early frame is a small one — 8% catches the second card while it still
+  // fills half the height.
+  //
+  // Changing a number here re-writes a poster whose `?v=` does not move: the
+  // manifest hashes the mp4, not the still beside it. Harmless for a poster that
+  // has never shipped; for one that has, bump the demo too or it stays cached.
+  "logo-collapse": 0.08,
+};
+
 function writePoster(file: string, tag: string) {
   const slug = path.basename(file, ".mp4");
   const dir = path.join(path.dirname(file), "posters");
@@ -278,8 +296,11 @@ function writePoster(file: string, tag: string) {
     file,
   ]);
   const seconds = Number(String(probe.stdout ?? "").trim());
+  const share = POSTER_AT[slug] ?? 0.6;
   const at =
-    Number.isFinite(seconds) && seconds > 0 ? (seconds * 0.6).toFixed(2) : "0";
+    Number.isFinite(seconds) && seconds > 0
+      ? (seconds * share).toFixed(2)
+      : "0";
 
   const png = path.join(dir, `${slug}.png`);
   const frame = spawnSync("ffmpeg", [

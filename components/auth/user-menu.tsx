@@ -3,15 +3,15 @@
 import {
   Clapperboard,
   Film,
+  KeyRound,
   LogOut,
   Plus,
-  ShieldCheck,
   User as UserIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { getProviders, signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { SignInButtons } from "@/components/showcase/sign-in-buttons";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +34,6 @@ import {
 import { identifyUser, resetUser, useTrackEvent } from "@/lib/analytics";
 import { type AuthProviderId, EMAIL_PROVIDER_ID } from "@/lib/auth-providers";
 import type { PlanName } from "@/lib/plans";
-import { startCheckout } from "@/lib/upgrade";
 import { cn } from "@/lib/utils";
 import type { ProjectSummary } from "@/lib/video-editor/project";
 
@@ -48,7 +47,7 @@ import type { ProjectSummary } from "@/lib/video-editor/project";
 const PLAN_LABEL: Record<PlanName, string> = {
   free: "Free — 720p, watermarked",
   starter: "Starter — 1080p, no watermark",
-  pro: "Pro — 1080p, no watermark",
+  pro: "Pro — components, MCP, no watermark",
 };
 
 /**
@@ -96,6 +95,9 @@ function SignInDialog({ className }: { className?: string }) {
   } | null>(null);
   const [open, setOpen] = useState(false);
   const trackEvent = useTrackEvent();
+  // Back to the page they signed in from. This was "/", so signing in from the
+  // gallery or the pricing page dropped you on the landing page instead.
+  const pathname = usePathname();
 
   // Fetched on first open, not on mount: most visitors never open this, and the
   // list cannot change while the page is up.
@@ -136,9 +138,9 @@ function SignInDialog({ className }: { className?: string }) {
         <DialogHeader>
           <DialogTitle>Sign in to snapcn</DialogTitle>
           <DialogDescription>
-            Saves your projects and lets you post to the showcase. Removing the
-            watermark from an export is Starter, $19/mo — the components stay
-            MIT either way, and a local render is never marked.
+            Saves your projects and your API keys. Removing the watermark from
+            an export is part of snapcn Pro — the free components stay MIT
+            either way, and a local render is never marked.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,7 +150,7 @@ function SignInDialog({ className }: { className?: string }) {
           <SignInButtons
             providers={providers.oauth}
             emailEnabled={providers.email}
-            callbackUrl="/"
+            callbackUrl={pathname}
           />
         )}
       </DialogContent>
@@ -170,36 +172,18 @@ function AccountMenu({
     name?: string | null;
     email?: string | null;
     image?: string | null;
-    isAdmin?: boolean;
   };
   className?: string;
 }) {
   const trackEvent = useTrackEvent();
   const [open, setOpen] = useState(false);
-  const [starting, setStarting] = useState(false);
-
-  async function upgrade() {
-    // Guarded: this is a button someone will click twice, and two checkout
-    // sessions is two chances to pay for the same month.
-    if (starting) return;
-    setStarting(true);
-    trackEvent("upgrade_started", { from: "account_menu" });
-    try {
-      await startCheckout("starter");
-      // `startCheckout` navigates away, so the spinner is cleared by the
-      // teardown rather than by us.
-    } catch (err) {
-      setStarting(false);
-      toast.error(
-        err instanceof Error ? err.message : "Couldn't start checkout.",
-      );
-    }
-  }
   // `null` while unknown, `false` once we know there is nothing to show — a
   // deployment with no database answers 503 here, and a section that cannot
   // work should be absent rather than empty.
-  const [videos, setVideos] = useState<ProjectSummary[] | null>(null);
-  const [videosAvailable, setVideosAvailable] = useState(true);
+  const [videos, setVideos] = useState<ProjectSummary[] | null | false>(null);
+  // What the open menu renders: `videos` as it stood when the menu opened, and
+  // never updated while it is open. See the fetch below for why.
+  const [shown, setShown] = useState<ProjectSummary[] | null | false>(null);
 
   // Same stitch the showcase header makes, for the same reason: `identifyUser`
   // is idempotent and returns true only on the anonymous→known transition, so
@@ -213,11 +197,17 @@ function AccountMenu({
     if (promoted) trackEvent("signed_in");
   }, [user.id, user.email, user.name, trackEvent]);
 
-  // Fetched on first open, like the provider list: this menu is mounted on
-  // every page including the statically rendered landing page, and most views
-  // of it are never opened.
+  // Fetched as soon as the account is known, not on first open. On open, the
+  // list landed while the menu was already showing and grew it by up to 140px
+  // *above* "Sign out" — so a sign-out click hit a video instead and opened the
+  // editor. Reproduced at 1.2s of latency, which is an ordinary production
+  // round trip. This menu only mounts for a signed-in reader, so the cost is
+  // one request per page for them and none for anyone else.
+  //
+  // And `shown` is frozen at open, so a slow response can still never move an
+  // item under the pointer: whatever arrives mid-open waits for the next open.
   useEffect(() => {
-    if (!open || videos) return;
+    if (!user.id) return;
     let cancelled = false;
     void fetch("/api/projects")
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
@@ -225,15 +215,21 @@ function AccountMenu({
         if (!cancelled) setVideos(body.projects);
       })
       .catch(() => {
-        if (!cancelled) setVideosAvailable(false);
+        if (!cancelled) setVideos(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [open, videos]);
+  }, [user.id]);
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setShown(videos);
+        setOpen(next);
+      }}
+    >
       <DropdownMenuTrigger
         aria-label="Account"
         className={cn(
@@ -274,36 +270,43 @@ function AccountMenu({
             {PLAN_LABEL[plan]}
           </span>
           {plan === "free" && (
-            <button
-              type="button"
-              onClick={upgrade}
-              disabled={starting}
-              className="cursor-pointer text-[0.6875rem] font-medium text-primary underline-offset-2 hover:underline disabled:cursor-wait disabled:opacity-60"
+            // To the one pricing page, not straight into a $129 checkout: the
+            // reader picks annual, lifetime or commercial there.
+            <Link
+              href="/docs/pricing"
+              onClick={() =>
+                trackEvent("cta_clicked", {
+                  cta: "account_menu_upgrade",
+                  destination: "/docs/pricing",
+                })
+              }
+              className="text-[0.6875rem] font-medium text-primary underline-offset-2 hover:underline"
             >
-              {starting ? "Opening…" : "Upgrade"}
-            </button>
+              Upgrade
+            </Link>
           )}
         </div>
 
         <DropdownMenuSeparator />
 
-        {videosAvailable && (
+        {shown !== false && (
           <>
             <DropdownMenuGroup className="max-h-64 overflow-y-auto">
               <DropdownMenuLabel>Your videos</DropdownMenuLabel>
 
-              {videos === null ? (
-                <div className="space-y-1 px-3 pb-1">
-                  <div className="h-4 animate-pulse rounded bg-muted" />
-                  <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                </div>
-              ) : videos.length === 0 ? (
+              {/* Not loaded when the menu opened: a static line rather than a
+                  skeleton, because nothing will replace it during this open. */}
+              {shown === null ? (
+                <p className="px-3 pb-2 text-xs text-muted-foreground">
+                  Loading your videos…
+                </p>
+              ) : shown.length === 0 ? (
                 <p className="px-3 pb-2 text-xs text-muted-foreground">
                   Nothing saved yet — the editor keeps a video as soon as it has
                   a clip.
                 </p>
               ) : (
-                videos.slice(0, RECENT_VIDEOS).map((video) => (
+                shown.slice(0, RECENT_VIDEOS).map((video) => (
                   <DropdownMenuItem
                     key={video.id}
                     render={
@@ -334,19 +337,12 @@ function AccountMenu({
         )}
 
         <DropdownMenuGroup>
-          <DropdownMenuItem render={<Link href="/docs/showcase" />}>
-            <Film className="size-4" />
-            Showcase
+          {/* Plan, API keys and the install steps — the only place a buyer
+              can get back to their key, make another or delete one. */}
+          <DropdownMenuItem render={<Link href="/account" />}>
+            <KeyRound className="size-4" />
+            Account &amp; API keys
           </DropdownMenuItem>
-
-          {/* Only rendered for an admin, and the page checks again on the
-              server — this is discovery, not the permission. */}
-          {user.isAdmin && (
-            <DropdownMenuItem render={<Link href="/docs/showcase/admin" />}>
-              <ShieldCheck className="size-4" />
-              Review submissions
-            </DropdownMenuItem>
-          )}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />

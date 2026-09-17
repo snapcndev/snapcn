@@ -1,6 +1,7 @@
 import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import Link from "next/link";
 import {
+  CATALOGUE_ITEMS,
   type CategoryId,
   GALLERY_CATEGORIES,
   GALLERY_ITEMS,
@@ -35,15 +36,21 @@ export function CategoryDoc({ category }: { category: CategoryId }) {
   // in the install and usage examples.
   const leadSlug = slugFromHref(items[0].href);
   const config = CONFIGS[leadSlug];
+  // The grid below shows the paid ones as well, so the sentence above it counts
+  // them — and says how many of those cards are not free.
+  const pro = CATALOGUE_ITEMS.filter(
+    (item) => item.pro && item.category === category,
+  ).length;
 
   return (
     <>
       <h2 id="components">The components</h2>
       <p>
         {items.length === 1 ? "One component" : `${items.length} components`} in{" "}
-        {label}. Each card plays its own default scene — open one for its props,
-        the source file <code>shadcn add</code> writes, and a player you can
-        scrub frame by frame.
+        {label}
+        {pro > 0 ? `, plus ${pro} Pro` : ""}. Each card plays its own default
+        scene — open one for its props, the source file <code>shadcn add</code>{" "}
+        writes, and a player you can scrub frame by frame.
       </p>
 
       <CategoryGrid category={category} />

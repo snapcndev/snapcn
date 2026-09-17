@@ -5,6 +5,8 @@ export interface CardItem {
   description: string;
   status: "stable" | "soon";
   href?: string;
+  /** Paid: no registry config to mount, only the video on the CDN. */
+  pro?: boolean;
 }
 
 /**

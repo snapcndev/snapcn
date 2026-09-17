@@ -97,14 +97,23 @@ const WIDTH_EASE = Easing.bezier(0.65, 0.2, 0.3, 1.5);
 const WIDTH_SECONDS = 0.6;
 
 /**
- * The label roll: a symmetric ease-in-out, and the tightest fit in the scene.
- * Measured progress at its eight frames is 0.010, 0.053, 0.164, 0.499, 0.833,
- * 0.946, 0.990, 1.000 — dead on 50% at the halfway frame, rms 0.08px on a 48px
- * move.
+ * The label roll: a symmetric ease-in-out — deliberately gentler and longer than
+ * the reference.
+ *
+ * The reference rolls in 8 frames of 24fps on (0.75, 0, 0.25, 1) (measured
+ * progress 0.010, 0.053, 0.164, 0.499, 0.833, 0.946, 0.990, 1.000). Rendered at
+ * 30fps that is 10 frames whose middle two each move a third of the travel —
+ * 32px a frame at 1080p — so the frame between them shows two half-cut labels and
+ * the swap reads as a flicker, not a roll. Reported as "flipping too fast".
+ *
+ * (0.45, 0, 0.55, 1) over 0.5s is 15 frames at 30: no step above 13px at 1080p,
+ * none below 0.8px (so no frozen frames in the tails, motion-quality rule 0).
+ * 0.6s was tried first and read as too slow; 0.5s is the step between the two.
+ * The label lands three frames before the width morph finishes its overshoot.
  */
-const ROLL_EASE = Easing.bezier(0.75, 0, 0.25, 1);
-/** Seconds the roll runs. Measured 8 frames on a 24fps clock, all three swaps. */
-const ROLL_SECONDS = 1 / 3;
+const ROLL_EASE = Easing.bezier(0.45, 0, 0.55, 1);
+/** Seconds the roll runs. See ROLL_EASE for why it is not the reference's 1/3. */
+const ROLL_SECONDS = 0.5;
 /** Roll travel, as a multiple of pill height. Measured 47.1px on a 46.2 pill. */
 const ROLL_TRAVEL = 1.02;
 
@@ -232,8 +241,9 @@ export interface StatusCycleMotion {
 }
 
 /**
- * Measured defaults. Every one is fitted from frame data — see the constant it
- * reads from — so overriding one is a deliberate departure, not a tweak.
+ * Measured defaults. Every one but the roll is fitted from frame data — see the
+ * constant it reads from — so overriding one is a deliberate departure, not a
+ * tweak. The roll departs from its reference on purpose; ROLL_EASE says why.
  */
 export const STATUS_CYCLE_MOTION: StatusCycleMotion = {
   widthEase: WIDTH_EASE,
@@ -302,7 +312,11 @@ export interface StatusCycleProps {
   chipFontSize?: number;
   /** Font stack. Defaults to Inter, loaded through `@remotion/google-fonts`. */
   fontFamily?: string;
-  /** Frames from one status swap to the next. */
+  /**
+   * Frames from one status swap to the next. Keep it above the roll (0.5s, 15
+   * frames at 30fps) plus time to read the label: at or below the roll, the pill
+   * never rests and every label is read mid-flight.
+   */
   statusHold?: number;
   /** Frames the intro cascade is given before the first swap. */
   introFrames?: number;
@@ -355,7 +369,7 @@ export function StatusCycle({
   fontSize,
   chipFontSize,
   fontFamily,
-  statusHold = 18,
+  statusHold = 30,
   introFrames = 24,
   chipStagger = 8,
   startAt = 0,

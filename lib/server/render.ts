@@ -21,7 +21,7 @@ function loadRenderer() {
 /**
  * Server-side MP4 render of any registered Remotion composition (
  * video-timeline, …). Full native quality on the box — width/height are passed
- * per request so one bundle serves every composition/orientation.
+ * per request and reached with `scale`, never by resizing the composition.
  */
 
 /** Concurrency (Chromium tabs) for a single render; env-tunable, default 4. */
@@ -81,11 +81,12 @@ export async function renderComposition({
 
   try {
     await renderMedia({
-      composition: { ...composition, width, height },
+      composition,
       serveUrl,
       codec: "h264",
       inputProps,
       outputLocation: outputPath,
+      scale: outputScale(composition, width, height),
       concurrency: remotionConcurrency(),
       cancelSignal,
       onProgress: onProgress
@@ -97,4 +98,30 @@ export async function renderComposition({
   }
 
   return outputPath;
+}
+
+/**
+ * The output size, as a scale of the composition — never a bigger viewport.
+ *
+ * Scenes lay themselves out in px for the canvas they were authored at. Passing
+ * 1920×1080 as the composition's own size widened the *page*, so every fixed-px
+ * scene rendered at 1280-layout inside a 1920 frame: a paid 1080p export came
+ * out with its type at 67% and its margins wrong. `scale` rasterises the same
+ * layout at more pixels, which is what "higher resolution" means.
+ *
+ * Throws on an aspect mismatch rather than scaling from one axis and silently
+ * cropping or letterboxing the other.
+ */
+export function outputScale(
+  composition: { width: number; height: number },
+  width: number,
+  height: number,
+): number {
+  const scale = width / composition.width;
+  if (Math.round(composition.height * scale) !== height) {
+    throw new Error(
+      `Output ${width}x${height} is not ${composition.width}x${composition.height} scaled`,
+    );
+  }
+  return scale;
 }

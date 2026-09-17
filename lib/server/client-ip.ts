@@ -22,7 +22,7 @@ import "server-only";
  * misconfigured deployment that forwards the header untouched still lets a
  * caller pick their own bucket — the rate limiter is the real floor.
  */
-export function clientIp(request: Request): string {
+export function clientIp(request: { headers: Headers }): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     const hops = forwarded

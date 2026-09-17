@@ -5,7 +5,11 @@ import { GalleryCard } from "@/components/docs/gallery/gallery-card";
 import { GalleryExplorer } from "@/components/docs/gallery/gallery-explorer";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { GalleryHeaderRow } from "@/components/docs/gallery/gallery-header-row";
-import { GALLERY_CATEGORIES, GALLERY_ITEMS } from "@/lib/gallery-data";
+import {
+  CATALOGUE_ITEMS,
+  GALLERY_CATEGORIES,
+  GALLERY_ITEMS,
+} from "@/lib/gallery-data";
 import { formatUpdatedAt, getGitHubUpdatedAt } from "@/lib/github";
 
 const SITE_URL = "https://snapcn.dev";
@@ -145,7 +149,7 @@ function GalleryGridFallback() {
       </div>
       {/* Keep in step with GalleryExplorer's grid. */}
       <div className="mt-6 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {GALLERY_ITEMS.map((item) => (
+        {CATALOGUE_ITEMS.map((item) => (
           <GalleryCard key={item.href} item={item} />
         ))}
       </div>
