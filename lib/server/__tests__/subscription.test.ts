@@ -32,6 +32,7 @@ import {
 } from "@/lib/server/subscription";
 
 const TOKEN = "3f2504e0-4f89-11d3-9a0c-0305e82c3301";
+const ID = "9b2f7c1e-2a3d-4e5f-8a9b-0c1d2e3f4a5b";
 
 /** Values that must never reach the database. */
 const JUNK = [
@@ -59,9 +60,10 @@ describe("TOKEN_RE", () => {
 
 describe("confirmSubscription", () => {
   it("reports 'confirmed' and hands back what the welcome mail needs", async () => {
-    chain = drizzleChain([{ email: "ada@example.com", token: TOKEN }]);
+    chain = drizzleChain([{ id: ID, email: "ada@example.com", token: TOKEN }]);
     expect(await confirmSubscription(TOKEN)).toEqual({
       outcome: "confirmed",
+      id: ID,
       email: "ada@example.com",
       token: TOKEN,
     });
@@ -85,8 +87,12 @@ describe("confirmSubscription", () => {
   it("reports 'already' when the update matched nothing but the row exists", async () => {
     // The refresh case. No row from the update means no welcome mail, and the
     // follow-up select is the only thing that separates this from a bad link.
-    chain = drizzleChain([], [{ email: "ada@example.com" }]);
-    expect(await confirmSubscription(TOKEN)).toEqual({ outcome: "already" });
+    chain = drizzleChain([], [{ id: ID }]);
+    // The id comes back so the page can hand out the free-component link again.
+    expect(await confirmSubscription(TOKEN)).toEqual({
+      outcome: "already",
+      id: ID,
+    });
     expect(called(chain, "select")).toBe(true);
   });
 

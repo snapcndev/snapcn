@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { after } from "next/server";
+import { CommandLine } from "@/components/command-line";
 import { MailLinkPage } from "@/components/mail-link-page";
+import { PRO_SAMPLE } from "@/lib/plans";
 import { sendEmail, welcomeSubscriberEmail } from "@/lib/server/email";
+import { sampleInstallUrl } from "@/lib/server/pro-sample";
 import { confirmSubscription } from "@/lib/server/subscription";
 
 export const metadata: Metadata = {
@@ -43,23 +47,29 @@ export default async function ConfirmSubscriptionPage({
   });
 
   if (result.outcome === "confirmed") {
-    after(() => sendEmail(welcomeSubscriberEmail(result.email, result.token)));
+    const sample = sampleInstallUrl(result.id);
+    after(() =>
+      sendEmail(welcomeSubscriberEmail(result.email, result.token, sample)),
+    );
     return (
       <MailLinkPage title="You're on the list.">
         <p className="mt-2 text-sm text-muted-foreground">
           New components as they ship, no more than one email a week. Every one
           of them carries an unsubscribe link.
         </p>
+        {sample ? <FreeSample url={sample} /> : null}
       </MailLinkPage>
     );
   }
 
   if (result.outcome === "already") {
+    const sample = sampleInstallUrl(result.id);
     return (
       <MailLinkPage title="You're already on the list.">
         <p className="mt-2 text-sm text-muted-foreground">
           Nothing to do — this link was already used.
         </p>
+        {sample ? <FreeSample url={sample} /> : null}
       </MailLinkPage>
     );
   }
@@ -71,5 +81,33 @@ export default async function ConfirmSubscriptionPage({
         Sign up again from the site and we will send a fresh one.
       </p>
     </MailLinkPage>
+  );
+}
+
+/**
+ * The free pro component, on the page they are already looking at.
+ *
+ * The welcome mail carries the same command, but it arrives a moment later in
+ * another tab. Somebody who just clicked "confirm" is at their desk with a
+ * terminal open — this is the one moment the install is a paste away.
+ */
+function FreeSample({ url }: { url: string }) {
+  return (
+    <div className="mt-5 border-border border-t pt-5 text-left">
+      <p className="font-medium text-foreground text-sm">
+        Your free Pro component: {PRO_SAMPLE.title}
+      </p>
+      <p className="mt-1 text-muted-foreground text-xs">
+        Run this in your Remotion project. It is yours to edit, like any snapcn
+        component.
+      </p>
+      <CommandLine className="mt-3" command={`npx shadcn@latest add ${url}`} />
+      <Link
+        href="/docs/pricing?ref=confirm"
+        className="mt-3 inline-block text-muted-foreground text-xs underline underline-offset-4 hover:text-foreground"
+      >
+        See the rest of Pro
+      </Link>
+    </div>
   );
 }
