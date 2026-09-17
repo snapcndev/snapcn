@@ -57,17 +57,12 @@ const LAYOUT: Record<number, { grid: string; frame: string }> = {
 
 export function PricingPlans({
   tiers,
-  signedIn,
   currentPlan,
-  returnTo = "/docs/pricing",
   from = "pricing",
   footnote,
 }: {
   tiers: Tier[];
-  signedIn: boolean;
   currentPlan: string;
-  /** Where sign-in sends them back to, so the buy button is still under them. */
-  returnTo?: string;
   /** Which page the `upgrade_started` came from — `/pro` sells too. */
   from?: "pricing" | "pro_page";
   /** One line under the whole row — the regional prices. */
@@ -79,13 +74,6 @@ export function PricingPlans({
 
   async function buy(product: UpgradeProduct) {
     if (pending) return;
-    if (!signedIn) {
-      // Checkout needs an account so the webhook has a user to attach the plan
-      // to. Sending them to sign-in with a return path is one redirect; letting
-      // them press Buy and hit a 401 is a dead end.
-      window.location.href = `/signin?callbackUrl=${encodeURIComponent(returnTo)}`;
-      return;
-    }
     setPending(product);
     trackEvent("upgrade_started", { from });
     try {

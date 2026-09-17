@@ -90,6 +90,19 @@ describe("pricingFor", () => {
     expect(tier(50, 0, "Lifetime")?.note).toBeUndefined();
   });
 
+  it("leads with Lifetime in India, and nowhere else", () => {
+    const names = (country: string) =>
+      pricingFor(country, 50, "ip", null, DAYS_LEFT).tiers.map((t) => t.name);
+    const featured = (country: string) =>
+      pricingFor(country, 50, "ip", null, DAYS_LEFT).tiers.find(
+        (t) => (t as { featured?: boolean }).featured,
+      )?.name;
+    expect(names("IN")).toEqual(["Free", "Lifetime", "Pro", "Commercial"]);
+    expect(featured("IN")).toBe("Lifetime");
+    expect(names("BR")).toEqual(["Free", "Pro", "Lifetime", "Commercial"]);
+    expect(featured("US")).toBe("Pro");
+  });
+
   it("never regionalises Commercial or Free", () => {
     expect(card("IN", "Commercial")?.price).toBe("$499");
     expect(card("IN", "Free")?.price).toBe("$0");

@@ -5,6 +5,7 @@ import { GalleryCard } from "@/components/docs/gallery/gallery-card";
 import { GalleryExplorer } from "@/components/docs/gallery/gallery-explorer";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { GalleryHeaderRow } from "@/components/docs/gallery/gallery-header-row";
+import { ProBanner } from "@/components/pro-banner";
 import {
   CATALOGUE_ITEMS,
   GALLERY_CATEGORIES,
@@ -103,6 +104,7 @@ export default async function ComponentsGalleryPage() {
       />
       <GalleryFrame>
         <GalleryHeaderRow meta={meta} />
+        <ProBanner className="mb-6 rounded-xl" />
         <div className="pb-24">
           {/* GalleryExplorer reads the filter/sort/item from the URL via nuqs
               (useSearchParams), which requires a Suspense boundary on this

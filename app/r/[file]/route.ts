@@ -1,6 +1,14 @@
 import { PRO_NAMES } from "@/config/site";
 import { GALLERY_COUNT, ITEM_BY_SLUG } from "@/lib/gallery-data";
-import { PLANS } from "@/lib/plans";
+import {
+  CATALOGUE_PRICE,
+  CATALOGUE_PROMISE,
+  EARLY_BIRD,
+  earlyBirdDaysLeft,
+  PLANS,
+  SEPTEMBER_BONUS,
+  septemberBonusActive,
+} from "@/lib/plans";
 import { bearer, planForApiKey } from "@/lib/server/api-key";
 import { readProItem } from "@/lib/server/pro-registry";
 
@@ -72,10 +80,12 @@ export async function GET(
      * upsell — read in a terminal by someone who has already decided they want
      * this component, which is the best moment this product ever gets.
      *
-     * It points at the component's own page (the video, the price, the free
-     * sample) and never names a price: **a string printed into a terminal
-     * cannot be edited afterwards**, and the price moves on a date. The older
-     * `/pro?c=` form still resolves — `/pro` forwards (see `proRedirect`).
+     * It names the price and the deadline, and links straight to the plans.
+     * It used to name neither, on the grounds that a string printed into a
+     * terminal cannot be edited afterwards and the price moves on a date — and
+     * 48 people a day read it without one of them reaching the pricing page.
+     * The string is built per request from `CATALOGUE_PRICE`, and it carries
+     * its own date, so an old copy in someone's scrollback dates itself.
      *
      * `?ref=cli` is read by `NewsletterForm` in preference to its own default,
      * so an address won here is attributable to a failed install rather than to
@@ -87,7 +97,11 @@ export async function GET(
       {
         error: "pro_component",
         component: name,
-        message: `@snapcn/${name} is a Pro component. Watch it, and see how to get it (or one Pro component free): https://snapcn.dev${page}?ref=cli`,
+        message: `@snapcn/${name} is a Pro component. Every Pro component, the MCP server and ${CATALOGUE_PROMISE.templates} templates: ${CATALOGUE_PRICE.annual}/yr or ${CATALOGUE_PRICE.lifetime} once${
+          earlyBirdDaysLeft() > 0
+            ? `, early-bird until ${EARLY_BIRD.endsOnShort}`
+            : ""
+        }.${septemberBonusActive() ? ` Buy by ${SEPTEMBER_BONUS.endsOnShort} and the Commercial licence is free.` : ""} Buy: https://snapcn.dev/docs/pricing?ref=cli#plans · Watch it: https://snapcn.dev${page}?ref=cli`,
         page: `https://snapcn.dev${page}?ref=cli`,
         pricing: "https://snapcn.dev/docs/pricing?ref=cli#plans",
         keys: "https://snapcn.dev/account",

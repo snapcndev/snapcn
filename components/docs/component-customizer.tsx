@@ -8,6 +8,7 @@ import { ElasticSlider } from "@/components/ui/elastic-slider";
 import { Label } from "@/components/ui/label";
 import { SelectContent, SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import type { ControlConfig, ControlType } from "@/lib/customizer-config";
 import { cn } from "@/lib/utils";
 
@@ -293,19 +294,33 @@ function Control({
 
     case "text":
       return (
-        <div className={PILL}>
+        // Stacked and wrapping, not a pill. This was a one-line, right-aligned
+        // field sharing an 11px-tall row with its label inside a 256px rail: a
+        // headline longer than a few words scrolled out of sight, and the only
+        // way to change it was to select the invisible text and retype. It is
+        // the editor's most rage-clicked element by a distance — 126 clicks
+        // from 40 people in three weeks, which is a triple-click to select all,
+        // over and over.
+        <div className="grid min-w-0 gap-1.5">
           <Label
             htmlFor={id}
             className="min-w-0 truncate font-medium text-muted-foreground"
           >
             {ctrl.label}
           </Label>
-          <input
+          <Textarea
             id={id}
-            type="text"
+            rows={2}
             value={value as string}
-            onChange={(e) => onChange(e.target.value)}
-            className="min-w-0 flex-1 bg-transparent text-right font-mono text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/50"
+            // Newlines collapse to a space: the box is multi-line so the copy
+            // is *visible*, not so a prop can carry a line break. Every scene
+            // renders this string into a `div`, where a newline is whitespace
+            // anyway — so Enter would look like it did something and change
+            // nothing.
+            onChange={(e) =>
+              onChange(e.target.value.replace(/\s*\n+\s*/g, " "))
+            }
+            className="min-h-0 rounded-xl border-transparent bg-control px-3 py-2 text-sm md:text-sm"
           />
         </div>
       );

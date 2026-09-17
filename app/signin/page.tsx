@@ -57,9 +57,11 @@ export default async function SignInPage({
     error?: string;
     callbackUrl?: string;
     check?: string;
+    /** Set by a guest checkout's return URL. */
+    paid?: string;
   }>;
 }) {
-  const { error, callbackUrl, check } = await searchParams;
+  const { error, callbackUrl, check, paid } = await searchParams;
   const session = await auth().catch(() => null);
   const providers = getConfiguredProviders();
   const emailEnabled = isEmailSignInConfigured();
@@ -109,6 +111,15 @@ export default async function SignInPage({
               an export is part of snapcn Pro. The free components stay MIT
               either way, and a local render is never marked.
             </p>
+
+            {paid && !error ? (
+              // A guest checkout lands here. The plan is on the address they
+              // typed at checkout, so that is the one thing to say.
+              <p className="mb-4 rounded-lg border border-primary/25 bg-primary/8 px-3 py-2.5 text-foreground text-sm">
+                Payment received. Sign in with the email you paid with — your
+                plan is on that account.
+              </p>
+            ) : null}
 
             {error && (
               <p

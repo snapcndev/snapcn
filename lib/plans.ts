@@ -285,6 +285,26 @@ export function earlyBirdDaysLeft(now: number = Date.now()): number {
 }
 
 /**
+ * A September-only reason to buy now rather than on 20 October: Pro or Lifetime
+ * bought by 30 Sep carries the Commercial terms — client work, up to five
+ * people — at no extra cost. The price does not change.
+ *
+ * ponytail: no flag is stored. The bonus is honoured from the Dodo payment
+ * date, which is already the record; add a column only if support ever needs
+ * to answer it without opening Dodo.
+ */
+export const SEPTEMBER_BONUS = {
+  /** 23:59 on 30 Sep anywhere on Earth, so no buyer's evening is cut short. */
+  endsAt: "2026-10-01T12:00:00Z",
+  endsOnShort: "30 Sep",
+  line: "Buy Pro or Lifetime by 30 Sep and the Commercial licence is free — client work, up to five people.",
+} as const;
+
+export function septemberBonusActive(now: number = Date.now()): boolean {
+  return now < Date.parse(SEPTEMBER_BONUS.endsAt);
+}
+
+/**
  * What the catalogue grows into. A promise, so it is written once: the pricing
  * cards and the Dodo product descriptions a buyer reads at checkout both quote
  * it, and the two must never name different numbers.
