@@ -1,4 +1,4 @@
-import { GALLERY_COUNT } from "@/lib/gallery-data";
+import { CATALOGUE_COUNT, GALLERY_COUNT } from "@/lib/gallery-data";
 
 /**
  * The roadmap, as data.
@@ -43,7 +43,7 @@ export const ROADMAP: RoadmapEntry[] = [
   {
     stage: "shipped",
     title: "The component registry",
-    body: `${GALLERY_COUNT} components — text animators, captions, logo stings, device frames, social proof and full scenes — installable with one shadcn command. Listed in the shadcn registry directory, so the CLI resolves @snapcn with nothing to configure.`,
+    body: `${GALLERY_COUNT} free components — text animators, captions, logo stings, device frames, social proof and full scenes — installable with one shadcn command. Listed in the shadcn registry directory, so the CLI resolves @snapcn with nothing to configure.`,
     href: "/docs/components",
   },
   {
@@ -59,6 +59,12 @@ export const ROADMAP: RoadmapEntry[] = [
     href: "/docs/getting-started/agent-skill",
   },
   {
+    stage: "shipped",
+    title: "The pro catalogue",
+    body: `${CATALOGUE_COUNT - GALLERY_COUNT} paid components on top of the free ${GALLERY_COUNT}, shown in the same grid and playing the same way — you can watch every one of them before deciding. Bought whole, never per component: a year of the catalogue, or the catalogue outright.`,
+    href: "/docs/pricing",
+  },
+  {
     stage: "building",
     title: "A new clip every day",
     body: "The registry is the product and it is not finished. One new clip, published every day — the gap between what a demo video needs and what is in here closes by cadence rather than in batches. The changelog is the receipt.",
@@ -66,22 +72,26 @@ export const ROADMAP: RoadmapEntry[] = [
   },
   {
     stage: "building",
-    due: "2026-09-15",
+    due: "2026-10-20",
     title: "Templates",
-    body: "Whole videos rather than single scenes — a launch film, a feature walkthrough, a changelog clip — composed from the registry and ready to render once you drop your own copy in.",
+    body: "Whole videos rather than single scenes — a launch film, a feature walkthrough, a changelog clip — composed from the registry and ready to render once you drop your own copy in. Around ten land on 20 October, included in Pro.",
     href: "/docs/templates",
   },
   {
-    stage: "building",
-    due: "2026-08-26",
+    stage: "shipped",
     title: "Video editor",
-    body: "Compose a video from snapcn components in the browser — add clips, edit the text and images, export an MP4. The timeline and the server-side render path already exist; what is left is making an export something you would actually ship.",
+    body: "Compose a video from snapcn components in the browser — add clips, edit the text and images, export an MP4. No install and no account needed to try it.",
+    href: "/docs/video-editor",
+  },
+  {
+    stage: "next",
+    title: "Code export from the editor",
+    body: "Leave the editor with a Remotion project rather than only a file — the timeline you built, emitted as a <Composition> and the components it uses, in your repo. The editor composes and renders today; what it cannot yet do is hand you the source.",
     href: "/docs/video-editor",
   },
   {
     stage: "exploring",
     title: "Marketplace",
     body: "A place for components that are not ours — other people's scenes, installed the same way. Only worth building once there are enough authors to fill it.",
-    href: "/docs/marketplace",
   },
 ];
