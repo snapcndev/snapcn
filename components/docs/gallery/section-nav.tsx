@@ -12,10 +12,8 @@ import { cn } from "@/lib/utils";
  * rail) and {@link DocsSectionNav} (the mobile row) read this list so the two
  * never drift. `match` is the path prefix that marks a link active.
  *
- * Every href here resolves. `Templates` and `Marketplace` are not built yet, so
- * they render `ComingSoonPage` inside the same chrome rather than 404'ing — a
- * linked dead end reads as a broken site, not as a roadmap. Replace those routes
- * with the real pages when they ship; nothing here needs to change.
+ * Every href here resolves — a linked dead end reads as a broken site, not as a
+ * roadmap.
  */
 export const DOCS_SECTIONS = [
   // The written documentation — Getting Started, and every component category
@@ -51,7 +49,14 @@ export const DOCS_SECTIONS = [
   // The coding-agent route in: Claude Code, Cursor, Codex and the rest. A
   // section rather than a Getting Started page because it is not MDX, and
   // `DOCS_NAV` is checked against the MDX on disk.
-  { label: "MCP", href: "/docs/mcp", match: "/docs/mcp" },
+  {
+    label: "MCP",
+    href: "/docs/mcp",
+    match: "/docs/mcp",
+    // Shipped with @snapcn/mcp. Same rule as the editor's flag: off once it
+    // stops being news.
+    badge: "New",
+  },
   { label: "Roadmap", href: "/docs/roadmap", match: "/docs/roadmap" },
   { label: "Changelog", href: "/docs/changelog", match: "/docs/changelog" },
 ] as const;

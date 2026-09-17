@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { CommandLine } from "@/components/command-line";
+import { MCP_CLIENT_ICONS } from "@/components/icons/mcp-client-icons";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTrackEvent } from "@/lib/analytics";
@@ -73,11 +74,15 @@ export function McpClients() {
           wrapping, which would break the pill into two rounded rows. */}
       <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
         <TabsList className="w-max">
-          {CLIENTS.map((client) => (
-            <TabsTrigger key={client.id} value={client.id}>
-              {client.label}
-            </TabsTrigger>
-          ))}
+          {CLIENTS.map((client) => {
+            const Icon = MCP_CLIENT_ICONS[client.id];
+            return (
+              <TabsTrigger key={client.id} value={client.id}>
+                {Icon ? <Icon /> : null}
+                {client.label}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </div>
 
