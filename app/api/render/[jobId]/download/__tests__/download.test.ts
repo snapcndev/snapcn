@@ -63,7 +63,7 @@ beforeEach(() => {
   getJob.mockReturnValue({ status: "done", fileName: "snapcn-video.mp4" });
 });
 
-describe("download — the file survives an aborted transfer", () => {
+describe("download — the file outlives the download", () => {
   it("does NOT delete the MP4 when the stream is torn down without finishing", async () => {
     await call();
 
@@ -74,14 +74,18 @@ describe("download — the file survives an aborted transfer", () => {
     expect(deleteJobFile).not.toHaveBeenCalled();
   });
 
-  it("deletes the MP4 once the read actually completes", async () => {
+  it("does NOT delete the MP4 when the read completes either", async () => {
+    // This route used to delete on `end`, which made "download it" and "keep a
+    // link to it" mutually exclusive: `/api/share` claims the same file, so it
+    // was always already gone. 39 exports in 30 days produced one visit to
+    // `/v/`. Reclaiming the file is the TTL sweep's job and only its job —
+    // if this assertion is ever flipped back, the share loop dies with it.
     await call();
 
     stream.emit("end");
-    stream.emit("close"); // always follows `end` — must not double-delete
+    stream.emit("close");
 
-    expect(deleteJobFile).toHaveBeenCalledTimes(1);
-    expect(deleteJobFile).toHaveBeenCalledWith(JOB_ID);
+    expect(deleteJobFile).not.toHaveBeenCalled();
   });
 
   it("still 404s an id that is not a UUID, before any lookup", async () => {

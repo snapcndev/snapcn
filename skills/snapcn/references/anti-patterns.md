@@ -25,7 +25,10 @@ changes a *line* inside a beat — it is not a scene transition.
 // ✅
 <TransitionSeries>
   <TransitionSeries.Sequence durationInFrames={90}><SceneA /></TransitionSeries.Sequence>
-  <TransitionSeries.Transition presentation={fade()} timing={springTiming({ durationInFrames: 18 })} />
+  <TransitionSeries.Transition
+    presentation={slide()}
+    timing={springTiming({ durationInFrames: 18, config: { damping: 200 } })}
+  />
   <TransitionSeries.Sequence durationInFrames={90}><SceneB /></TransitionSeries.Sequence>
 </TransitionSeries>
 ```
@@ -91,3 +94,30 @@ ALL-CAPS + wide tracking + gradient text + glow shadows on text *you* add. See `
 
 Stagger sibling entrances (3–6f). Landing a whole group simultaneously reads robotic. See
 `motion-principles.md` → Follow-Through & Overlapping Action.
+
+## 12. Crossfading one scene into the next
+
+A `<TransitionSeries.Transition>` overlaps the two beats **in time** — both are mounted for its
+whole duration. The presentation decides whether that is visible. Anything that composites
+(`fade`, `none`, `wipe`, `iris`, `clockWipe`) draws the arriving beat *on top of* the outgoing
+one, and since snapcn scenes are transparent (see 9) and all of them own the middle of the
+frame, both are legible at once for every frame of the overlap. `fade()` is the worst case:
+`shouldFadeOutExitingScene` defaults to `false`, so the old shot sits at **full opacity**
+underneath the new one. Settling early does not help — a finished beat is just as inked as an
+unfinished one.
+
+Use a presentation that **moves** the beats apart, so every pixel belongs to exactly one shot:
+
+```tsx
+// ❌ two centred headlines, one illegible word, 18 frames long
+<TransitionSeries.Transition presentation={fade()} timing={springTiming({ durationInFrames: 18 })} />
+// ✅
+<TransitionSeries.Transition
+  presentation={slide()}
+  timing={springTiming({ durationInFrames: 18, config: { damping: 200 } })}
+/>
+```
+
+`damping: 200` because the default spring overshoots, and an overshooting slide throws the whole
+scene past centre and drags it back. A fade is only safe when the outgoing beat is empty by the
+time it starts — which no snapcn scene is.

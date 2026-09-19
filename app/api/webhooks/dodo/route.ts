@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { captureServer } from "@/lib/analytics-server";
 import { oneTimePlanFor, planForProduct } from "@/lib/plans";
 import { isDbConfigured } from "@/lib/server/db";
 import { type DodoEvent, verifyWebhookSignature } from "@/lib/server/dodo";
@@ -133,6 +134,32 @@ export async function POST(request: Request) {
     }
   };
 
+  /**
+   * The sale, reported once, from the branch that granted it.
+   *
+   * Not at the top of the handler: this endpoint also hears cancellations,
+   * failures and another brand's events, and every one of them is a signed,
+   * parseable payload. Only a branch that actually handed something over knows
+   * money moved. `captureServer` never throws and is awaited so the lambda is
+   * not killed before the request leaves.
+   */
+  const reportSale = async (
+    kind: "subscription" | "lifetime" | "pack",
+    plan: string,
+    renewal = false,
+  ) => {
+    await captureServer("purchase_completed", userId, {
+      kind,
+      plan,
+      renewal,
+      product: str(metadata.product) ?? null,
+      // Dodo reports minor units. Both names appear across its payloads, so
+      // read either rather than guess which product sent this one.
+      amount: num(data.total_amount) ?? num(data.amount) ?? null,
+      currency: str(data.currency) ?? null,
+    });
+  };
+
   try {
     switch (type) {
       // There is no `subscription.created` in Dodo's vocabulary, and there
@@ -168,6 +195,7 @@ export async function POST(request: Request) {
           currentPeriodEnd: date(data.next_billing_date),
         });
         if (type === "subscription.active") await tellGuest();
+        await reportSale("subscription", plan, type === "subscription.renewed");
         break;
       }
 
@@ -232,6 +260,7 @@ export async function POST(request: Request) {
             currentPeriodEnd: null,
           });
           await tellGuest();
+          await reportSale("lifetime", outright);
           console.info(`[dodo] ${metadata.product} granted to ${userId}`);
           break;
         }
@@ -247,6 +276,7 @@ export async function POST(request: Request) {
         // the log line is the whole entitlement, and it is enough to answer
         // "did this person buy it" by hand. Give it a table (and a read in
         // `planFor`) the day a pack asset lives behind a login.
+        await reportSale("pack", "pack");
         console.info(`[dodo] template pack purchased by ${userId}`);
         break;
       }
@@ -273,6 +303,22 @@ export async function POST(request: Request) {
 /** Non-empty string, or null — Dodo omits fields rather than nulling them. */
 function str(value: unknown): string | null {
   return typeof value === "string" && value ? value : null;
+}
+
+/**
+ * A finite number, or null.
+ *
+ * Dodo sends amounts as minor units, and has sent them as a numeric string on
+ * at least one product — `Number(null)` is 0 and `Number("")` is 0, either of
+ * which would report a free sale rather than an unknown one, so both are
+ * rejected before the coercion.
+ */
+function num(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const raw = str(value);
+  if (!raw) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 /**

@@ -121,7 +121,28 @@ export type ServerEvent =
    * they need different fixes and would otherwise be one indistinguishable
    * number.
    */
-  | "render_failed";
+  | "render_failed"
+  /**
+   * Money arrived. The only event in this product that means a sale.
+   *
+   * It is server-side and it is fired from the Dodo webhook rather than from
+   * the browser for the same reason entitlements are granted there: the
+   * checkout page hands out a link and learns nothing, and a return-URL hit is
+   * a *redirect*, not a payment. `upgrade_started` — which is a click — was the
+   * furthest this product could see, so 224 people hitting the paywall against
+   * 5 upgrade clicks had no third number after it, and revenue was invisible in
+   * PostHog entirely.
+   *
+   * `distinct_id` is the snapcn user id, which is what `$identify` aliases a
+   * signed-in browser person to — so a purchase joins to the same person who
+   * clicked `upgrade_started`, and the funnel closes.
+   *
+   * Props: `plan`, `product`, `kind` (subscription | lifetime | pack),
+   * `renewal` (a renewed subscription is revenue, but it is not a new
+   * customer — count them apart or month two looks like growth), and `amount`
+   * / `currency` when the payload carries them.
+   */
+  | "purchase_completed";
 
 type Props = Record<string, unknown>;
 
@@ -243,6 +264,36 @@ export function classifyClient(userAgent: string | null): ClientKind {
     return "agent";
   }
   if (/bot\b|crawler|spider|slurp|facebookexternalhit|bingpreview/.test(ua)) {
+    return "bot";
+  }
+  /**
+   * Registry indexers, which are the population this classifier was actually
+   * losing. They are not search crawlers and most do not say "bot", so every
+   * one of them was landing in `cli` or `browser` and being counted as an
+   * install: over 30 days that was 390 fake installers and 2,737 fake installs,
+   * and a further 193 ids sweeping 10+ components each.
+   *
+   * Two rules, in order of how well they age:
+   *
+   *  1. `(+https://…)` inside a user agent is the long-standing convention for
+   *     "I am a robot, here is who to contact". It caught `BlockDex/1.0
+   *     (+https://blockdex.…)`, `VelustroRegistryBot` and `registry-directory`
+   *     without naming any of them, and it will catch the next one unnamed.
+   *  2. The words these tools are built out of. `registry-directory/1.0`
+   *     contains "mozilla" and was read as a browser; `shadcn-registry-health`
+   *     and `shadcn-registry-corpus-collector` start with "shadcn" and were read
+   *     as the CLI. Both checks have to run BEFORE those two.
+   *
+   * Deliberately not matched: `node` and `curl`. They are genuinely ambiguous —
+   * the shadcn CLI itself presents as `node` on older versions — so they stay
+   * `cli` and are separated by behaviour instead (see `install-counts.ts`).
+   */
+  if (
+    /\(\+https?:\/\//.test(ua) ||
+    /registry-(directory|fetch|health)|universal-index|corpus|collector|indexes? public|-vendor\b|scraper/.test(
+      ua,
+    )
+  ) {
     return "bot";
   }
   if (

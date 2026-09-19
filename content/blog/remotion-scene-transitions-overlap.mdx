@@ -1,0 +1,109 @@
+---
+title: Why your Remotion scene transitions look broken
+seoTitle: Remotion scene transitions — fixing the crossfade overlap
+description: A fade() between two Remotion scenes leaves both of them on screen at full opacity. Here is why, and the one-line fix.
+date: 2026-09-18
+tags:
+  - remotion
+  - transitions
+---
+
+You wire up `<TransitionSeries>`, drop a `fade()` between two scenes, render —
+and for half a second in the middle, both scenes are on screen at once. Two
+headlines stacked on the same pixels, unreadable.
+
+It is not a bug in your components, and it is not a timing problem. It is what
+`fade()` does.
+
+## The exiting scene never fades out
+
+Here is the presentation, from `@remotion/transitions`:
+
+```tsx
+opacity: isEntering
+  ? presentationProgress
+  : passedProps.shouldFadeOutExitingScene
+    ? 1 - presentationProgress
+    : 1,
+```
+
+Read the last branch. When the scene is *exiting* and you have not passed
+`shouldFadeOutExitingScene`, its opacity is **`1`** — for the entire transition.
+The arriving scene ramps `0 → 1` on top of a scene that is still fully painted.
+
+So an 18-frame transition means 18 frames where both scenes are inked. If both
+put something in the middle of the frame — and almost every scene does — you get
+a double exposure.
+
+## Settling earlier does not help
+
+The instinct is to make the outgoing scene finish sooner, so it is "done" before
+the overlap. That fixes nothing. A finished scene is exactly as opaque as an
+unfinished one. The problem is not that it is still moving; it is that it is
+still *there*.
+
+`shouldFadeOutExitingScene: true` does not rescue it either. Now both scenes sit
+at 50% through the middle of the transition — two ghost headlines instead of two
+solid ones.
+
+## Transparency makes it worse
+
+If your scene components render transparent — which is the right default, so the
+composition owns the background — then every *compositing* presentation has the
+same flaw:
+
+| Presentation | Safe between two centred scenes? |
+| --- | --- |
+| `fade()` | No — exiting scene stays at full opacity |
+| `none()` | No — both stacked, entering one on top |
+| `wipe()`, `iris()`, `clockWipe()` | No — the exiting scene shows through the revealed region |
+| `slide()`, `flip()` | **Yes** — the scenes are moved apart |
+
+A wipe *looks* like it should work, because it has a hard edge. But it clips the
+entering scene; it does not remove the exiting one. Wherever the entering scene
+is transparent, the old one is still visible underneath.
+
+## The fix
+
+Use a presentation that **moves** the scenes apart rather than blending them.
+Then every pixel belongs to exactly one scene, no matter what either one paints:
+
+```tsx
+import { springTiming, TransitionSeries } from "@remotion/transitions";
+import { slide } from "@remotion/transitions/slide";
+
+const beat = {
+  presentation: slide({ direction: "from-right" }),
+  timing: springTiming({ durationInFrames: 18, config: { damping: 200 } }),
+};
+
+<TransitionSeries>
+  <TransitionSeries.Sequence durationInFrames={110}>
+    <SceneOne />
+  </TransitionSeries.Sequence>
+  <TransitionSeries.Transition {...beat} />
+  <TransitionSeries.Sequence durationInFrames={130}>
+    <SceneTwo />
+  </TransitionSeries.Sequence>
+</TransitionSeries>;
+```
+
+Two details worth keeping:
+
+**`damping: 200`.** The default spring overshoots. On a scale or an opacity that
+reads as bounce; on a full-frame slide it throws the whole scene past centre and
+drags it back. Critically damping it removes the wobble without making the move
+feel slow.
+
+**`direction: "from-right"`.** Remotion's default is `from-left`, which brings
+the new scene in from the left and pushes the old one right — the direction a
+"back" gesture moves. `from-right` reads as forward.
+
+## When a fade is still right
+
+A crossfade is not always wrong. It is right when the outgoing scene is *empty*
+by the time the transition starts — a scene that has already animated its own
+content away, or a full-bleed background with nothing to read. That is a real
+shot, and it is the only case where the overlap costs you nothing.
+
+Everywhere else, slide.
