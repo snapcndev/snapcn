@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { installCommand } from "@/config/site";
 import { convertNpmCommand } from "@/lib/convert-npm-command";
+import STUDIO_ELEMENTS from "@/lib/studio-elements.json";
 import { CodeBlockCommand } from "./code-block-command";
+import { StudioInstall } from "./studio-install";
 
 /**
  * The install command for a single component. Spelled once, in
@@ -51,6 +53,7 @@ export function InstallBlock({
         </Link>{" "}
         if this is your first snapcn component.
       </p>
+      {STUDIO_ELEMENTS.includes(name) && <StudioInstall name={name} />}
     </div>
   );
 }
