@@ -49,7 +49,7 @@ A product demo is 6 beats. **Proof** and **CTA** are optional; **Hook** and **Pr
 | 5 | **Proof** *(optional)* | Make it credible | a metric/score counting up, metric cards, "Join 12,000+ people" + testimonials, an integration landing in Slack |
 | 6 | **CTA** *(optional)* | One ask + where to go | "Build with…", a command to run, `domain.com`, logo lockup on a calm hold |
 
-The hook usually carries the single hardest idea; features are where most of the runtime lives. Transitions between beats come from `@remotion/transitions` (`slide` for "going deeper", `fade` for a neutral cut) — snapcn ships none. `text-swap` changes a line within a beat, not the beat itself.
+The hook usually carries the single hardest idea; features are where most of the runtime lives. Transitions between beats come from `@remotion/transitions` — snapcn ships none. Use one that MOVES the beats apart (`slide` is the default, `flip` for "going deeper"); never a `fade`, which paints the arriving beat on top of the outgoing one and leaves both legible for the whole overlap (anti-patterns 12). `text-swap` changes a line within a beat, not the beat itself.
 
 ---
 

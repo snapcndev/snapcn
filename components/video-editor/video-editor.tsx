@@ -468,7 +468,7 @@ export function VideoEditor({
                 removeWatermark,
                 font,
                 audio,
-                onDownloaded: () => {
+                onDownloaded: (jobId) => {
                   // The one moment worth asking: they have the file, so the
                   // ask is not a toll. Signed-in people are skipped — we
                   // already have their address — and `hasAnsweredEmailPrompt`
@@ -476,6 +476,7 @@ export function VideoEditor({
                   if (!signedIn && !hasAnsweredEmailPrompt()) {
                     setEmailPromptOpen(true);
                   }
+                  offerShareLink(jobId);
                 },
               })
             }
@@ -712,4 +713,53 @@ function MobilePanels({
       </Sheet>
     </div>
   );
+}
+
+/**
+ * Offer a permanent link to the video somebody has just downloaded.
+ *
+ * The download no longer destroys the MP4 (see the download route), so for the
+ * ten minutes the sweep leaves it there the same render can also become a
+ * `/v/<id>` page. This is the only moment the offer makes sense: they have
+ * watched it, they have the file, and nothing is being withheld to make them
+ * click.
+ *
+ * It is a toast rather than a dialog because it must be ignorable. The export
+ * is the thing they came for; the link is a second thing we would like, and a
+ * modal in front of a finished download would be a toll.
+ */
+function offerShareLink(jobId: string) {
+  toast.success("Video exported", {
+    description: "Want a link you can send someone?",
+    duration: 12_000,
+    action: {
+      label: "Get a link",
+      onClick: async () => {
+        try {
+          const res = await fetch("/api/share", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jobId }),
+          });
+          if (res.status === 401) {
+            toast.info("Sign in to keep a link", {
+              description:
+                "Use the Share button — a permanent URL needs an owner.",
+            });
+            return;
+          }
+          const data = (await res.json()) as { url?: string; error?: string };
+          if (!res.ok || !data.url) {
+            toast.error(data.error ?? "Could not create a link.");
+            return;
+          }
+          const url = `${window.location.origin}${data.url}`;
+          await navigator.clipboard.writeText(url).catch(() => {});
+          toast.success("Link copied", { description: url });
+        } catch {
+          toast.error("Could not create a link.");
+        }
+      },
+    },
+  });
 }

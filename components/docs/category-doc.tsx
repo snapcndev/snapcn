@@ -3,10 +3,10 @@ import Link from "next/link";
 import {
   CATALOGUE_ITEMS,
   type CategoryId,
-  GALLERY_CATEGORIES,
   GALLERY_ITEMS,
   slugFromHref,
 } from "@/lib/gallery-data";
+import { CATEGORY_QUERY } from "@/lib/structured-data";
 import { CONFIGS } from "@/registry/__configs__";
 import { CategoryGrid } from "./category-grid";
 import { InstallBlock } from "./install-block";
@@ -29,8 +29,11 @@ import { InstallBlock } from "./install-block";
  */
 export function CategoryDoc({ category }: { category: CategoryId }) {
   const items = GALLERY_ITEMS.filter((item) => item.category === category);
-  const label =
-    GALLERY_CATEGORIES.find((c) => c.id === category)?.label ?? category;
+  // The phrase this page is trying to rank for, said once in its own body.
+  // The <title> and meta description have carried it since `searchMeta`
+  // shipped; the page itself never said it, which is the one place a hub page
+  // cannot afford to be coy. The label is already the H1 above this.
+  const query = CATEGORY_QUERY[category];
 
   // The category's first curated entry is its flagship — the one worth showing
   // in the install and usage examples.
@@ -46,9 +49,10 @@ export function CategoryDoc({ category }: { category: CategoryId }) {
     <>
       <h2 id="components">The components</h2>
       <p>
-        {items.length === 1 ? "One component" : `${items.length} components`} in{" "}
-        {label}
-        {pro > 0 ? `, plus ${pro} Pro` : ""}. Each card plays its own default
+        {items.length === 1
+          ? `One free ${query}`
+          : `${items.length} free ${query}s`}
+        {pro > 0 ? `, plus ${pro} in Pro` : ""}. Each card plays its own default
         scene — open one for its props, the source file <code>shadcn add</code>{" "}
         writes, and a player you can scrub frame by frame.
       </p>

@@ -34,11 +34,43 @@ const HOST = (
   process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.posthog.com"
 ).replace(/\/+$/, "");
 
+/**
+ * Two exclusions beyond the user-agent prefix, both measured on 2026-09-19.
+ *
+ * The prefix was already doing most of the work — it is why this badge was
+ * never badly wrong — but it let two kinds of indexer through:
+ *
+ *  · `shadcn-registry-corpus-collector/0.1` and friends START with "shadcn",
+ *    so the prefix admits them and only `registry-health` was named. The
+ *    pattern now covers the shape rather than the one instance, including the
+ *    `(+https://…)` contact convention every well-behaved crawler uses.
+ *
+ *  · A script sweeping the catalogue counts once for EVERY component, which
+ *    lifts all badges by the same amount and is invisible precisely because it
+ *    is uniform. The tell is `registry_pro_blocked`: `install all` never names
+ *    a paid component, so an id that was refused five or more distinct Pro
+ *    components is enumerating, not installing. A human who tries one or two
+ *    Pro names out of curiosity is under the threshold and still counts.
+ *
+ * Together they removed 17 of 663 installers — 2.6%. Small, and in the honest
+ * direction: the badge already under-counted people and now under-counts
+ * slightly more.
+ */
 const INSTALLERS = `
   from events
   where event = 'registry_component_fetched'
     and match(lower(coalesce(properties.user_agent, '')), '^(shadcn|node)')
-    and not match(lower(properties.user_agent), 'registry-health')
+    and not match(
+      lower(coalesce(properties.user_agent, '')),
+      'registry-|corpus|index|collector|vendor|\\(\\+http'
+    )
+    and distinct_id not in (
+      select distinct_id from events
+      where event = 'registry_pro_blocked'
+        and timestamp > now() - interval 30 day
+      group by distinct_id
+      having uniq(properties.component) >= 5
+    )
     and timestamp > now() - interval 30 day`;
 
 async function hogql(query: string): Promise<unknown[][]> {

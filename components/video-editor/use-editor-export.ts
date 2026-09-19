@@ -83,7 +83,8 @@ export function useEditorExport() {
          * claims the render *instead of* downloading it — and not fired on the
          * showcase path, because "your video is downloading" is not true there.
          */
-        onDownloaded?: () => void;
+        /** The finished job, so the caller can still offer a share link for it. */
+        onDownloaded?: (jobId: string) => void;
       } = {},
     ) => {
       if (clips.length === 0) {
@@ -156,7 +157,7 @@ export function useEditorExport() {
                   await onDone(jobId);
                 } else {
                   triggerDownload(job.downloadUrl);
-                  onDownloaded?.();
+                  onDownloaded?.(jobId);
                 }
                 trackEvent("editor_export_succeeded", {
                   clip_count: clips.length,

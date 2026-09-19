@@ -58,7 +58,7 @@ picked component first (`shadcn add @snapcn/<name>`); deps auto-install.
 ```tsx
 import { AbsoluteFill } from "remotion";
 import { TransitionSeries, springTiming } from "@remotion/transitions";
-import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
 import { TextBuild } from "@/components/snap-cn/text-build";
 import { TextReveal } from "@/components/snap-cn/text-reveal";
 import { TerminalSimulator } from "@/components/snap-cn/terminal-simulator";
@@ -67,7 +67,9 @@ import { FollowerRush } from "@/components/snap-cn/follower-rush";
 import { TextHighlight } from "@/components/snap-cn/text-highlight";
 
 const ACCENT = "#F2D200";
-const beat = { presentation: fade(), timing: springTiming({ durationInFrames: 18 }) };
+// Slides, never fades: the beats overlap 18f and snapcn scenes are transparent,
+// so a fade leaves both shots inked over each other for all 18. See anti-patterns 12.
+const beat = { presentation: slide(), timing: springTiming({ durationInFrames: 18, config: { damping: 200 } }) };
 
 export const ProductDemo = () => (
   <AbsoluteFill style={{ background: "#FAF8EC" }}>

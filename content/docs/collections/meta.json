@@ -1,0 +1,10 @@
+{
+  "title": "Collections",
+  "collapsible": false,
+  "pages": [
+    "device-mockups",
+    "terminal-animations",
+    "cursor-animations",
+    "image-galleries"
+  ]
+}

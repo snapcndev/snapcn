@@ -3,6 +3,7 @@ import type { MDXComponents } from "mdx/types";
 import { Note, Warning } from "@/components/docs/callout";
 import { CategoryDoc } from "@/components/docs/category-doc";
 import { CategoryGrid } from "@/components/docs/category-grid";
+import { CollectionDoc } from "@/components/docs/collection-doc";
 import { ComponentCardGrid } from "@/components/docs/component-card-grid";
 import { ComponentExample } from "@/components/docs/component-example";
 import { ComponentPreview } from "@/components/docs/component-preview";
@@ -49,6 +50,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     ComponentCardGrid,
     CategoryGrid,
     CategoryDoc,
+    Collection: CollectionDoc,
     DocsIndex,
 
     ...components,

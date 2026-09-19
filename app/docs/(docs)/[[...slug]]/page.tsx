@@ -6,8 +6,10 @@ import { InstallBlock } from "@/components/docs/install-block";
 import { DocsNewsletterCta } from "@/components/docs/newsletter-cta";
 import { ProCta } from "@/components/docs/pro-cta";
 import { RelatedComponents } from "@/components/docs/related-components";
+import { collectionBySlug, collectionItems } from "@/lib/collections";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import {
+  CATALOGUE_ITEMS,
   GALLERY_CATEGORIES,
   type GalleryItem,
   galleryItemByHref,
@@ -21,9 +23,14 @@ import { proDemoSrc } from "@/lib/pro-demos";
 import { RenderedDemo } from "@/lib/rendered-demos";
 import { installCounts, MIN_SHOWN } from "@/lib/server/install-counts";
 import {
+  categoryItemList,
+  categoryQuestions,
+  collectionQuestions,
   componentQuestions,
   faqPage,
   firstSentence,
+  isCategoryIndex,
+  itemList,
   JsonLd,
   PUBLISHER,
   searchMeta,
@@ -104,7 +111,28 @@ export default async function Page(props: {
   // Only for a page with a component behind it: a prose page has no install
   // command to answer with, and a FAQ invented for one would be the drift
   // this helper exists to avoid.
-  const questions = item && slug ? componentQuestions(slug, item) : [];
+  // A category index is the other page that can answer a real question: it is
+  // a hub for a whole query ("remotion text animations"), and it shipped with
+  // nothing quotable on it at all.
+  const category = isCategoryIndex(page.slugs) ? page.slugs[0] : undefined;
+  const categoryItems = category
+    ? CATALOGUE_ITEMS.filter((i) => i.category === category)
+    : [];
+  // A collection page is the other hub shape: same job as a category index,
+  // but for a query the taxonomy cannot carry (see `lib/collections.ts`).
+  const collection =
+    page.slugs[0] === "collections" && page.slugs.length === 2
+      ? collectionBySlug(page.slugs[1])
+      : undefined;
+  const collectionCards = collection ? collectionItems(collection) : [];
+  const questions =
+    item && slug
+      ? componentQuestions(slug, item)
+      : category
+        ? categoryQuestions(category, categoryItems)
+        : collection && collectionCards.length > 0
+          ? collectionQuestions(collection.query, collectionCards)
+          : [];
   const installers = item
     ? (await installCounts())?.byComponent[slug]
     : undefined;
@@ -141,6 +169,12 @@ export default async function Page(props: {
           ]
         : []),
       ...(questions.length > 0 ? [faqPage(page.url, questions)] : []),
+      // The grid on a category page is this list; without the schema the page
+      // competes for its query while describing itself as a generic article.
+      ...(category ? [categoryItemList(category, categoryItems)] : []),
+      ...(collection && collectionCards.length > 0
+        ? [itemList(`${collection.query}s`, collectionCards)]
+        : []),
       ...howToGraph(page.url, data),
       {
         "@type": "BreadcrumbList",

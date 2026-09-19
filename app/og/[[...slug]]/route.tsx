@@ -9,7 +9,7 @@ import {
 } from "@/config/site";
 import { proItemBySlugs } from "@/lib/gallery-data";
 import { firstSentence } from "@/lib/structured-data";
-import { source } from "@/source";
+import { blogSource, source } from "@/source";
 
 export const revalidate = 3600;
 
@@ -116,22 +116,31 @@ export async function GET(
     !page && slug?.length === 1 ? DOCS_PAGE_META[slug[0]] : undefined;
   // A paid component's page has no MDX either; its catalogue entry is the card.
   const pro = page ? null : proItemBySlugs(slug);
+  // A post lives in the blog collection, which `source` cannot see at all. Its
+  // card is the one most likely to be shared, since a post is written to be.
+  const post =
+    !page && slug?.[0] === "blog" && slug.length === 2
+      ? blogSource.getPage([slug[1]])
+      : undefined;
 
   const title =
     data?.title ??
+    post?.data.title ??
     bespoke?.title ??
     pro?.name ??
     "Product demo videos, in React.";
   const description =
     data?.description ??
+    post?.data.description ??
     bespoke?.description ??
     (pro ? firstSentence(pro.description) : undefined) ??
     "Copy-paste Remotion components for the shots a software demo is made of — streaming AI answers, terminals, device frames, captions.";
 
   // The category's own index page owns its label, so the card cannot drift from
   // the sidebar the way a hardcoded slug→label map here did.
-  const category =
-    slug && slug.length > 1
+  const category = post
+    ? "Blog"
+    : slug && slug.length > 1
       ? (source.getPage([slug[0]])?.data as { title?: string } | undefined)
           ?.title
       : undefined;

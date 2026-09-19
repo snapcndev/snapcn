@@ -4,7 +4,7 @@ import {
   galleryItemByHref,
   PRO_GALLERY_ITEMS,
 } from "@/lib/gallery-data";
-import { source } from "@/source";
+import { blogPosts, source } from "@/source";
 
 const SITE_URL = "https://snapcn.dev";
 
@@ -30,6 +30,7 @@ function latestReleaseDate(): Date | undefined {
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const latest = latestReleaseDate();
+  const posts = blogPosts();
 
   /**
    * The bespoke `(gallery)` routes. None of these has an MDX file, so
@@ -76,7 +77,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.5,
     },
+    {
+      url: `${SITE_URL}/blog`,
+      lastModified: posts[0]?.data.date,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
   ];
+
+  // Posts carry a real `lastModified` because a post has a real date — the one
+  // in its frontmatter, which is also what the feed and the schema publish.
+  const blogRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
+    url: `${SITE_URL}${post.url}`,
+    lastModified: post.data.date,
+    changeFrequency: "yearly" as const,
+    priority: 0.7,
+  }));
 
   // Every MDX page, components included — they have their own routes again, so
   // there is nothing left to filter out.
@@ -103,5 +119,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...docRoutes, ...proRoutes];
+  return [...staticRoutes, ...docRoutes, ...proRoutes, ...blogRoutes];
 }

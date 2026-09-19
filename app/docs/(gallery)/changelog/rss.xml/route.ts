@@ -1,4 +1,5 @@
 import { GALLERY_ITEMS } from "@/lib/gallery-data";
+import { escapeXml, rfc822 } from "@/lib/rss";
 
 export const dynamic = "force-static";
 
@@ -30,7 +31,7 @@ export function GET() {
       <title>${escapeXml(item.name)}</title>
       <link>${url}</link>
       <guid isPermaLink="true">${url}</guid>
-      <pubDate>${rfc822(item.added as string)}</pubDate>
+      <pubDate>${rfc822(day(item.added as string))}</pubDate>
       <description>${escapeXml(item.description)}</description>
     </item>`;
     })
@@ -44,7 +45,9 @@ export function GET() {
     <atom:link href="${FEED_URL}" rel="self" type="application/rss+xml" />
     <description>Every component added to snapcn, newest first.</description>
     <language>en</language>${
-      latest ? `\n    <lastBuildDate>${rfc822(latest)}</lastBuildDate>` : ""
+      latest
+        ? `\n    <lastBuildDate>${rfc822(day(latest))}</lastBuildDate>`
+        : ""
     }
 ${body}
   </channel>
@@ -56,15 +59,7 @@ ${body}
   });
 }
 
-/** An ISO day, as the RFC 822 date RSS requires. Midnight UTC, like the page. */
-function rfc822(iso: string): string {
-  return new Date(`${iso}T00:00:00Z`).toUTCString();
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+/** An ISO day as a `Date`, at midnight UTC — the date the page prints. */
+function day(iso: string): Date {
+  return new Date(`${iso}T00:00:00Z`);
 }

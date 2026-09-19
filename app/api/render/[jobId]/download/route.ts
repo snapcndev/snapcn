@@ -2,7 +2,6 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { deleteJobFile } from "@/lib/server/cleanup";
 import { RENDER_WORK_DIR } from "@/lib/server/paths";
 import { getJob } from "@/lib/server/render-queue";
 
@@ -48,15 +47,21 @@ export async function GET(
   }
 
   const nodeStream = createReadStream(filePath);
-  // `end`, not `close`. `close` fires on *any* teardown — including the client
-  // aborting or the connection dropping mid-transfer — so the previous version
-  // deleted the MP4 out from under a download that had failed, and the retry
-  // 404'd on a render the user had waited minutes for. `end` fires only when
-  // the source has been read to completion; a cancelled read destroys the
-  // stream without it, and the TTL sweep reclaims the file instead.
-  nodeStream.on("end", () => {
-    void deleteJobFile(jobId);
-  });
+  // The file is deliberately NOT deleted when the stream ends.
+  //
+  // It used to be, on `end`. That made downloading and keeping a share link
+  // mutually exclusive: `/api/share` claims the same MP4, so by the time
+  // anyone had the file in their downloads folder there was nothing left to
+  // claim, and the only way to get a link was to render the whole thing a
+  // second time. Measured over 30 days: 39 people exported a video and `/v/`
+  // was opened once. The share loop was not unpopular, it was unreachable.
+  //
+  // Nothing replaces the delete because the TTL sweep in `lib/server/cleanup.ts`
+  // already reclaims anything left in `RENDER_WORK_DIR` after ten minutes, and
+  // it was already the only thing collecting cancelled and failed downloads.
+  // The cost is that a finished MP4 now sits on disk for up to that window
+  // instead of milliseconds; the gain is that "download it" and "keep a link to
+  // it" stop being a choice made before you have seen the video.
 
   const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
