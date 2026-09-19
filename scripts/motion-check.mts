@@ -24,6 +24,7 @@ import {
   shapeInvariant,
   subjectArea,
 } from "../lib/motion-check/measure.ts";
+import { loadConfigs } from "./lib/configs.mts";
 import type { Measured, MeasuredComponent } from "./lib/measured.ts";
 import { sourceHash } from "./lib/source-hash.mts";
 
@@ -59,7 +60,6 @@ import { sourceHash } from "./lib/source-hash.mts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
-const REPO = new URL(`${root}/`, "file:");
 
 /**
  * @remotion/transitions' overlap — `snapcn-mcp/src/tools.ts:863`. The last 18
@@ -132,44 +132,6 @@ function getFlag(name: string): string | undefined {
   return eq ? eq.slice(name.length + 3) : undefined;
 }
 const hasFlag = (name: string) => process.argv.includes(`--${name}`);
-
-// --------------------------------------------------------------------------
-// Registry
-// --------------------------------------------------------------------------
-
-/**
- * `registry/__configs__.ts` is the driver: it is where SHARED_CONTROLS is merged
- * and the MIN_SPEED_ONE overrides are applied, so it is the only place that
- * knows a component's real runtime controls. Node resolves neither the `@/`
- * alias nor extensionless relative imports; teach it both, exactly as
- * `snapcn-mcp/scripts/build-manifest.mjs` already does.
- */
-async function loadConfigs(): Promise<Record<string, ComponentConfig>> {
-  // `node:module`'s `registerHooks` is Node >= 22.15 and this repo is on
-  // @types/node 20, so the shape is declared here rather than bumping types the
-  // whole app would have to absorb.
-  const { registerHooks } = (await import("node:module")) as unknown as {
-    registerHooks: (hooks: {
-      resolve: (
-        spec: string,
-        ctx: unknown,
-        next: (s: string, c: unknown) => unknown,
-      ) => unknown;
-    }) => void;
-  };
-  registerHooks({
-    resolve(spec: string, ctx: unknown, next) {
-      if (spec.startsWith("@/")) spec = new URL(spec.slice(2), REPO).href;
-      try {
-        return next(spec, ctx);
-      } catch {
-        return next(`${spec}.ts`, ctx);
-      }
-    },
-  });
-  const mod = await import(new URL("registry/__configs__.ts", REPO).href);
-  return mod.CONFIGS;
-}
 
 // --------------------------------------------------------------------------
 // Copy budget

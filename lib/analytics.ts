@@ -90,6 +90,16 @@ type AnalyticsEvents = {
     surface: "docs" | "landing";
   };
   /**
+   * "Add to Remotion Studio" — the install with no CLI and no `components.json`.
+   * It never touches `/r/`, so this is its only record. Does the button earn its
+   * place? `result` is the protocol's own answer: `awaiting-confirmation` reached
+   * a Studio; `no-compatible-studio` is a click from someone with none running.
+   */
+  studio_install_requested: {
+    component: string;
+    result: string;
+  };
+  /**
    * Anything copied or clicked on `/docs/mcp`. Which agent do people put snapcn in,
    * and which job brought them? `target` is the client id for the install
    * kinds and the tool name for `job_prompt`. The MCP's own traffic is invisible
