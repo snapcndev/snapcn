@@ -57,6 +57,15 @@ export const DOCS_SECTIONS = [
     // stops being news.
     badge: "New",
   },
+  // "Add to Remotion Studio" — the install with no CLI. The button lives on
+  // every free component; this is where it explains itself. Same rule as the
+  // flags above: off once it stops being news.
+  {
+    label: "Remotion Studio",
+    href: "/docs/remotion-studio",
+    match: "/docs/remotion-studio",
+    badge: "New",
+  },
   { label: "Roadmap", href: "/docs/roadmap", match: "/docs/roadmap" },
   { label: "Changelog", href: "/docs/changelog", match: "/docs/changelog" },
 ] as const;

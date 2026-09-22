@@ -53,7 +53,9 @@ export function InstallBlock({
         </Link>{" "}
         if this is your first snapcn component.
       </p>
-      {STUDIO_ELEMENTS.includes(name) && <StudioInstall name={name} />}
+      {STUDIO_ELEMENTS.includes(name) && (
+        <StudioInstall name={name} surface="docs" />
+      )}
     </div>
   );
 }

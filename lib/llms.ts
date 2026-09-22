@@ -128,6 +128,7 @@ function bespokePages(): LlmsPage[] {
   const changelog = DOCS_PAGE_META.changelog;
   const roadmap = DOCS_PAGE_META.roadmap;
   const mcp = DOCS_PAGE_META.mcp;
+  const studio = DOCS_PAGE_META["remotion-studio"];
 
   // The same snippets the page renders — an agent reading this installs exactly
   // what a person copying from the page does.
@@ -195,6 +196,15 @@ ${mcpTools}
 ## Install
 
 ${mcpInstall}`,
+    },
+    {
+      url: "/docs/remotion-studio",
+      title: studio.title,
+      description: studio.description,
+      category: "tools",
+      body: `Every free component's page has an "Add to Remotion Studio" button. It sends the component over the Remotion Studio Protocol to the Studio running on the reader's computer (Remotion 4.0.524+, started with \`npx remotion studio\`, a composition open). Studio shows the source, and on confirmation writes \`src/<name>.element.tsx\`, installs the packages it imports at exact versions, and places it in the open composition as one layer: transparent, sized to the component, text and colours in the Inspector.
+
+For an agent working in a project, the shadcn CLI is still the route — \`npx shadcn@latest add @snapcn/<name>\` — since the button needs a person to click it and confirm in Studio.`,
     },
     {
       url: "/docs/changelog",

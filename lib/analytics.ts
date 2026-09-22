@@ -98,6 +98,8 @@ type AnalyticsEvents = {
   studio_install_requested: {
     component: string;
     result: string;
+    /** The component page's install block, or the gallery panel. */
+    surface: "docs" | "gallery";
   };
   /**
    * Anything copied or clicked on `/docs/mcp`. Which agent do people put snapcn in,
