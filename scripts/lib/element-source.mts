@@ -18,7 +18,11 @@ import ts from "typescript";
  * - a lib import whose name the component already uses is renamed — culori's
  *   `interpolate` against Remotion's, in 21 components. The lib source cannot
  *   be edited instead: `motion:measure` hashes it, and a rename that renders
- *   nothing would mark every measurement stale.
+ *   nothing would mark every measurement stale;
+ * - what nothing in the file reads is dropped, with the imports only it used.
+ *   A lib file arrives whole, and a component file exports helpers for its
+ *   tests and config; once `export` is off, each of those is an error under
+ *   the `noUnusedLocals` Remotion's templates type-check with.
  *
  * Returns null for a component that builds on another snapcn component: that
  * would mean flattening a component into a component, and the CLI stays the
@@ -101,22 +105,96 @@ export function elementSource(
   });
 
   const parts = [own, ...libParts];
+  const sourceCode = prune(
+    [
+      [...new Set(parts.flatMap((p) => p.header))].join("\n"),
+      renderImports(
+        parts.flatMap((p) => p.bindings).filter((b) => !isLocal(b.module)),
+        [
+          ...new Set(
+            parts.flatMap((p) => p.modules).filter((m) => !isLocal(m)),
+          ),
+        ],
+      ),
+      ...libParts.map((p) => p.body),
+      own.body,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+  );
+  // Read back off the pruned file: a package only a dropped helper used is not
+  // a dependency of this Element.
   const modules = [
-    ...new Set(parts.flatMap((p) => p.modules).filter((m) => !isLocal(m))),
-  ];
-  const sourceCode = [
-    [...new Set(parts.flatMap((p) => p.header))].join("\n"),
-    renderImports(
-      parts.flatMap((p) => p.bindings).filter((b) => !isLocal(b.module)),
-      modules,
+    ...new Set(
+      source(sourceCode)
+        .statements.filter(ts.isImportDeclaration)
+        .map((s) => (s.moduleSpecifier as ts.StringLiteral).text),
     ),
-    ...libParts.map((p) => p.body),
-    own.body,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  ];
 
   return { sourceCode: `${sourceCode}\n`, modules };
+}
+
+/** TS6133 unused value, TS6196 unused type. */
+const UNUSED = new Set([6133, 6196]);
+
+/**
+ * Top-level declarations nothing reads, removed with the comments above them
+ * until none are left — a helper can be the only reader of another. Then the
+ * imports only they used, the way an editor's "remove unused imports" does it.
+ * An unused local inside a function is that function's own bug and stays.
+ *
+ * ponytail: assumes an unread top-level initializer is pure — `converter()`,
+ * `Easing.bezier()`. A call made for its effect (a font load) has to be an
+ * expression statement, which this never drops, or be read.
+ */
+function prune(text: string): string {
+  const options = { noUnusedLocals: true, jsx: ts.JsxEmit.Preserve };
+  for (;;) {
+    const unused = new Set(
+      service(text, options)
+        .getSemanticDiagnostics(FILE)
+        .filter((d) => UNUSED.has(d.code))
+        .map((d) => d.start),
+    );
+    const dead = source(text).statements.filter((stmt) => {
+      const names = nameStarts(stmt);
+      return names.length > 0 && names.every((at) => unused.has(at));
+    });
+    if (!dead.length) break;
+    for (const stmt of dead.reverse()) {
+      text = text.slice(0, stmt.getFullStart()) + text.slice(stmt.end);
+    }
+  }
+  const [imports] = service(text, options).organizeImports(
+    { type: "file", fileName: FILE, mode: ts.OrganizeImportsMode.RemoveUnused },
+    {},
+    undefined,
+  );
+  for (const c of [...(imports?.textChanges ?? [])].reverse()) {
+    const end = c.span.start + c.span.length;
+    text = text.slice(0, c.span.start) + c.newText + text.slice(end);
+  }
+  return text.trim();
+}
+
+/** Where each name a non-import statement declares is written. */
+function nameStarts(stmt: ts.Statement): number[] {
+  if (ts.isVariableStatement(stmt)) {
+    const names = stmt.declarationList.declarations.map((d) => d.name);
+    // A destructured declaration is reported on the pattern; leave it be.
+    return names.every(ts.isIdentifier) ? names.map((n) => n.getStart()) : [];
+  }
+  if (
+    (ts.isFunctionDeclaration(stmt) ||
+      ts.isClassDeclaration(stmt) ||
+      ts.isEnumDeclaration(stmt) ||
+      isType(stmt)) &&
+    stmt.name
+  ) {
+    return [stmt.name.getStart()];
+  }
+  return [];
 }
 
 /** `@remotion/google-fonts/Inter` → `@remotion/google-fonts`. */
@@ -317,19 +395,7 @@ function stripExport(stmt: ts.Statement, full: string, keep: boolean) {
  * shorthand from the import, which a text replace does not.
  */
 function rename(text: string, at: number, to: string): string {
-  const file = "part.tsx";
-  const service = ts.createLanguageService({
-    getScriptFileNames: () => [file],
-    getScriptVersion: () => "0",
-    getScriptSnapshot: (f) =>
-      f === file ? ts.ScriptSnapshot.fromString(text) : undefined,
-    getCurrentDirectory: () => "/",
-    getCompilationSettings: () => ({ noLib: true, noResolve: true }),
-    getDefaultLibFileName: () => "lib.d.ts",
-    fileExists: (f) => f === file,
-    readFile: (f) => (f === file ? text : undefined),
-  });
-  const spots = service.findRenameLocations(file, at, false, false, {
+  const spots = service(text).findRenameLocations(FILE, at, false, false, {
     providePrefixAndSuffixTextForRename: true,
   });
   if (!spots?.length) throw new Error(`cannot rename at ${at}`);
@@ -341,6 +407,27 @@ function rename(text: string, at: number, to: string): string {
     out = `${out.slice(0, s.textSpan.start)}${s.prefixText ?? ""}${to}${s.suffixText ?? ""}${out.slice(end)}`;
   }
   return out;
+}
+
+const FILE = "part.tsx";
+
+/** A language service over one file alone: no lib, no import resolved. */
+function service(text: string, options: ts.CompilerOptions = {}) {
+  return ts.createLanguageService({
+    getScriptFileNames: () => [FILE],
+    getScriptVersion: () => "0",
+    getScriptSnapshot: (f) =>
+      f === FILE ? ts.ScriptSnapshot.fromString(text) : undefined,
+    getCurrentDirectory: () => "/",
+    getCompilationSettings: () => ({
+      noLib: true,
+      noResolve: true,
+      ...options,
+    }),
+    getDefaultLibFileName: () => "lib.d.ts",
+    fileExists: (f) => f === FILE,
+    readFile: (f) => (f === FILE ? text : undefined),
+  });
 }
 
 function renderImports(bindings: Binding[], modules: string[]): string {

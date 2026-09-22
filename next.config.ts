@@ -118,6 +118,12 @@ const nextConfig: NextConfig = {
                 ? "no-store"
                 : "public, max-age=0, must-revalidate",
           },
+          // A Studio Element's default footage lives here, and the Studio it is
+          // installed into (localhost) reads it with ranged fetch() for the
+          // timeline filmstrip — cross-origin, so it fails without these. The
+          // size of the file comes from Content-Range, which CORS hides.
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Expose-Headers", value: "Content-Range" },
         ],
       },
     ];
