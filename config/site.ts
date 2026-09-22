@@ -176,6 +176,11 @@ export const DOCS_PAGE_META: Record<string, DocsPageMeta> = {
     description:
       "Compose a video from snapcn components — add clips, edit text and images, and export an MP4.",
   },
+  "remotion-studio": {
+    title: "Remotion Studio",
+    description:
+      "Add a snapcn component to your Remotion project in one click: the site sends it to the Remotion Studio running on your computer, which installs it and puts it on your timeline. No CLI, no components.json. Every free component.",
+  },
   mcp: {
     title: "MCP Server",
     description:
@@ -226,6 +231,7 @@ export const FOOTER_COLUMNS: FooterColumn[] = [
       { href: "/docs/getting-started/installation", label: "Installation" },
       { href: "/docs/getting-started/agent-skill", label: "Agent skill" },
       { href: "/docs/mcp", label: "MCP server" },
+      { href: "/docs/remotion-studio", label: "Remotion Studio" },
     ],
   },
   {

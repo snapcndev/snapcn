@@ -21,7 +21,7 @@
       "detailCoverage": 0.0183
     },
     "announce-title": {
-      "sourceHash": "dbcdc52c463f",
+      "sourceHash": "ca6c17a401fd",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -106,7 +106,7 @@
       "detailCoverage": 0.0011
     },
     "follower-rush": {
-      "sourceHash": "7bb95085c770",
+      "sourceHash": "24d99f45da54",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -119,7 +119,7 @@
       "detailCoverage": 0.1481
     },
     "hero-launch": {
-      "sourceHash": "d2d6b9993048",
+      "sourceHash": "656406e0d5a5",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -155,7 +155,7 @@
       "detailCoverage": 0.0731
     },
     "laptop-frame": {
-      "sourceHash": "5694c3f72621",
+      "sourceHash": "be435452dddf",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -174,7 +174,7 @@
       "subject": 0.2534
     },
     "logo-assemble": {
-      "sourceHash": "73785de7ce93",
+      "sourceHash": "4c7995f8b8f9",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -210,7 +210,7 @@
       "detailCoverage": 0.0726
     },
     "logo-flicker": {
-      "sourceHash": "48050dc62000",
+      "sourceHash": "354c0a8847ec",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -228,7 +228,7 @@
       "detailCoverage": 0.0928
     },
     "moodboard-reveal": {
-      "sourceHash": "40385a5863a1",
+      "sourceHash": "0fc4349ea8f5",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -246,7 +246,7 @@
       "detailCoverage": 0.0685
     },
     "orbit-gallery": {
-      "sourceHash": "fe623cafc7e0",
+      "sourceHash": "bbca1807f2d4",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -264,7 +264,7 @@
       "detailCoverage": 0.366
     },
     "phone-frame": {
-      "sourceHash": "014b8df6d4ae",
+      "sourceHash": "7dad81ae10d0",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -278,7 +278,7 @@
       "subject": 0.2684
     },
     "prompt-send": {
-      "sourceHash": "01dd0da58e4e",
+      "sourceHash": "9523531656c3",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -332,7 +332,7 @@
       "detailCoverage": 0.0857
     },
     "roster-grant": {
-      "sourceHash": "a85d6ec938ec",
+      "sourceHash": "98955ba6b0f1",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -350,7 +350,7 @@
       "detailCoverage": 0.2074
     },
     "screen-recording": {
-      "sourceHash": "9a72d4c9e8e9",
+      "sourceHash": "5e92090a5144",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -400,7 +400,7 @@
       "detailCoverage": 0.0453
     },
     "terminal-simulator": {
-      "sourceHash": "06193fd1a8c4",
+      "sourceHash": "6c38572abb07",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -436,7 +436,7 @@
       "detailCoverage": 0.0508
     },
     "text-highlight": {
-      "sourceHash": "7e6b90a5ad7c",
+      "sourceHash": "074596e2c5fb",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -544,7 +544,7 @@
       "detailCoverage": 0.0319
     },
     "type-morph": {
-      "sourceHash": "a682a9a5e74c",
+      "sourceHash": "16b126d51015",
       "width": 1280,
       "height": 720,
       "fps": 30,

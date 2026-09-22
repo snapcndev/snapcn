@@ -31,7 +31,7 @@ export interface LaptopFrameProps {
    * (.mp4/.webm/.mov/.m4v) play via `<OffthreadVideo>`, images via `<Img>` —
    * both cover the screen and fade/un-blur in. A root-relative path
    * (`/showcase-videos/x.mp4`) is served by Next in the Player and rewritten
-   * through `staticFile()` in a render.
+   * through `staticFile()` in Remotion Studio and a render.
    */
   screenSrc?: string;
   /** How the laptop enters. `open` lifts the lid up from the deck. */
@@ -526,16 +526,22 @@ const isVideo = (src: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(src);
 
 /**
  * A root-relative asset (`/showcase-videos/x.mp4`) is served at the origin root
- * by Next in the Player, but a server render serves `public/` through
- * `staticFile()` — so rewrite local paths only while rendering, and pass
+ * by Next in the Player, but Remotion Studio and a render serve `public/` through
+ * `staticFile()` alone — so rewrite local paths everywhere but the Player, and pass
  * http(s)/data/blob URLs straight through.
  */
 function resolveSrc(src: string): string {
   const isLocal = src.startsWith("/") && !src.startsWith("//");
-  if (isLocal && getRemotionEnvironment().isRendering) {
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
     return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
   }
-  return src;
 }
 
 /** Fills the screen with an image or a video, fading and un-blurring it in. */

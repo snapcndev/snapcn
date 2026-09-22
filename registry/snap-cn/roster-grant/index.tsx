@@ -11,6 +11,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  parseColor,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -784,7 +785,10 @@ export function RosterGrant({
         overflow: "hidden",
       }}
     >
-      <Backdrop accent={accent} th={th} />
+      {/* A transparent page asks for no page, and the backdrop is the page. */}
+      {parseColor(th.background).alpha !== 0 && (
+        <Backdrop accent={accent} th={th} />
+      )}
       <div
         style={{
           position: "absolute",

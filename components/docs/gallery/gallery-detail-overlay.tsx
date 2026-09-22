@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckIcon,
+  ChevronDown,
   Clapperboard,
   CopyIcon,
   KeyRound,
@@ -20,6 +21,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { StudioInstall } from "@/components/docs/studio-install";
 import { installCommand as buildInstallCommand } from "@/config/site";
 import { useOwnsCatalogue } from "@/hooks/use-owns-catalogue";
 import { useTrackEvent } from "@/lib/analytics";
@@ -36,6 +38,7 @@ import {
   renderedDemoPoster,
   renderedDemoSrc,
 } from "@/lib/rendered-demos";
+import STUDIO_ELEMENTS from "@/lib/studio-elements.json";
 import { cn } from "@/lib/utils";
 import { loadDocBody } from "./doc-body-action";
 import { morphToCard, SHARED_MEDIA } from "./shared-media-transition";
@@ -44,6 +47,19 @@ import { morphToCard, SHARED_MEDIA } from "./shared-media-transition";
 const LivePreview = dynamic(() => import("./live-preview"), { ssr: false });
 
 const CATEGORY_LABEL = new Map(GALLERY_CATEGORIES.map((c) => [c.id, c.label]));
+
+/**
+ * The panel's primary action. A lit top edge and a short shadow give it a
+ * surface to press, and it presses: a touch smaller, 150ms, out.
+ */
+const PRIMARY_BTN =
+  "inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-medium text-primary-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(0_0_0/0.25)] transition-[filter,transform] duration-150 ease-out hover:brightness-110 active:scale-[0.97] motion-reduce:transition-none";
+
+/** A card on the panel: a hairline, a whisper of fill. */
+const CARD = "rounded-xl border border-border bg-muted/30 px-3.5 py-3";
+/** The small caps a card and a spec open with. */
+const CARD_LABEL =
+  "font-medium text-[11px] text-muted-foreground uppercase tracking-[0.12em]";
 
 const ROUND_BTN =
   "flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted";
@@ -235,19 +251,12 @@ function OverlayBody({
   // command and does nothing if you type it — while the copy button quietly
   // handed over the real thing. What it says is now what you get.
   const installCommand = buildInstallCommand(slug);
-  const [copied, setCopied] = useState(false);
   const hasDocs = hasDoc;
   const trackEvent = useTrackEvent();
   // A paid card sells Pro only to someone without it. An owner gets the install
   // row and a way to their key instead. `null` while the session loads.
   const owns = useOwnsCatalogue();
   const locked = item.pro && !owns;
-
-  const copyInstall = () => {
-    navigator.clipboard.writeText(installCommand);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
 
   // Arrow keys step between components without leaving the overlay.
   useEffect(() => {
@@ -322,102 +331,95 @@ function OverlayBody({
 
         <div
           key={slug}
-          className="order-3 mx-auto flex w-full max-w-3xl animate-in flex-col gap-5 px-4 pt-2 pb-8 fade-in duration-150 sm:px-6 xl:order-none xl:mx-0 xl:max-w-none xl:p-0"
+          className="order-3 mx-auto flex w-full max-w-3xl animate-in flex-col gap-6 px-4 pt-2 pb-8 fade-in duration-150 sm:px-6 xl:order-none xl:mx-0 xl:max-w-none xl:p-0"
         >
-          <div>
-            <p className="text-sm text-muted-foreground">{category}</p>
-            <Dialog.Title className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+          <header>
+            <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
+              {category}
+            </p>
+            <Dialog.Title className="mt-2 font-semibold text-[1.75rem] text-foreground leading-[1.1] tracking-[-0.025em]">
               {item.name}
             </Dialog.Title>
-          </div>
+          </header>
 
-          <Dialog.Description className="text-sm leading-relaxed text-muted-foreground">
-            {item.description}
-          </Dialog.Description>
+          <Description text={item.description} />
 
-          <dl className="text-sm">
-            <MetaRow label="Source">snapcn</MetaRow>
-            <MetaRow label="Category">{category}</MetaRow>
-            <MetaRow label="Type">{typeLabel(item.href)}</MetaRow>
+          {/* The facts, as a spec sheet rather than a ledger: label over value,
+              two to a row, between hairlines. */}
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-border border-y py-5">
+            <Spec label="Type">{typeLabel(item.href)}</Spec>
             {meta ? (
-              <MetaRow label="Duration">
+              <Spec label="Duration">
                 {(meta.durationInFrames / meta.fps).toFixed(1)}s
-              </MetaRow>
+              </Spec>
             ) : null}
-            {locked ? (
-              // The price, spelled both ways, because the two products are the
-              // decision: a year of everything, or the same catalogue outright.
-              <MetaRow label="Price">
-                {CATALOGUE_PRICE.annual} a year · {CATALOGUE_PRICE.lifetime}{" "}
-                outright
-              </MetaRow>
-            ) : (
-              <MetaRow label="Install">
-                <button
-                  type="button"
-                  onClick={copyInstall}
-                  className="inline-flex items-start gap-1.5 text-left font-mono text-xs break-all text-foreground transition-colors hover:text-muted-foreground"
-                  title="Copy install command"
-                >
-                  {installCommand}
-                  {copied ? (
-                    <CheckIcon className="size-3.5" />
-                  ) : (
-                    <CopyIcon className="size-3.5" />
-                  )}
-                </button>
-              </MetaRow>
-            )}
+            <Spec label="Category">{category}</Spec>
+            <Spec label="Source">snapcn</Spec>
           </dl>
 
-          {/* The gallery's second exit, and the one that stays measurable.
-              A copied install command finishes in somebody else's terminal —
-              this keeps them here, and the editor is where the product is
-              actually understood: 64% of the people who open it put a clip on
-              the timeline. `?clip=` carries this component straight onto it, so
-              the first thing they see is the shot they were already looking at,
-              with their own words waiting to be typed into it. */}
-          {item.pro && owns ? (
-            <Link
-              href="/account"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90 xl:mt-5"
-            >
-              <KeyRound className="size-4" aria-hidden="true" />
-              Your API key and setup
-            </Link>
+          {locked ? (
+            // The price, spelled both ways, because the two products are the
+            // decision: a year of everything, or the same catalogue outright.
+            <div className={CARD}>
+              <p className={CARD_LABEL}>Price</p>
+              <p className="mt-1.5 text-foreground text-sm tabular-nums">
+                {CATALOGUE_PRICE.annual} a year · {CATALOGUE_PRICE.lifetime}{" "}
+                outright
+              </p>
+            </div>
           ) : (
-            <Link
-              href={
-                item.pro
-                  ? "/docs/pricing#plans"
-                  : `/docs/video-editor?clip=${slug}`
-              }
-              onClick={() =>
-                trackEvent("cta_clicked", {
-                  cta: item.pro ? "gallery_pro" : "gallery_make_video",
-                  destination: item.pro
-                    ? "/docs/pricing#plans"
-                    : `/docs/video-editor?clip=${slug}`,
-                })
-              }
-              className={cn(
-                "inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90 xl:mt-5",
-                item.pro && owns === null && "invisible",
-              )}
-            >
-              {item.pro ? (
-                <>
-                  <Lock className="size-4" aria-hidden="true" />
-                  Get the pro catalogue
-                </>
-              ) : (
-                <>
-                  <Clapperboard className="size-4" aria-hidden="true" />
-                  Make a video with this
-                </>
-              )}
-            </Link>
+            <InstallCard command={installCommand} slug={slug} />
           )}
+
+          {/* The actions, as one group: the editor first — the gallery's
+              measurable exit, where 64% of visitors put a clip on the timeline,
+              and `?clip=` carries this one straight onto it — then Studio for
+              someone already in a Remotion project. */}
+          <div className="flex flex-col gap-2.5">
+            {item.pro && owns ? (
+              <Link href="/account" className={PRIMARY_BTN}>
+                <KeyRound className="size-4" aria-hidden="true" />
+                Your API key and setup
+              </Link>
+            ) : (
+              <Link
+                href={
+                  item.pro
+                    ? "/docs/pricing#plans"
+                    : `/docs/video-editor?clip=${slug}`
+                }
+                onClick={() =>
+                  trackEvent("cta_clicked", {
+                    cta: item.pro ? "gallery_pro" : "gallery_make_video",
+                    destination: item.pro
+                      ? "/docs/pricing#plans"
+                      : `/docs/video-editor?clip=${slug}`,
+                  })
+                }
+                className={cn(
+                  PRIMARY_BTN,
+                  item.pro && owns === null && "invisible",
+                )}
+              >
+                {item.pro ? (
+                  <>
+                    <Lock className="size-4" aria-hidden="true" />
+                    Get the pro catalogue
+                  </>
+                ) : (
+                  <>
+                    <Clapperboard className="size-4" aria-hidden="true" />
+                    Make a video with this
+                  </>
+                )}
+              </Link>
+            )}
+            {/* Free ones only — a Pro component installs with a key, through
+                the CLI. */}
+            {!item.pro && STUDIO_ELEMENTS.includes(slug) && (
+              <StudioInstall name={slug} surface="gallery" block />
+            )}
+          </div>
         </div>
       </div>
 
@@ -477,11 +479,117 @@ function OverlayBody({
   );
 }
 
-function MetaRow({ label, children }: { label: string; children: ReactNode }) {
+/** One fact: a small-caps label, the value under it. */
+function Spec({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border py-2.5 last:border-b-0">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-right text-foreground">{children}</dd>
+    <div className="min-w-0">
+      <dt className={CARD_LABEL}>{label}</dt>
+      <dd className="mt-1 truncate text-foreground text-sm">{children}</dd>
+    </div>
+  );
+}
+
+/**
+ * The whole description, always — it is the page's text, and search reads it
+ * whether or not it is open. Past four lines it rests under a fade, and "Show
+ * more" lets it run; a short one never grows a button it does not need.
+ */
+function Description({ text }: { text: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [long, setLong] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current?.firstElementChild;
+    if (el) setLong(el.scrollHeight > el.clientHeight + 1);
+  }, []);
+
+  return (
+    <div ref={ref}>
+      <Dialog.Description
+        className={cn(
+          "text-pretty text-[0.9375rem] text-muted-foreground leading-6",
+          !open && "line-clamp-4",
+          !open &&
+            long &&
+            "[mask-image:linear-gradient(to_bottom,#000_55%,transparent)]",
+        )}
+      >
+        {text}
+      </Dialog.Description>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="mt-2 inline-flex items-center gap-1 font-medium text-foreground/80 text-xs transition-colors hover:text-foreground"
+        >
+          {open ? "Show less" : "Show more"}
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none",
+              open && "rotate-180",
+            )}
+            aria-hidden="true"
+          />
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The install command as a card: a label and the copy action on top, the
+ * command on one line below — never wrapped, so the package name is never cut
+ * in two; it scrolls and fades at the edge instead. The package is the part
+ * worth reading, so it is the bright part.
+ */
+function InstallCard({ command, slug }: { command: string; slug: string }) {
+  const [copied, setCopied] = useState(false);
+  const at = command.lastIndexOf(" ") + 1;
+
+  const copy = () => {
+    navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div className={cn(CARD, "px-0 py-0")}>
+      <div className="flex h-9 items-center justify-between border-border border-b px-3.5">
+        <p className={CARD_LABEL}>Install</p>
+        <button
+          type="button"
+          onClick={copy}
+          aria-label={`Copy install command for ${slug}`}
+          className="-mr-1.5 inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-muted-foreground text-xs transition-[background-color,color,transform] duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-[0.96] motion-reduce:transition-none"
+        >
+          <span
+            key={copied ? "copied" : "copy"}
+            className="inline-flex items-center gap-1.5 animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none"
+          >
+            {copied ? (
+              <>
+                <CheckIcon className="size-3.5 text-primary" />
+                Copied
+              </>
+            ) : (
+              <CopyIcon className="size-3.5" />
+            )}
+          </span>
+        </button>
+      </div>
+      <div className="relative">
+        <p className="overflow-x-auto whitespace-nowrap px-3.5 py-3 font-mono text-[0.8125rem] leading-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="select-none text-muted-foreground/60">$ </span>
+          <span className="text-muted-foreground">{command.slice(0, at)}</span>
+          <span className="text-foreground">{command.slice(at)}</span>
+        </p>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-br-xl bg-gradient-to-l from-background/80 to-transparent"
+        />
+      </div>
     </div>
   );
 }

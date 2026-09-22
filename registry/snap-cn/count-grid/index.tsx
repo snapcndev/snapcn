@@ -336,6 +336,25 @@ const OWN_CARDS = STILLS.flatMap((s, i) => [
 // index 0, 2, 4 … are ART by construction, and the five seed cells only ever
 // reach the first `SEED.length` of them.
 
+/**
+ * A root-relative asset is a `public/` file. Only the site's own Player serves
+ * it at that path; Remotion Studio and a render know its URL through
+ * `staticFile()` alone — so every environment but the Player rewrites it.
+ */
+function resolveSrc(src: string): string {
+  const isLocal = src.startsWith("/") && !src.startsWith("//");
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
+    return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
+  }
+}
+
 export function CountGrid({
   from = "5",
   to = "500",
@@ -493,7 +512,7 @@ export function CountGrid({
           >
             {c.src ? (
               <Img
-                src={c.src}
+                src={resolveSrc(c.src)}
                 style={{
                   width: cardW,
                   height: cardH,

@@ -35,7 +35,8 @@ export interface TextHighlightSpringConfig {
 }
 
 /**
- * Rewrite root-relative assets through staticFile only while rendering.
+ * Rewrite root-relative assets through staticFile everywhere but the Player —
+ * Remotion Studio serves `public/` through it as much as a render does.
  *
  * A page serves `/logo/mark.png` from `public/`; a Remotion bundle does not —
  * it 404s, and `<Img>` turns that into a `cancelRender` that kills the whole
@@ -45,10 +46,16 @@ export interface TextHighlightSpringConfig {
  */
 function resolveSrc(src: string): string {
   const isLocal = src.startsWith("/") && !src.startsWith("//");
-  if (isLocal && getRemotionEnvironment().isRendering) {
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
     return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
   }
-  return src;
 }
 
 /** The lighter of two colours — a specular highlight follows the light, not the mode. */

@@ -12,6 +12,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  parseColor,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -249,13 +250,19 @@ function PersonIcon({ color, size }: { color: string; size: number }) {
   );
 }
 
-/** Rewrite root-relative assets through staticFile only while rendering. */
+/** Rewrite root-relative assets through staticFile everywhere but the Player. */
 function resolveSrc(src: string): string {
   const isLocal = src.startsWith("/") && !src.startsWith("//");
-  if (isLocal && getRemotionEnvironment().isRendering) {
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
     return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
   }
-  return src;
 }
 
 /**
@@ -400,6 +407,9 @@ export function FollowerRush({
   const tokens = useSnapCnTheme(theme, mode);
   const face = resolveFont(fontFamily ?? tokens.fontFamily) ?? FONT_FAMILY;
   const t = paletteFrom(tokens);
+  // A transparent page asks for no page. The scene paints the card surface, so
+  // it is dropped here rather than through the token; the rings keep it.
+  const bare = parseColor(tokens.background).alpha === 0;
   const accent = accentColor ?? tokens.primary;
   const pool = followers.length > 0 ? followers : SAMPLE_FOLLOWERS;
   const isVertical = orientation === "vertical";
@@ -525,7 +535,7 @@ export function FollowerRush({
   const SLOTS = MAX + 2; // two extra so the scroll never opens an edge gap
 
   return (
-    <AbsoluteFill style={{ background: t.bg }}>
+    <AbsoluteFill style={{ background: bare ? "transparent" : t.bg }}>
       <div
         style={{
           position: "absolute",

@@ -60,7 +60,7 @@ export interface TypeMorphProps {
    * as a leftover rather than as a beat.
    */
   wordOnFlood?: boolean;
-  /** Caret and freshly-typed glyphs. Defaults to the theme's accent. */
+  /** Accepted, not drawn: the caret and fresh glyphs take the ink colour. */
   accent?: string;
   /**
    * Two flat colours to flood the frame with at the end, or `false` to end on
@@ -175,13 +175,7 @@ function pairGlyphs(from: string, to: string): (number | null)[] {
 }
 
 /** Per-glyph x offsets of a string, measured in the real face at the real size. */
-function useGlyphOffsets(
-  strings: string[],
-  fontSize: number,
-  face: string,
-  /** Glyphs before this index in string 0 are rendered at 400, the rest at 700. */
-  _regularUntil: number,
-) {
+function useGlyphOffsets(strings: string[], fontSize: number, face: string) {
   const ref = useRef<HTMLDivElement>(null);
   const [offsets, setOffsets] = useState<number[][] | null>(null);
   // Every frame of a render is a fresh mount, so a plain effect + state lets the
@@ -269,7 +263,6 @@ export function TypeMorph({
   morphTo = "something more.",
   finally_ = "more.",
   wordOnFlood = false,
-  accent,
   background,
   ink,
   reveal,
@@ -283,7 +276,6 @@ export function TypeMorph({
   const { height, width } = useVideoConfig();
   const t = useSnapCnTheme(theme, mode);
   const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS;
-  const _hot = accent ?? t.primary;
   const paper = background ?? t.background;
   const type = ink ?? t.foreground;
   const fontSize = height * size;
@@ -293,7 +285,6 @@ export function TypeMorph({
     [typed, emphasis, morphTo, finally_],
     fontSize,
     face,
-    lead.length,
   );
 
   // ── the timeline ──────────────────────────────────────────────────────────
