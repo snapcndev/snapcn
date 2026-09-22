@@ -76,34 +76,69 @@ export async function GET(
   // them is a product decision, and it lives in the plan table.
   if (!plan || !PLANS[plan].components) {
     /**
-     * 402, not 403. The shadcn CLI prints the body, so this string is the whole
-     * upsell — read in a terminal by someone who has already decided they want
-     * this component, which is the best moment this product ever gets.
+     * The upsell — read in a terminal by someone who has already decided they
+     * want this component, which is the best moment this product ever gets.
      *
      * It names the price and the deadline, and links straight to the plans.
      * It used to name neither, on the grounds that a string printed into a
-     * terminal cannot be edited afterwards and the price moves on a date — and
-     * 48 people a day read it without one of them reaching the pricing page.
-     * The string is built per request from `CATALOGUE_PRICE`, and it carries
-     * its own date, so an old copy in someone's scrollback dates itself.
+     * terminal cannot be edited afterwards and the price moves on a date. The
+     * string is built per request from `CATALOGUE_PRICE`, and it carries its
+     * own date, so an old copy in someone's scrollback dates itself.
      *
      * `?ref=cli` is read by `NewsletterForm` in preference to its own default,
      * so an address won here is attributable to a failed install rather than to
-     * somebody scrolling the landing page. The extra fields are for agents,
-     * which read the body rather than the CLI's one-line rendering of it.
+     * somebody scrolling the landing page.
      */
-    const page = ITEM_BY_SLUG.get(name)?.href ?? "/docs/pricing";
+    const page = `https://snapcn.dev${ITEM_BY_SLUG.get(name)?.href ?? "/docs/pricing"}?ref=cli`;
+    const pricing = "https://snapcn.dev/docs/pricing?ref=cli#plans";
+    const offer = `Every Pro component, the MCP server and ${CATALOGUE_PROMISE.templates} templates: ${CATALOGUE_PRICE.annual}/yr or ${CATALOGUE_PRICE.lifetime} once${
+      earlyBirdDaysLeft() > 0
+        ? `, early-bird until ${EARLY_BIRD.endsOnShort}`
+        : ""
+    }.${septemberBonusActive() ? ` Buy by ${SEPTEMBER_BONUS.endsOnShort} and the Commercial licence is free.` : ""}`;
+
+    /**
+     * The shadcn CLI never prints an error body. Every non-2xx renders as
+     * "Failed to fetch from registry (402) … Check your request parameters"
+     * (shadcn 4.21.0 files the body under `responseBody` and prints only its
+     * own string), so for its whole life this upsell read as a broken registry:
+     * ~120 CLI users a month hit it and one reached the site.
+     *
+     * The one thing the CLI does print is a registry item's `docs`, after a
+     * successful install. So the CLI gets a 200 — an item with no files whose
+     * `docs` is the upsell. Nothing lands in their project, and a free
+     * component named in the same `add` now installs instead of failing with it.
+     *
+     * Only the CLI, which sends `User-Agent: shadcn`. Everything else keeps the
+     * 402: the MCP server reads that status as "this key was refused", and
+     * agents read the JSON body below.
+     */
+    if (/^shadcn\b/i.test(req.headers.get("user-agent") ?? "")) {
+      return Response.json(
+        {
+          name,
+          type: "registry:component",
+          files: [],
+          docs: [
+            `@snapcn/${name} is a Pro component — nothing was installed.`,
+            offer,
+            `Buy:         ${pricing}`,
+            `Watch it:    ${page}`,
+            `Have a key?  https://snapcn.dev/account`,
+          ].join("\n"),
+        },
+        // Depends on the key, so never shared or edge-cached.
+        { headers: { "cache-control": "private, no-store" } },
+      );
+    }
+
     return Response.json(
       {
         error: "pro_component",
         component: name,
-        message: `@snapcn/${name} is a Pro component. Every Pro component, the MCP server and ${CATALOGUE_PROMISE.templates} templates: ${CATALOGUE_PRICE.annual}/yr or ${CATALOGUE_PRICE.lifetime} once${
-          earlyBirdDaysLeft() > 0
-            ? `, early-bird until ${EARLY_BIRD.endsOnShort}`
-            : ""
-        }.${septemberBonusActive() ? ` Buy by ${SEPTEMBER_BONUS.endsOnShort} and the Commercial licence is free.` : ""} Buy: https://snapcn.dev/docs/pricing?ref=cli#plans · Watch it: https://snapcn.dev${page}?ref=cli`,
-        page: `https://snapcn.dev${page}?ref=cli`,
-        pricing: "https://snapcn.dev/docs/pricing?ref=cli#plans",
+        message: `@snapcn/${name} is a Pro component. ${offer} Buy: ${pricing} · Watch it: ${page}`,
+        page,
+        pricing,
         keys: "https://snapcn.dev/account",
         free: `${GALLERY_COUNT} components are free and install without a key: https://snapcn.dev/docs/components`,
       },
