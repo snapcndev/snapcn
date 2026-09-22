@@ -25,10 +25,12 @@ export const useTheme = () => mix("red", "blue");
   {
     path: "registry/snap-cn-ui/core/color.ts",
     content: `// snapcn UI Core · snapcn
-import { interpolate } from "culori";
+import { formatHex, interpolate } from "culori";
 export function mix(a: string, b: string) {
   return interpolate([a, b])(0.5);
 }
+/** Arrives with the file, read by nothing in this component. */
+export const toHex = (c: string) => formatHex(c);
 `,
   },
   {
@@ -44,6 +46,7 @@ import { interpolate } from "remotion";
 import { mix, useTheme } from "@/lib/snap-cn-ui";
 
 export const SPEED = 2;
+export const leftoverFrames = () => SPEED * 10;
 export interface DemoProps {
   at: number;
 }
@@ -79,6 +82,8 @@ describe("elementSource", () => {
       code.indexOf("const useTheme"),
     );
     expect(code).not.toMatch(/unused|use client|export default/);
+    // What nothing reads is an error under a template's `noUnusedLocals`.
+    expect(code).not.toMatch(/toHex|formatHex|leftoverFrames/);
     expect(element?.modules).toEqual(["remotion", "culori"]);
   });
 
