@@ -13,6 +13,7 @@ import {
 import { inputStyleContext } from "@/components/snap-cn/input";
 import {
   mixOklch,
+  parseColor,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -752,6 +753,8 @@ export function PromptSend({
   // token is walked toward the background through the system's own mix rather
   // than by picking a lighter grey (design-system rule 3b).
   const hairline = mixOklch(ui.idleBorder, t.background, 0.1);
+  // A transparent page asks for no page: the wash is the page's, so it goes too.
+  const bare = parseColor(t.background).alpha === 0;
   const surface = withAlpha(t.card, 0.94);
   const glassy = withAlpha(t.card, 0.52);
   const sendIdle = mixOklch(t.foreground, t.card, 0.55);
@@ -796,21 +799,23 @@ export function PromptSend({
               `background` and `accentColor` (design-system rule 5). Alpha, not
               `mixOklch`: hue interpolation from a near-neutral page colour to
               blue takes the short way round, through green. */}
-          <div
-            style={{
-              position: "absolute",
-              left: -OX,
-              top: -OY,
-              width: REF_W * BLEED,
-              height: REF_H * BLEED,
-              background: t.background,
-              backgroundImage: [
-                `radial-gradient(${0.96 * REF_W}px ${0.8 * REF_H}px at ${OX + 0.06 * REF_W}px ${OY + 0.98 * REF_H}px, ${withAlpha(t.background, 0.9)} 0%, transparent 62%)`,
-                `radial-gradient(${0.74 * REF_W}px ${0.62 * REF_H}px at ${OX + 0.1 * REF_W}px ${OY + 0.46 * REF_H}px, ${withAlpha(t.card, 0.42)} 0%, transparent 66%)`,
-                `linear-gradient(215deg, ${withAlpha(accent, 0.5)} 0%, ${withAlpha(accent, 0.28)} 52%, ${withAlpha(accent, 0.14)} 100%)`,
-              ].join(","),
-            }}
-          />
+          {!bare && (
+            <div
+              style={{
+                position: "absolute",
+                left: -OX,
+                top: -OY,
+                width: REF_W * BLEED,
+                height: REF_H * BLEED,
+                background: t.background,
+                backgroundImage: [
+                  `radial-gradient(${0.96 * REF_W}px ${0.8 * REF_H}px at ${OX + 0.06 * REF_W}px ${OY + 0.98 * REF_H}px, ${withAlpha(t.background, 0.9)} 0%, transparent 62%)`,
+                  `radial-gradient(${0.74 * REF_W}px ${0.62 * REF_H}px at ${OX + 0.1 * REF_W}px ${OY + 0.46 * REF_H}px, ${withAlpha(t.card, 0.42)} 0%, transparent 66%)`,
+                  `linear-gradient(215deg, ${withAlpha(accent, 0.5)} 0%, ${withAlpha(accent, 0.28)} 52%, ${withAlpha(accent, 0.14)} 100%)`,
+                ].join(","),
+              }}
+            />
+          )}
 
           {/* ---- The glass panel */}
           <div

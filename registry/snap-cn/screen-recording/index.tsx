@@ -90,7 +90,7 @@ export interface ScreenRecordingProps {
    * `<OffthreadVideo>` and anything else renders as an `<Img>`, so a single
    * screenshot takes exactly the same camera track. A root-relative path
    * (`/recordings/checkout.mp4`) is served by Next in the Player and rewritten
-   * through `staticFile()` in a render; http(s)/data/blob URLs pass through.
+   * through `staticFile()` in Remotion Studio and a render; http(s)/data/blob URLs pass through.
    */
   src: string;
   /** Browser and OS chrome to cut away, as a fraction of each edge of the source. */
@@ -417,16 +417,22 @@ const pct = (value: number, of: number) => `${(value / of) * 100}%`;
 
 /**
  * A root-relative asset (`/recordings/checkout.mp4`) is served at the origin
- * root by Next in the Player, but a server render serves `public/` through
- * `staticFile()` — so rewrite local paths only while rendering, and pass
+ * root by Next in the Player, but Remotion Studio and a render serve `public/` through
+ * `staticFile()` alone — so rewrite local paths everywhere but the Player, and pass
  * http(s)/data/blob URLs straight through.
  */
 function resolveSrc(src: string): string {
   const isLocal = src.startsWith("/") && !src.startsWith("//");
-  if (isLocal && getRemotionEnvironment().isRendering) {
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
     return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
   }
-  return src;
 }
 
 // --- Component ------------------------------------------------------------

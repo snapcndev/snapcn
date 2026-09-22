@@ -4,13 +4,16 @@ import { useMemo, useState } from "react";
 import {
   AbsoluteFill,
   Easing,
+  getRemotionEnvironment,
   Img,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 import {
   mixOklch,
+  parseColor,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -171,6 +174,25 @@ export function sizeScale(
 }
 
 /**
+ * A root-relative asset is a `public/` file. Only the site's own Player serves
+ * it at that path; Remotion Studio and a render know its URL through
+ * `staticFile()` alone — so every environment but the Player rewrites it.
+ */
+function resolveSrc(src: string): string {
+  const isLocal = src.startsWith("/") && !src.startsWith("//");
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
+    return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
+  }
+}
+
+/**
  * One card face: the editorial gradient is always painted as the base layer,
  * and a photo (when provided) overlays it. A failed load flips to `errored` so
  * the gradient shows through — crucially, the `onError` handler also stops
@@ -183,7 +205,7 @@ function OrbitTile({ src, fill }: { src: string | undefined; fill: string }) {
       <div style={{ position: "absolute", inset: 0, backgroundImage: fill }} />
       {src && !errored ? (
         <Img
-          src={src}
+          src={resolveSrc(src)}
           crossOrigin="anonymous"
           onError={() => setErrored(true)}
           style={{
@@ -343,7 +365,9 @@ export function OrbitGallery({
           backdrop blur re-blurred every moving card each frame and froze the
           player. The slight softness behind the text comes from the small
           center cards' own light blur (see `centerBlur` in the card loop). */}
-      {title || subtitle || buttonLabel ? (
+      {/* The scrim deepens the page behind the lockup; with no page there is
+          nothing to deepen, and on a transparent one it would be black. */}
+      {(title || subtitle || buttonLabel) && parseColor(stage).alpha !== 0 ? (
         <div
           style={{
             position: "absolute",

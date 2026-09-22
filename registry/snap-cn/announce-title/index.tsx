@@ -58,6 +58,12 @@ export interface AnnounceTitleProps {
   /** Where the tagline settles once the white has swept through it. */
   taglineColor?: string;
   /**
+   * The eyebrow and the macro line, drawn white for the dark shots they sit
+   * on. With the shots' colours set to transparent — the scene as an overlay —
+   * they want ink that reads on whatever is under them.
+   */
+  inkColor?: string;
+  /**
    * The mark the closing line is led by, as an SVG path drawn in a
    * `0 0 100 100` box. Pass your own logo's path, or `""` for no mark at all.
    */
@@ -604,12 +610,14 @@ function RecedingPlane({
   width,
   height,
   fontSize,
+  ink,
 }: {
   text: string;
   frame: number;
   width: number;
   height: number;
   fontSize: number;
+  ink: string;
 }) {
   const face = useSnapCnTheme().fontFamily ?? SANS;
   const mag = sample(PLANE_MAG, frame);
@@ -628,7 +636,7 @@ function RecedingPlane({
           <div
             style={{
               ...lineStyle(fontSize * PLANE_BASE, EYEBROW_TRACK, face),
-              color: "#ffffff",
+              color: ink,
               transform: `rotateX(${rake}deg)`,
             }}
           >
@@ -690,12 +698,14 @@ function EyebrowLine({
   width,
   height,
   fontSize,
+  ink,
 }: {
   text: string;
   frame: number;
   width: number;
   height: number;
   fontSize: number;
+  ink: string;
 }) {
   const scale =
     1 +
@@ -709,7 +719,7 @@ function EyebrowLine({
       baseline={EYEBROW_BASELINE}
       height={height}
       style={{
-        color: "#ffffff",
+        color: ink,
         display: "flex",
         transformOrigin: "50% 100%",
         transform: `translateY(${PIVOT_LIFT * fontSize * (scale - 1)}px) scale(${scale})`,
@@ -864,12 +874,14 @@ function MacroShot({
   frame,
   width,
   height,
+  ink,
 }: {
   tagline: string;
   symbol: SymbolStyle;
   frame: number;
   width: number;
   height: number;
+  ink: string;
 }) {
   const face = useSnapCnTheme().fontFamily ?? SANS;
   const pan = (macroPan(frame) * width) / REF_W;
@@ -883,7 +895,7 @@ function MacroShot({
         <div
           style={{
             ...lineStyle(fontSize, TAGLINE_TRACK, face),
-            color: "#ffffff",
+            color: ink,
             // The percentage is of the line's own width, so the hold lands on
             // the same part of any sentence; the px is the camera.
             transform: `translateX(${width / 2 + pan}px) translateX(${-MACRO_ANCHOR * 100}%)`,
@@ -1102,6 +1114,7 @@ export function AnnounceTitle({
   glowColor = "#08ff4b",
   glowStrength = 0.139,
   taglineColor = "#f2f8ff",
+  inkColor = "#ffffff",
   symbolPath = MARK_PATH,
   symbolColors,
   symbolScale = 1,
@@ -1163,6 +1176,7 @@ export function AnnounceTitle({
                 width={width}
                 height={height}
                 fontSize={eyebrowSize}
+                ink={inkColor}
               />
             )}
           </Shutter>
@@ -1188,6 +1202,7 @@ export function AnnounceTitle({
                 width={width}
                 height={height}
                 fontSize={eyebrowSize}
+                ink={inkColor}
               />
             )}
           </Shutter>
@@ -1224,6 +1239,7 @@ export function AnnounceTitle({
             frame={frame}
             width={width}
             height={height}
+            ink={inkColor}
           />
         ) : (
           <ClosingShot

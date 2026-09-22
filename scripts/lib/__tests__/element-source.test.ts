@@ -87,6 +87,40 @@ describe("elementSource", () => {
     expect(element?.modules).toEqual(["remotion", "culori"]);
   });
 
+  it("inlines the components it builds on, when it has them", () => {
+    const input = {
+      path: "registry/snap-cn-ui/input/index.tsx",
+      content: `import { cn } from "@/lib/utils";
+import { mix } from "@/lib/snap-cn-ui";
+const SPEED = 1;
+export const surface = () => mix("a", "b") + SPEED;
+export function Input() {
+  return <div className={cn("x")} />;
+}
+`,
+    };
+    const card = `import { surface } from "@/components/snap-cn/input";
+const SPEED = 2;
+export const Card = () => <div>{surface() + SPEED}</div>;
+`;
+    const deps = { "@/components/snap-cn/input": input };
+    const code = elementSource(card, "Card", lib, deps)?.sourceCode ?? "";
+
+    expect(code).toContain("const surface = () =>");
+    // Its helper yields the name to the component's.
+    expect(code).toContain("const SPEEDInput = 1;");
+    expect(code).toContain('mix("a", "b") + SPEEDInput');
+    // `Input` and the `cn` only it used go, so `@/lib/utils` is never needed.
+    expect(code).not.toMatch(/function Input|cn\(|@\/lib\/utils|@\/components/);
+
+    const usesInput = `import { Input } from "@/components/snap-cn/input";
+export const Form = () => <Input />;
+`;
+    expect(() => elementSource(usesInput, "Form", lib, deps)).toThrow(
+      /not inlined, still used: cn/,
+    );
+  });
+
   it("leaves a component built on another component to the CLI", () => {
     const composite = `import { Input } from "@/components/snap-cn/input";
 export const Form = () => <Input />;

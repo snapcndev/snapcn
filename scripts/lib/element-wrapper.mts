@@ -32,6 +32,13 @@ export interface Studio {
    * bottom, keeps its stage and the box crops it to the content, centred.
    */
   stage?: readonly [number, number];
+  /** Where the box sits in the stage, top-left, in px. Default: centred. */
+  at?: readonly [number, number];
+  /**
+   * A scene prop under another name, `{ element: scene }` — for a prop whose
+   * name the Sequence already owns (`from`).
+   */
+  alias?: Record<string, string>;
   /** The controls the Inspector shows. Style switches and timing internals stay in code. */
   controls: readonly string[];
   /**
@@ -151,11 +158,22 @@ export function elementDefaults(
   site: string,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [key, c] of Object.entries(controls)) {
-    if (studio.drop?.includes(key)) continue;
+  const renamed = Object.fromEntries(
+    Object.entries(studio.alias ?? {}).map(([el, scene]) => [scene, el]),
+  );
+  for (const [sceneKey, c] of Object.entries(controls)) {
+    if (studio.drop?.includes(sceneKey)) continue;
+    const key = renamed[sceneKey] ?? sceneKey;
     let value: unknown = c.default;
-    if (typeof value === "string" && /^\/(?!\/)/.test(value)) {
-      value = `${site}${value}`;
+    // A site-relative asset, or a `|` list of them (avatars, card images).
+    if (
+      typeof value === "string" &&
+      value.split("|").every((p) => /^\/(?!\/)/.test(p.trim()))
+    ) {
+      value = value
+        .split("|")
+        .map((p) => `${site}${p.trim()}`)
+        .join("|");
     }
     if (c.type === "select" && numeric(c.options)) value = Number(value);
     // An unset colour or image is "" to the customizer, undefined to the component.
@@ -195,7 +213,10 @@ export function studioWrapper({
 }): string {
   const [w, h] = studio.box;
   const [sw, sh] = studio.stage ?? studio.box;
+  const [ax, ay] = studio.at ?? [(sw - w) / 2, (sh - h) / 2];
   const list = studio.list ?? [];
+  const alias = studio.alias ?? {};
+  const aliased = Object.keys(alias);
   const schema = studio.controls.map((key) => {
     // A list is a prop the customizer never had a control for.
     const c: ControlType | undefined = list.includes(key)
@@ -204,18 +225,30 @@ export function studioWrapper({
           default: "",
           label: `${key[0].toUpperCase()}${key.slice(1)} (comma separated)`,
         }
-      : controls[key];
+      : controls[alias[key] ?? key];
     if (!c) throw new Error(`${name}: no control ${key}`);
     return `  ${key}: ${field(c, defaults[key])},`;
   });
-  const props = list.length
-    ? `Omit<ComponentProps<typeof ${scene}>, ${list.map(lit).join(" | ")}> & {\n${list.map((k) => `    readonly ${k}?: string;`).join("\n")}\n  }`
+  const omitted = [...list, ...aliased.map((k) => alias[k])];
+  const added = [
+    ...list.map((k) => `    readonly ${k}?: string;`),
+    ...aliased.map(
+      (k) =>
+        `    readonly ${k}?: ComponentProps<typeof ${scene}>[${lit(alias[k])}];`,
+    ),
+  ];
+  const props = omitted.length
+    ? `Omit<ComponentProps<typeof ${scene}>, ${omitted.map(lit).join(" | ")}> & {\n${added.join("\n")}\n  }`
     : `ComponentProps<typeof ${scene}>`;
-  const split = list
-    .map((k) => ` ${k}={${k}?.split(",").map((w) => w.trim()).filter(Boolean)}`)
-    .join("");
-  const spread = list.length
-    ? `const { ${list.join(", ")}, ...rest } = { ...${name}Defaults, ...props };`
+  const split = [
+    ...list.map(
+      (k) => ` ${k}={${k}?.split(",").map((w) => w.trim()).filter(Boolean)}`,
+    ),
+    ...aliased.map((k) => ` ${alias[k]}={${k}}`),
+  ].join("");
+  const pulled = [...list, ...aliased];
+  const spread = pulled.length
+    ? `const { ${pulled.join(", ")}, ...rest } = { ...${name}Defaults, ...props };`
     : `const rest = { ...${name}Defaults, ...props };`;
 
   return `
@@ -315,7 +348,7 @@ const ${name}Inner = forwardRef<
         >
           ${
             studio.stage
-              ? `<div style={{ position: "absolute", left: ${(w - sw) / 2}, top: ${(h - sh) / 2}, width: ${sw}, height: ${sh} }}>
+              ? `<div style={{ position: "absolute", left: ${-ax}, top: ${-ay}, width: ${sw}, height: ${sh} }}>
             <${name}Fade>
               <${scene} key={key} {...rest}${split} />
             </${name}Fade>
@@ -404,6 +437,58 @@ export function hideLayers(source: string): string {
   let out = source;
   for (const pos of at.sort((a, b) => b - a)) {
     out = `${out.slice(0, pos)} showInTimeline={false}${out.slice(pos)}`;
+  }
+  return out;
+}
+
+/**
+ * The scene's parameter defaults, made the Element's. The wrapper passes every
+ * one of them, so the scene's own are never read — but they are what someone
+ * reading the installed file sees, and several of them are snapcn's: its mark,
+ * its roster, its posters. Pointing them at the Element's values makes the file
+ * say what it renders, and lets pruning drop the constants only they used.
+ * A literal where the value is one; the defaults object where it is data.
+ */
+export function adoptDefaults(
+  source: string,
+  scene: string,
+  name: string,
+  studio: Studio,
+  defaults: Record<string, unknown>,
+): string {
+  const file = ts.createSourceFile(
+    "element.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const fn = file.statements.find(
+    (s): s is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(s) && s.name?.text === scene,
+  );
+  const pattern = fn?.parameters[0]?.name;
+  if (!pattern || !ts.isObjectBindingPattern(pattern)) return source;
+  const byScene = Object.fromEntries(
+    Object.keys(defaults)
+      .filter((k) => !studio.list?.includes(k))
+      .map((k) => [studio.alias?.[k] ?? k, k]),
+  );
+  const edits: [number, number, string][] = [];
+  for (const el of pattern.elements) {
+    const key = (el.propertyName ?? el.name).getText();
+    const own = byScene[key];
+    if (!el.initializer || own === undefined) continue;
+    const value = defaults[own];
+    const text =
+      value !== null && typeof value === "object"
+        ? `${name}Defaults.${own}`
+        : JSON.stringify(value);
+    edits.push([el.initializer.getStart(), el.initializer.end, text]);
+  }
+  let out = source;
+  for (const [a, b, text] of edits.reverse()) {
+    out = out.slice(0, a) + text + out.slice(b);
   }
   return out;
 }

@@ -14,6 +14,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  parseColor,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -268,16 +269,21 @@ export function CardRail({
   // accent over a warm off-white mixed to a pale green.
   const from0 = stops[0] ?? mixOklch(t.primary, "#0b1f3d", 0.55);
   const to0 = stops[1] ?? mixOklch(t.primary, "#dceaff", 0.78);
+  // A theme with a transparent page asks for no page: no backdrop, so the rail
+  // sits on whatever is under it, and a heading in ink rather than mixed off it.
+  const bare = parseColor(t.background).alpha === 0;
 
   return (
     <AbsoluteFill
       style={
-        plate
-          ? { backgroundColor: t.background }
-          : { background: `linear-gradient(${ANGLE}deg, ${from0}, ${to0})` }
+        bare
+          ? undefined
+          : plate
+            ? { backgroundColor: t.background }
+            : { background: `linear-gradient(${ANGLE}deg, ${from0}, ${to0})` }
       }
     >
-      {plate && (
+      {plate && !bare && (
         <Plate
           src={plate}
           style={{ position: "absolute", inset: 0, objectFit: "cover" }}
@@ -306,7 +312,7 @@ export function CardRail({
               fontSize: HEAD_CAP * 1.38 * u,
               lineHeight: 1,
               fontWeight: 500,
-              color: mixOklch(to0, t.background, 0.62),
+              color: bare ? t.foreground : mixOklch(to0, t.background, 0.62),
             }}
           >
             {heading}
@@ -453,6 +459,25 @@ function Card({
 }
 
 /**
+ * A root-relative asset is a `public/` file. Only the site's own Player serves
+ * it at that path; Remotion Studio and a render know its URL through
+ * `staticFile()` alone — so every environment but the Player rewrites it.
+ */
+function resolveSrc(src: string): string {
+  const isLocal = src.startsWith("/") && !src.startsWith("//");
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
+    return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
+  }
+}
+
+/**
  * A picture that holds the render until it has actually loaded.
  *
  * Without it a frame can be captured before the image arrives and the card comes
@@ -464,15 +489,10 @@ function Card({
 function Plate({ src, style }: { src: string; style: CSSProperties }) {
   const [handle] = useState(() => delayRender(`card-rail: ${src}`));
   const release = useCallback(() => continueRender(handle), [handle]);
-  const local = src.startsWith("/") && !src.startsWith("//");
   return (
     // biome-ignore lint/performance/noImgElement: Remotion frame, not a Next route.
-    <img
-      src={
-        local && getRemotionEnvironment().isRendering
-          ? staticFile(src.replace(/^\/+/, ""))
-          : src
-      }
+    <img // eslint-disable-line @remotion/warn-native-media-tag -- onLoad releases the frame; <Img> hangs on some JPEGs
+      src={resolveSrc(src)}
       alt=""
       // Tailwind's preflight sets `img { max-width: 100% }`, which collapses an
       // image inside a shrink-to-fit box to zero pixels wide on the site while

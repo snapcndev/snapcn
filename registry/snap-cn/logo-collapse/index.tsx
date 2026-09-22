@@ -366,6 +366,25 @@ function Lockup({
 }
 
 /**
+ * A root-relative asset is a `public/` file. Only the site's own Player serves
+ * it at that path; Remotion Studio and a render know its URL through
+ * `staticFile()` alone — so every environment but the Player rewrites it.
+ */
+function resolveSrc(src: string): string {
+  const isLocal = src.startsWith("/") && !src.startsWith("//");
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
+    return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
+  }
+}
+
+/**
  * An image that holds the render until it has actually loaded.
  *
  * Without it a frame can be captured before the picture arrives and the card
@@ -377,15 +396,10 @@ function Lockup({
 function Plate({ src, style }: { src: string; style: CSSProperties }) {
   const [handle] = useState(() => delayRender(`logo-collapse: ${src}`));
   const release = useCallback(() => continueRender(handle), [handle]);
-  const local = src.startsWith("/") && !src.startsWith("//");
   return (
     // biome-ignore lint/performance/noImgElement: Remotion frame, not a Next route.
-    <img
-      src={
-        local && getRemotionEnvironment().isRendering
-          ? staticFile(src.replace(/^\/+/, ""))
-          : src
-      }
+    <img // eslint-disable-line @remotion/warn-native-media-tag -- onLoad releases the frame; <Img> hangs on some JPEGs
+      src={resolveSrc(src)}
       alt=""
       // Tailwind's preflight sets `img { max-width: 100% }`, which collapses an
       // image inside a shrink-to-fit box to zero pixels wide on the site while

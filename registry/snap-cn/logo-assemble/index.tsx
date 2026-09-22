@@ -181,13 +181,19 @@ export function namePose(frame: number): NamePose {
   };
 }
 
-/** Rewrite root-relative assets through staticFile only while rendering. */
+/** Rewrite root-relative assets through staticFile everywhere but the Player. */
 function resolveSrc(src: string): string {
   const isLocal = src.startsWith("/") && !src.startsWith("//");
-  if (isLocal && getRemotionEnvironment().isRendering) {
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
     return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
   }
-  return src;
 }
 
 export function LogoAssemble({

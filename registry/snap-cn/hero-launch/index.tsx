@@ -87,16 +87,22 @@ const FALL = Easing.bezier(0.5, 0, 0.9, 0.4);
 
 /**
  * A root-relative asset ("/showcase-assets/..") is served at the origin root by
- * Next in the Player, but a server render serves `public/` through
- * `staticFile()` — so rewrite local paths only while rendering, and pass
+ * Next in the Player, but Remotion Studio and a render serve `public/` through
+ * `staticFile()` alone — so rewrite local paths everywhere but the Player, and pass
  * http(s)/data/blob URLs straight through.
  */
 function resolveSrc(src: string): string {
   const isLocal = src.startsWith("/") && !src.startsWith("//");
-  if (isLocal && getRemotionEnvironment().isRendering) {
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
     return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
   }
-  return src;
 }
 
 /**
@@ -112,7 +118,7 @@ function HeroImage({ src, style }: { src: string; style: CSSProperties }) {
   const release = useCallback(() => continueRender(handle), [handle]);
   return (
     // biome-ignore lint/performance/noImgElement: Remotion frame, not a Next route.
-    <img
+    <img // eslint-disable-line @remotion/warn-native-media-tag -- onLoad releases the frame; <Img> hangs on some JPEGs
       src={resolveSrc(src)}
       alt=""
       style={style}

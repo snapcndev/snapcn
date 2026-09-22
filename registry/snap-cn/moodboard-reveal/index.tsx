@@ -12,6 +12,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  parseColor,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -268,13 +269,19 @@ function Card({ src, style }: { src: string; style: CSSProperties }) {
   );
 }
 
-/** Rewrite root-relative assets through staticFile only while rendering. */
+/** Rewrite root-relative assets through staticFile everywhere but the Player. */
 function resolveSrc(src: string): string {
   const isLocal = src.startsWith("/") && !src.startsWith("//");
-  if (isLocal && getRemotionEnvironment().isRendering) {
+  if (!isLocal || getRemotionEnvironment().isPlayer) return src;
+  // A value that already came out of staticFile() carries the static base
+  // (`/static-<hash>/…`); running it through again would prefix it twice.
+  const base = staticFile("_").slice(0, -2);
+  if (base && src.startsWith(`${base}/`)) return src;
+  try {
     return staticFile(src.replace(/^\/+/, ""));
+  } catch {
+    return src;
   }
-  return src;
 }
 
 /** Thin wireframe square/diamond marker that drifts and slowly rotates. */
@@ -352,10 +359,15 @@ export function MoodboardReveal({
     [0, 1],
     [darkColor ?? dark.background, lightColor ?? light.background],
   );
+  // Both pages transparent — the scene as an overlay — asks for no page: no
+  // dotted grid, and ink that reads on light footage from the first frame.
+  const bare =
+    parseColor(darkColor ?? dark.background).alpha === 0 &&
+    parseColor(lightColor ?? light.background).alpha === 0;
   // The marker is always the opposite page: light ink on the dark half, dark on
   // the light one.
   const markerColor =
-    bg < 0.5
+    bg < 0.5 && !bare
       ? withAlpha(light.background, 0.55)
       : withAlpha(dark.background, 0.5);
   const hero = heroImage ?? images[3] ?? images[0];
@@ -392,7 +404,7 @@ export function MoodboardReveal({
         style={{
           position: "absolute",
           inset: 0,
-          opacity: 1 - bg,
+          opacity: bare ? 0 : 1 - bg,
           backgroundImage: `radial-gradient(circle, ${withAlpha(
             light.background,
             0.07,
@@ -412,7 +424,7 @@ export function MoodboardReveal({
             justifyContent: "center",
             gap: 18,
             opacity: sentenceOp,
-            color: dark.foreground,
+            color: bare ? light.foreground : dark.foreground,
             fontSize: 28,
             fontWeight: 400,
             letterSpacing: "-0.01em",

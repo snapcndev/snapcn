@@ -9,6 +9,7 @@ import {
 } from "remotion";
 import {
   mixOklch,
+  parseColor,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -154,6 +155,16 @@ const TERM_COLORS: Record<TerminalLineType, string> = {
   error: "#F04438",
 };
 
+/**
+ * On a light page the two colours drawn for a dark one — near-white args and
+ * commands — would vanish, so they take ink instead; the rest read on either.
+ */
+const LIGHT_ARG_COLOR = "#1B2533";
+const LIGHT_TERM_COLORS: Record<TerminalLineType, string> = {
+  ...TERM_COLORS,
+  command: "#141414",
+};
+
 /** Functional color map kept for the public helper API. */
 const TYPE_COLORS: Record<TerminalLineType, string> = TERM_COLORS;
 
@@ -292,13 +303,14 @@ export function parseIntro(
 /** Colour a shell command: word 0 = manager, word 1 = subcommand, rest = args. */
 export function commandSpans(
   text: string,
+  argColor: string = CMD_ARG_COLOR,
 ): Array<{ text: string; color: string }> {
   const out: Array<{ text: string; color: string }> = [];
   let wordIndex = -1;
   for (const part of text.split(/(\s+)/)) {
     if (part.length === 0) continue;
     if (/^\s+$/.test(part)) {
-      out.push({ text: part, color: CMD_ARG_COLOR });
+      out.push({ text: part, color: argColor });
       continue;
     }
     wordIndex++;
@@ -307,7 +319,7 @@ export function commandSpans(
         ? CMD_MANAGER_COLOR
         : wordIndex === 1
           ? CMD_SUBCOMMAND_COLOR
-          : CMD_ARG_COLOR;
+          : argColor;
     out.push({ text: part, color });
   }
   return out;
@@ -465,12 +477,17 @@ export function TerminalSimulator({
   const { fps, width, height } = useVideoConfig();
   const { isRendering } = getRemotionEnvironment();
   const t = useSnapCnTheme(theme, mode ?? "dark");
+  const light = (mode ?? "dark") === "light";
   const face = resolveFont(fontFamily ?? t.fontFamily) ?? SANS_FAMILY;
   const panel = background ?? t.card;
   const hairline = borderColor ?? t.border;
   // One constant stage across the whole flythrough — the page, a shade under
   // the panel that floats on it.
-  const stage = mixOklch(t.background, "#000", 0.35);
+  // A transparent page asks for no page, so the stage under the panel goes too.
+  const stage =
+    parseColor(t.background).alpha === 0
+      ? "transparent"
+      : mixOklch(t.background, "#000", 0.35);
 
   const hasIntro = intro != null && intro.trim().length > 0;
   const hasCommand = command != null && command.text.trim().length > 0;
@@ -498,6 +515,7 @@ export function TerminalSimulator({
       borderColor={hairline}
       ink={t.foreground}
       inkMuted={t.mutedForeground}
+      light={light}
       fontSize={fontSize}
       charsPerFrame={charsPerFrame}
       chunkSize={chunkSize}
@@ -567,6 +585,7 @@ function WorldContent({
   borderColor,
   ink,
   inkMuted,
+  light,
   fontSize,
   charsPerFrame,
   chunkSize,
@@ -582,6 +601,7 @@ function WorldContent({
   borderColor: string;
   ink: string;
   inkMuted: string;
+  light: boolean;
   fontSize: number;
   charsPerFrame: number;
   chunkSize: number;
@@ -609,6 +629,7 @@ function WorldContent({
           borderColor={borderColor}
           ink={ink}
           inkMuted={inkMuted}
+          light={light}
           fontScale={s}
           charsPerFrame={charsPerFrame}
           chunkSize={chunkSize}
@@ -618,6 +639,7 @@ function WorldContent({
       )}
       <TerminalStation
         frame={frame}
+        light={light}
         lines={lines}
         fontScale={s}
         charsPerFrame={charsPerFrame}
@@ -696,6 +718,7 @@ function CommandStation({
   borderColor,
   ink,
   inkMuted,
+  light,
   fontScale,
   charsPerFrame,
   chunkSize,
@@ -708,12 +731,14 @@ function CommandStation({
   borderColor: string;
   ink: string;
   inkMuted: string;
+  light: boolean;
   fontScale: number;
   charsPerFrame: number;
   chunkSize: number;
   fps: number;
   typeStart: number;
 }) {
+  const argColor = light ? LIGHT_ARG_COLOR : CMD_ARG_COLOR;
   const managers = command.managers?.length ? command.managers : ["npm"];
   const revealed = chunkedReveal(
     Math.max(0, frame - typeStart),
@@ -723,7 +748,7 @@ function CommandStation({
   );
   const typingDone = revealed >= command.text.length;
   const blink = Math.floor((frame / fps) * 2) % 2 === 0;
-  const spans = commandSpans(command.text);
+  const spans = commandSpans(command.text, argColor);
 
   const tabFont = Math.round(20 * fontScale);
   const rowFont = Math.round(33 * fontScale);
@@ -809,7 +834,7 @@ function CommandStation({
               display: "inline-block",
               width: rowFont * 0.55,
               height: rowFont,
-              background: CMD_ARG_COLOR,
+              background: argColor,
               marginLeft: 2,
             }}
           />
@@ -822,6 +847,7 @@ function CommandStation({
 /** Station 3 — the green focus terminal. */
 function TerminalStation({
   frame,
+  light,
   lines,
   fontScale,
   charsPerFrame,
@@ -830,6 +856,7 @@ function TerminalStation({
   typeStart,
 }: {
   frame: number;
+  light: boolean;
   lines: TerminalLine[];
   fontScale: number;
   charsPerFrame: number;
@@ -885,7 +912,7 @@ function TerminalStation({
                 height: TERM_LINE_H,
                 display: "flex",
                 alignItems: "center",
-                color: TERM_COLORS[line.type],
+                color: (light ? LIGHT_TERM_COLORS : TERM_COLORS)[line.type],
                 fontSize: font,
                 whiteSpace: "pre",
               }}

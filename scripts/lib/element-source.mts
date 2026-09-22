@@ -24,9 +24,12 @@ import ts from "typescript";
  *   tests and config; once `export` is off, each of those is an error under
  *   the `noUnusedLocals` Remotion's templates type-check with.
  *
- * Returns null for a component that builds on another snapcn component: that
- * would mean flattening a component into a component, and the CLI stays the
- * honest path for those. Anything else it cannot do, it throws.
+ * A component that builds on another snapcn component (`@/components/snap-cn/
+ * input`) or on a sibling file of its own (`./timeline`) gets those inlined the
+ * same way, when `deps` has them; without, it returns null and stays on the CLI.
+ * An import a dependency makes that `deps` cannot supply (`@/lib/utils`) is
+ * allowed only if pruning removes everything that used it. Anything else it
+ * cannot do, it throws.
  */
 
 const LIB = "@/lib/snap-cn-ui";
@@ -64,27 +67,50 @@ export function elementSource(
   component: string,
   componentName: string,
   lib: RegistryFile[],
+  deps: Record<string, RegistryFile> = {},
 ): { sourceCode: string; modules: string[] } | null {
   const own = parse(
     component,
     (stmt, names) => names.includes(componentName) || isType(stmt),
   );
-  if (own.modules.some((m) => isLocal(m) && m !== LIB)) return null;
+  const inlined = (m: string) => isLocal(m) && m !== LIB;
+  if (own.modules.some((m) => inlined(m) && !deps[m])) return null;
   if (!own.declared.includes(componentName)) {
     throw new Error(`${componentName} is not declared in its own file`);
   }
 
-  const fromLib = own.bindings.filter((b) => b.module === LIB);
-  const aliased = fromLib.find((b) => b.local !== b.imported);
-  if (aliased) throw new Error(`aliased import from ${LIB}: ${aliased.text}`);
+  // The files it builds on, each after what it imports.
+  const depFiles: RegistryFile[] = [];
+  const unresolved = new Set<string>();
+  const seen = new Set<string>();
+  const visit = (module: string) => {
+    const file = deps[module];
+    if (!file) {
+      unresolved.add(module);
+      return;
+    }
+    if (seen.has(module)) return;
+    seen.add(module);
+    for (const m of parse(file.content, () => false).modules) {
+      if (inlined(m)) visit(m);
+    }
+    depFiles.push(file);
+  };
+  for (const m of own.modules) if (inlined(m)) visit(m);
+
+  const imported = [
+    own,
+    ...depFiles.map((f) => parse(f.content, () => false)),
+  ].flatMap((p) => p.bindings);
+  const aliased = imported.find(
+    (b) => isLocal(b.module) && b.local !== b.imported,
+  );
+  if (aliased) throw new Error(`aliased import from ${aliased.module}`);
 
   // The component claims its names first: it is the code people read and edit.
   const owner = new Map<string, string>();
   claim(own, owner);
-  const libParts = libFiles(
-    lib,
-    fromLib.map((b) => b.imported),
-  ).map((file) => {
+  const place = (file: RegistryFile, suffix: string) => {
     let text = file.content;
     for (;;) {
       const part = parse(text, () => false);
@@ -94,17 +120,60 @@ export function elementSource(
           owner.has(b.local) &&
           owner.get(b.local) !== origin(b),
       );
-      if (!clash) {
-        claim(part, owner, file.path);
-        return part;
+      if (clash) {
+        const alias =
+          camel(packageName(clash.module)) + capital(clash.imported);
+        if (owner.has(alias)) throw new Error(`cannot rename ${clash.local}`);
+        text = rename(text, clash.pos, alias);
+        continue;
       }
-      const alias = camel(packageName(clash.module)) + capital(clash.imported);
-      if (owner.has(alias)) throw new Error(`cannot rename ${clash.local}`);
-      text = rename(text, clash.pos, alias);
+      // A helper a dependency shares a name with is the dependency's to rename.
+      const taken = suffix && part.declared.find((n) => owner.has(n));
+      if (taken) {
+        const at = declaredAt(text, taken);
+        if (owner.has(taken + suffix) || at === null) {
+          throw new Error(`${file.path} redeclares ${taken}`);
+        }
+        text = rename(text, at, taken + suffix);
+        continue;
+      }
+      claim(part, owner, file.path);
+      return part;
     }
-  });
+  };
+  const libs = libFiles(
+    lib,
+    imported.filter((b) => b.module === LIB).map((b) => b.imported),
+  );
+  const deps2 = depFiles.map((f) => ({ ...f }));
+  // A lib helper the component also declares (its own `clamp01`) yields: it
+  // is renamed where it is declared, and in every inlined file that imports it
+  // — lib files through `./file`, dependencies through the lib's index.
+  for (const file of libs) {
+    const base = `./${path.basename(file.path, path.extname(file.path))}`;
+    for (const name of parse(file.content, () => false).declared) {
+      if (!own.declared.includes(name)) continue;
+      const to = `${name}Lib`;
+      const at = declaredAt(file.content, name);
+      if (at === null || owner.has(to)) {
+        throw new Error(`${file.path} redeclares ${name}`);
+      }
+      file.content = rename(file.content, at, to);
+      for (const f of [...libs, ...deps2]) {
+        const from = libs.includes(f) ? base : LIB;
+        const b = parse(f.content, () => false).bindings.find(
+          (x) => x.module === from && x.imported === name,
+        );
+        if (b) f.content = rename(f.content, b.pos, to);
+      }
+    }
+  }
+  const libParts = libs.map((file) => place(file, ""));
+  const depParts = deps2.map((file) =>
+    place(file, capital(camel(path.basename(path.dirname(file.path))))),
+  );
 
-  const parts = [own, ...libParts];
+  const parts = [own, ...libParts, ...depParts];
   const sourceCode = prune(
     [
       [...new Set(parts.flatMap((p) => p.header))].join("\n"),
@@ -117,11 +186,20 @@ export function elementSource(
         ],
       ),
       ...libParts.map((p) => p.body),
+      ...depParts.map((p) => p.body),
       own.body,
     ]
       .filter(Boolean)
       .join("\n\n"),
   );
+  const orphans = parts
+    .flatMap((p) => p.bindings)
+    .filter((b) => unresolved.has(b.module))
+    .map((b) => b.local);
+  const survivors = identifiers(sourceCode).filter((n) => orphans.includes(n));
+  if (survivors.length) {
+    throw new Error(`not inlined, still used: ${[...new Set(survivors)]}`);
+  }
   // Read back off the pruned file: a package only a dropped helper used is not
   // a dependency of this Element.
   const modules = [
@@ -176,6 +254,34 @@ function prune(text: string): string {
     text = text.slice(0, c.span.start) + c.newText + text.slice(end);
   }
   return text.trim();
+}
+
+/** Every identifier the file mentions, imports included. */
+function identifiers(text: string): string[] {
+  const out: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isIdentifier(node)) out.push(node.text);
+    ts.forEachChild(node, visit);
+  };
+  visit(source(text));
+  return out;
+}
+
+/** Where the top-level declaration of `name` is written, for a rename. */
+function declaredAt(text: string, name: string): number | null {
+  for (const stmt of source(text).statements) {
+    if (declaredNames(stmt).includes(name)) {
+      const at = nameStarts(stmt);
+      if (at.length === 1) return at[0];
+      const n = ts.isVariableStatement(stmt)
+        ? stmt.declarationList.declarations.find(
+            (d) => ts.isIdentifier(d.name) && d.name.text === name,
+          )?.name
+        : undefined;
+      return n ? n.getStart() : null;
+    }
+  }
+  return null;
 }
 
 /** Where each name a non-import statement declares is written. */
@@ -258,7 +364,10 @@ function libFiles(lib: RegistryFile[], names: string[]): RegistryFile[] {
     if (!base) throw new Error(`${LIB} does not export ${name}`);
     visit(base);
   }
-  return order.flatMap((base) => byBase.get(base) ?? []);
+  return order.flatMap((base) => {
+    const file = byBase.get(base);
+    return file ? [{ ...file }] : [];
+  });
 }
 
 const source = (text: string) =>

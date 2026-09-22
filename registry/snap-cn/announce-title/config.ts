@@ -60,6 +60,7 @@ export const announceTitleConfig: ComponentConfig = {
       label: "Glow strength",
     },
     taglineColor: { type: "color", default: "#f2f8ff", label: "Tagline ink" },
+    inkColor: { type: "color", default: "#ffffff", label: "Shot ink" },
     fontFamily: FONT_FAMILY_CONTROL,
   },
   durationInFrames: 170,
