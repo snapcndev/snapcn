@@ -177,6 +177,7 @@ const COMPONENT_QUERY: Record<string, string> = {
   "hero-launch": "Remotion product launch hero",
   "orbit-gallery": "Remotion orbit feature cards",
   "moodboard-reveal": "Remotion moodboard animation",
+  "reel-collage": "Remotion photo collage animation",
   "channel-thread": "Remotion Slack chat animation",
   "search-typing": "Remotion search bar animation",
   "prompt-send": "Remotion AI prompt typing animation",

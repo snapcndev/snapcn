@@ -557,6 +557,22 @@
       ]
     },
     {
+      "name": "reel-collage",
+      "type": "registry:component",
+      "docs": "Docs and props: https://snapcn.dev/docs/scenes/reel-collage?ref=cli \u2014 the page, glow and flush are props; the captions take the theme's foreground.",
+      "title": "Reel Collage",
+      "description": "Photo reel that shuts into a collage. A picture cuts through a quick reel between two captions and slowly zooms, then shuts like an eyelid while the captions fold into one stacked line; the copy swaps, the lines split, and a scattered collage blooms in around them on a peach flush. Every curve is fitted from a reference recording, frame by frame.",
+      "dependencies": ["remotion"],
+      "registryDependencies": ["https://snapcn.dev/r/snap-cn-ui.json"],
+      "files": [
+        {
+          "path": "reel-collage/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/reel-collage.tsx"
+        }
+      ]
+    },
+    {
       "name": "search-typing",
       "type": "registry:component",
       "docs": "Docs and props: https://snapcn.dev/docs/ai-input/search-typing?ref=cli \u2014 pass mode=\"dark\" if you are rendering onto a dark frame \u2014 these default to shadcn's light palette and a bare Remotion render is black.",

@@ -22,6 +22,7 @@ import { phoneFrameConfig } from "@/registry/snap-cn/phone-frame/config";
 import { promptSendConfig } from "@/registry/snap-cn/prompt-send/config";
 import { promptZoomConfig } from "@/registry/snap-cn/prompt-zoom/config";
 import { punchLinesConfig } from "@/registry/snap-cn/punch-lines/config";
+import { reelCollageConfig } from "@/registry/snap-cn/reel-collage/config";
 import { rosterGrantConfig } from "@/registry/snap-cn/roster-grant/config";
 import { screenRecordingConfig } from "@/registry/snap-cn/screen-recording/config";
 import { searchTypingConfig } from "@/registry/snap-cn/search-typing/config";
@@ -75,6 +76,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "prompt-send": promptSendConfig,
   "prompt-zoom": promptZoomConfig,
   "punch-lines": punchLinesConfig,
+  "reel-collage": reelCollageConfig,
   "roster-grant": rosterGrantConfig,
   "screen-recording": screenRecordingConfig,
   "search-typing": searchTypingConfig,
@@ -149,6 +151,9 @@ const MIN_SPEED_ONE = [
   // inside that same length, so the preview stops on a shot mid-move.
   "screen-recording",
   "cursor-track",
+  // The collage lands at frame ~76 of 96; under speed < 1 it is still
+  // blooming when the composition ends.
+  "reel-collage",
 ];
 for (const name of MIN_SPEED_ONE) {
   const config = CONFIGS[name];

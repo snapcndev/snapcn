@@ -389,6 +389,15 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     tile: "wide",
   },
   {
+    name: "Reel Collage",
+    description:
+      "A photo reel between two captions shuts like an eyelid, the captions fold into one line, then split as a collage blooms in on a peach flush",
+    category: "scenes",
+    href: "/docs/scenes/reel-collage",
+    added: "2026-09-23",
+    tile: "wide",
+  },
+  {
     name: "Search Typing",
     description:
       "A search field wider than the shot — it comes forward, types across its left half, then pages to its right half",
