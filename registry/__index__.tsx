@@ -24,6 +24,7 @@ import { PhoneFrame } from "@/registry/snap-cn/phone-frame";
 import { PromptSend } from "@/registry/snap-cn/prompt-send";
 import { PromptZoom } from "@/registry/snap-cn/prompt-zoom";
 import { PunchLines } from "@/registry/snap-cn/punch-lines";
+import { ReelCollage } from "@/registry/snap-cn/reel-collage";
 import { RosterGrant } from "@/registry/snap-cn/roster-grant";
 import { ScreenRecording } from "@/registry/snap-cn/screen-recording";
 import { SearchTyping } from "@/registry/snap-cn/search-typing";
@@ -108,6 +109,10 @@ const registry: Record<string, RegistryEntry> = {
   "prompt-send": { Component: PromptSend, config: CONFIGS["prompt-send"] },
   "prompt-zoom": { Component: PromptZoom, config: CONFIGS["prompt-zoom"] },
   "punch-lines": { Component: PunchLines, config: CONFIGS["punch-lines"] },
+  "reel-collage": {
+    Component: ReelCollage,
+    config: CONFIGS["reel-collage"],
+  },
   "roster-grant": { Component: RosterGrant, config: CONFIGS["roster-grant"] },
   "screen-recording": {
     Component: ScreenRecording,

@@ -92,6 +92,10 @@ export const RENDERED_DEMOS: readonly string[] = [
   // apart reads as a cascade only if all five land on the frame they are meant
   // to.
   "roster-grant",
+  // Eight shots cut every three to six frames under a type zoom, then the frame
+  // shuts in two frames of real travel. A cut shown a frame late is a stutter,
+  // and a live Player flashes each new shot before its image is decoded.
+  "reel-collage",
   "hero-launch",
   // Type is under a moving scale for most of the run — a receding 3D plane, a
   // 1.5x settle, then a whole line panned at 19x — and each of the first two

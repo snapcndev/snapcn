@@ -61,6 +61,7 @@ export const COLLECTIONS: Collection[] = [
     names: [
       "orbit-gallery",
       "moodboard-reveal",
+      "reel-collage",
       "card-rail",
       "gallery-push",
       "word-montage",

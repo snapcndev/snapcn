@@ -1,0 +1,86 @@
+---
+title: Reel Collage
+description: A photo reel between two captions shuts like an eyelid, the copy swaps, and a collage blooms in around the lines
+---
+
+<ComponentPreview name="reel-collage" />
+
+## Installation
+
+<InstallBlock name="reel-collage" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="reel-collage" />
+
+## Usage
+
+A three-beat scene, 2.6 seconds of motion then a hold:
+
+1. **Reel** — eight shots cut between `topLine` and `bottomLine` while everything slowly zooms.
+2. **Eyelid** — the frame shuts to a hairline and the captions fold into one stacked pair.
+3. **Collage** — the copy swaps to `swapTop` / `swapBottom`, the lines split apart, and six
+   pictures bloom in around them on a peach flush.
+
+Every curve was fitted on a reference recording's timestamps, so the timing is the
+reference's, frame for frame.
+
+```tsx
+// src/Root.tsx
+import { Composition, staticFile } from "remotion";
+import { ReelCollage } from "@/components/snap-cn/reel-collage";
+
+const Scene = () => (
+  <ReelCollage
+    topLine="The videos"
+    bottomLine="That you ship"
+    swapTop="Especially on"
+    swapBottom="Launch day"
+    slides={[staticFile("shots/1.jpg") /* …8 shots */]}
+    collage={[staticFile("shots/a.jpg") /* …6 pictures */]}
+  />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="ReelCollage"
+    component={Scene}
+    durationInFrames={96}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+Images take a root-relative `/…` path (served by Next in the Player, rewritten through
+`staticFile()` in a render) or an `http(s)`/data URL. Each is cropped to cover its frame,
+so any aspect works. Fewer than eight shots or six pictures are repeated.
+
+The reel cuts every three to six frames and the captions scale, which a live `<Player>`
+mispaces — so the docs preview plays the **rendered mp4**. Re-render after any change:
+`pnpm run render:previews --only reel-collage`.
+
+## Props
+
+<PropsTable
+  rows={[
+    { name: "topLine", type: "string", default: "\"The videos\"", description: "Caption above the reel" },
+    { name: "bottomLine", type: "string", default: "\"That you ship\"", description: "Caption below the reel" },
+    { name: "swapTop", type: "string", default: "\"Especially on\"", description: "First line after the swap — drifts up and left" },
+    { name: "swapBottom", type: "string", default: "\"Launch day\"", description: "Second line after the swap — drifts down and right" },
+    { name: "slides", type: "string[]", description: "The reel, in cut order. Eight shots; the last is the one that shuts. Defaults to snapcn's own scenes" },
+    { name: "collage", type: "string[]", description: "Six pictures, in slot order: left, centre, top right, bottom left, bottom right, centre right" },
+    { name: "background", type: "string", default: "\"#f5f4f2\"", description: "The page" },
+    { name: "glowColor", type: "string", default: "\"#dfe7e3\"", description: "The soft glow the scene sits on" },
+    { name: "flushColor", type: "string", default: "\"#fdc7bc\"", description: "The flush that rises around the edges as the collage blooms" },
+    { name: "textColor", type: "string", default: "theme foreground", description: "Caption ink" },
+    { name: "fontFamily", type: "string", description: "A label from fonts.ts or a family you have loaded. Defaults to Inter" },
+    { name: "speed", type: "number", default: "1", description: "Global playback multiplier" },
+    { name: "className", type: "string", description: "Optional className passed to the outer wrapper" },
+    { name: "theme", type: "Partial<SnapCnTheme>", description: "Design-system token overrides" },
+    { name: "mode", type: "\"light\" | \"dark\"", description: "Which end of the design system to resolve tokens against" },
+  ]}
+/>
