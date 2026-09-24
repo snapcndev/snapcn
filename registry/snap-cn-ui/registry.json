@@ -44,6 +44,11 @@
           "target": "lib/snap-cn-ui/motion.ts"
         },
         {
+          "path": "core/item.tsx",
+          "type": "registry:lib",
+          "target": "lib/snap-cn-ui/item.tsx"
+        },
+        {
           "path": "core/types.ts",
           "type": "registry:lib",
           "target": "lib/snap-cn-ui/types.ts"

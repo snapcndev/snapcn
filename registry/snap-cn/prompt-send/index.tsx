@@ -12,6 +12,7 @@ import {
 } from "remotion";
 import { inputStyleContext } from "@/components/snap-cn/input";
 import {
+  Item,
   mixOklch,
   parseColor,
   resolveFont,
@@ -947,33 +948,34 @@ export function PromptSend({
                       CHIP_EASE,
                     );
                     return (
-                      <div
-                        key={labels[i]}
-                        style={{
-                          boxSizing: "border-box",
-                          height: L.chipHeight,
-                          padding: `0 ${L.chipPadX}px`,
-                          borderRadius: L.chipHeight / 2,
-                          background: t.card,
-                          border: `1px solid ${hairline}`,
-                          color: t.foreground,
-                          fontFamily: face,
-                          fontWeight: 400,
-                          fontSize: chipFontSize,
-                          // The label rides low in the pill on the reference,
-                          // which is what stops a small label in a round pill
-                          // reading as though it were floating.
-                          paddingTop: chipFontSize * 0.17073,
-                          lineHeight: `${L.chipHeight - 4}px`,
-                          whiteSpace: "nowrap",
-                          textRendering: "geometricPrecision",
-                          opacity: p,
-                          transform: `translateY(${(1 - p) * CHIP_RISE}px)`,
-                          willChange,
-                        }}
-                      >
-                        {labels[i]}
-                      </div>
+                      <Item key={labels[i]} index={i}>
+                        <div
+                          style={{
+                            boxSizing: "border-box",
+                            height: L.chipHeight,
+                            padding: `0 ${L.chipPadX}px`,
+                            borderRadius: L.chipHeight / 2,
+                            background: t.card,
+                            border: `1px solid ${hairline}`,
+                            color: t.foreground,
+                            fontFamily: face,
+                            fontWeight: 400,
+                            fontSize: chipFontSize,
+                            // The label rides low in the pill on the reference,
+                            // which is what stops a small label in a round pill
+                            // reading as though it were floating.
+                            paddingTop: chipFontSize * 0.17073,
+                            lineHeight: `${L.chipHeight - 4}px`,
+                            whiteSpace: "nowrap",
+                            textRendering: "geometricPrecision",
+                            opacity: p,
+                            transform: `translateY(${(1 - p) * CHIP_RISE}px)`,
+                            willChange,
+                          }}
+                        >
+                          {labels[i]}
+                        </div>
+                      </Item>
                     );
                   })}
                 </div>

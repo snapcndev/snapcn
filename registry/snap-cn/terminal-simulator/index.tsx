@@ -8,6 +8,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   parseColor,
   resolveFont,
@@ -503,7 +504,9 @@ export function TerminalSimulator({
   const worldTransform = (c: CameraState) =>
     `translate(${width / 2 - c.x * c.z}px, ${height / 2 - c.y * c.z}px) scale(${c.z})`;
 
-  const world = (
+  // The world is drawn once per ghost and once under the camera; only the
+  // camera's copy hands its lines to Studio, so each line has one outline.
+  const world = (primary: boolean) => (
     <WorldContent
       face={face}
       frame={frame}
@@ -520,6 +523,7 @@ export function TerminalSimulator({
       charsPerFrame={charsPerFrame}
       chunkSize={chunkSize}
       hasIntro={hasIntro}
+      primary={primary}
     />
   );
 
@@ -552,7 +556,7 @@ export function TerminalSimulator({
               pointerEvents: "none",
             }}
           >
-            {world}
+            {world(false)}
           </div>
         ))}
 
@@ -567,7 +571,7 @@ export function TerminalSimulator({
           ...(isRendering ? {} : { willChange: "transform" }),
         }}
       >
-        {world}
+        {world(true)}
       </div>
     </div>
   );
@@ -591,6 +595,7 @@ function WorldContent({
   chunkSize,
   hasIntro,
   face,
+  primary,
 }: {
   frame: number;
   fps: number;
@@ -607,6 +612,7 @@ function WorldContent({
   chunkSize: number;
   hasIntro: boolean;
   face: string;
+  primary: boolean;
 }) {
   const s = fontSize / 18; // font scale, layout stays fixed
 
@@ -645,6 +651,7 @@ function WorldContent({
         charsPerFrame={charsPerFrame}
         chunkSize={chunkSize}
         fps={fps}
+        primary={primary}
         typeStart={
           command !== null ? TERM_TYPE_START : hasIntro ? CMD_ARRIVE - 6 : 6
         }
@@ -854,6 +861,7 @@ function TerminalStation({
   chunkSize,
   fps,
   typeStart,
+  primary,
 }: {
   frame: number;
   light: boolean;
@@ -863,6 +871,7 @@ function TerminalStation({
   chunkSize: number;
   fps: number;
   typeStart: number;
+  primary: boolean;
 }) {
   const starts = computeLineStarts(lines, charsPerFrame, chunkSize, typeStart);
   const font = Math.round(TERM_FONT * fontScale);
@@ -905,31 +914,38 @@ function TerminalStation({
             frame >= starts[index] &&
             (!typingDone || (isLast && blink));
           return (
-            <div
+            // The line Studio selects is its row: nothing moves a line on its
+            // own, the camera carries the whole column.
+            <Item
               // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional and never reorder
               key={index}
-              style={{
-                height: TERM_LINE_H,
-                display: "flex",
-                alignItems: "center",
-                color: (light ? LIGHT_TERM_COLORS : TERM_COLORS)[line.type],
-                fontSize: font,
-                whiteSpace: "pre",
-              }}
+              index={index}
+              primary={primary}
             >
-              <span>{line.text.substring(0, revealed)}</span>
-              {showCursor && (
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: font * 0.6,
-                    height: font * 0.95,
-                    background: TERM_CURSOR,
-                    marginLeft: 6,
-                  }}
-                />
-              )}
-            </div>
+              <div
+                style={{
+                  height: TERM_LINE_H,
+                  display: "flex",
+                  alignItems: "center",
+                  color: (light ? LIGHT_TERM_COLORS : TERM_COLORS)[line.type],
+                  fontSize: font,
+                  whiteSpace: "pre",
+                }}
+              >
+                <span>{line.text.substring(0, revealed)}</span>
+                {showCursor && (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: font * 0.6,
+                      height: font * 0.95,
+                      background: TERM_CURSOR,
+                      marginLeft: 6,
+                    }}
+                  />
+                )}
+              </div>
+            </Item>
           );
         })}
       </div>

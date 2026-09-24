@@ -9,6 +9,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   resolveFont,
   type SnapCnTheme,
@@ -646,39 +647,43 @@ export function AgentSteps({
                     : undefined,
                 }}
               >
-                <div
-                  style={{
-                    ...rowStyle,
-                    height: pitch,
-                    transform: isLast
-                      ? `translateX(${-50 * centred}%)`
-                      : undefined,
-                  }}
-                >
-                  {showCheck ? (
-                    <Check
-                      size={iconSize}
-                      color={accent}
-                      strokeWidth={CHECK_W}
-                    />
-                  ) : (
-                    <div style={{ opacity: isDone ? 1 : RUNNING_ICON }}>
-                      <Globe
+                {/* The step Studio selects is this inner row: it shrinks to
+                    the icon and label, where the outer row spans the column. */}
+                <Item index={i}>
+                  <div
+                    style={{
+                      ...rowStyle,
+                      height: pitch,
+                      transform: isLast
+                        ? `translateX(${-50 * centred}%)`
+                        : undefined,
+                    }}
+                  >
+                    {showCheck ? (
+                      <Check
                         size={iconSize}
-                        color={muted}
-                        strokeWidth={GLOBE_W}
-                        turn={isDone ? 0 : (fc / (SPIN_S * fps)) % 1}
+                        color={accent}
+                        strokeWidth={CHECK_W}
                       />
-                    </div>
-                  )}
-                  {/* The running label is *not* dimmed. Measured: the ref's
-                      running and done labels carry the same ink per glyph
-                      (ratio 1.04, which is the two strings' own width ratio).
-                      Only the icon is faint while a step runs. */}
-                  <span style={{ ...label, color: muted }}>
-                    {isDone ? step.done : step.running}
-                  </span>
-                </div>
+                    ) : (
+                      <div style={{ opacity: isDone ? 1 : RUNNING_ICON }}>
+                        <Globe
+                          size={iconSize}
+                          color={muted}
+                          strokeWidth={GLOBE_W}
+                          turn={isDone ? 0 : (fc / (SPIN_S * fps)) % 1}
+                        />
+                      </div>
+                    )}
+                    {/* The running label is *not* dimmed. Measured: the ref's
+                        running and done labels carry the same ink per glyph
+                        (ratio 1.04, which is the two strings' own width ratio).
+                        Only the icon is faint while a step runs. */}
+                    <span style={{ ...label, color: muted }}>
+                      {isDone ? step.done : step.running}
+                    </span>
+                  </div>
+                </Item>
               </div>
             );
           })}

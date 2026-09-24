@@ -154,7 +154,9 @@ export default function RemotionStudioPage() {
           {components.length} components work this way
         </h2>
         <p className="mt-3 max-w-lg text-pretty text-current/70">
-          Every free component. Pro components install with your key through the{" "}
+          Every free component, and the Pro ones marked Studio-ready in the
+          gallery, signed in with the account that owns them. Other Pro
+          components install with your key through the{" "}
           <Link
             href="/docs/getting-started/installation"
             className="text-foreground underline underline-offset-4"

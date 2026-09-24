@@ -15,6 +15,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   resolveFont,
   type SnapCnTheme,
@@ -261,20 +262,25 @@ export function HeroLaunch({
   return (
     <AbsoluteFill style={{ backgroundColor: t.background, fontFamily: face }}>
       <AbsoluteFill style={{ transform: `translateY(${groupY}px)` }}>
-        <div style={cardBox(leftX, leftOpacity)}>
-          <div style={zoom(leftScale)}>
-            {/* inner edge = right edge → pivot at 100% 50% */}
-            <div style={tilt(leftDeg, "100% 50%")}>
-              <ImageCard s={s} src={image1} t={t} />
+        {/* Each card is its own object to Remotion Studio (see `Item`). */}
+        <Item index={0}>
+          <div style={cardBox(leftX, leftOpacity)}>
+            <div style={zoom(leftScale)}>
+              {/* inner edge = right edge → pivot at 100% 50% */}
+              <div style={tilt(leftDeg, "100% 50%")}>
+                <ImageCard s={s} src={image1} t={t} />
+              </div>
             </div>
           </div>
-        </div>
-        <div style={cardBox(rightX, rightOpacity)}>
-          {/* inner edge = left edge → pivot at 0% 50% */}
-          <div style={tilt(TILT, "0% 50%")}>
-            <ImageCard s={s} src={image2} t={t} />
+        </Item>
+        <Item index={1}>
+          <div style={cardBox(rightX, rightOpacity)}>
+            {/* inner edge = left edge → pivot at 0% 50% */}
+            <div style={tilt(TILT, "0% 50%")}>
+              <ImageCard s={s} src={image2} t={t} />
+            </div>
           </div>
-        </div>
+        </Item>
       </AbsoluteFill>
 
       {/* Wide, clean edge dissolve — fades in after the full-screen opening. */}

@@ -39,6 +39,7 @@ import {
   renderedDemoSrc,
 } from "@/lib/rendered-demos";
 import STUDIO_ELEMENTS from "@/lib/studio-elements.json";
+import STUDIO_ELEMENTS_PRO from "@/lib/studio-elements-pro.json";
 import { cn } from "@/lib/utils";
 import { loadDocBody } from "./doc-body-action";
 import { morphToCard, SHARED_MEDIA } from "./shared-media-transition";
@@ -414,9 +415,11 @@ function OverlayBody({
                 )}
               </Link>
             )}
-            {/* Free ones only — a Pro component installs with a key, through
-                the CLI. */}
-            {!item.pro && STUDIO_ELEMENTS.includes(slug) && (
+            {/* A free Element for anyone; a Pro one for its owners, whose
+                session is what `/elements/<name>.json` checks. */}
+            {(item.pro
+              ? owns === true && STUDIO_ELEMENTS_PRO.includes(slug)
+              : STUDIO_ELEMENTS.includes(slug)) && (
               <StudioInstall name={slug} surface="gallery" block />
             )}
           </div>

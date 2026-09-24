@@ -2,7 +2,7 @@
 
 import { loadFont as loadSans } from "@remotion/google-fonts/Figtree";
 import type { CSSProperties } from "react";
-import { useCallback, useState } from "react";
+import { forwardRef, useCallback, useState } from "react";
 import {
   AbsoluteFill,
   continueRender,
@@ -13,6 +13,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   parseColor,
   resolveFont,
@@ -232,10 +233,10 @@ export function CardRail({
   const u = height / REF_H;
   const ox = (width - REF_W * u) / 2;
 
-  const shots = split(images);
-  const title = split(titles);
-  const note = split(notes);
-  const tag = split(tags);
+  const shots = columns(images);
+  const title = columns(titles);
+  const note = columns(notes);
+  const tag = columns(tags);
   const stops = split(backdrop);
   const only = stops.length === 1 ? (stops[0] ?? "") : "";
   const plate = only.startsWith("data:") || only.startsWith("/") ? only : "";
@@ -262,6 +263,20 @@ export function CardRail({
   // needs them, but nothing is drawn before the first one — a loop that wraps
   // round puts a card in the empty half of the frame the scene opens on.
   const first = Math.max(0, Math.floor((travelled - offset) / pitch));
+  // The rail can show one card twice. Studio outlines the copy nearest the
+  // middle of the frame; the other is only a picture of it.
+  const nearest = new Map<number, number>();
+  for (let n = 0; n < span; n++) {
+    const i = first + n;
+    const k = ((i % shots.length) + shots.length) % shots.length;
+    const d = Math.abs(i * pitch - travelled + offset - (REF_W - CARD_W) / 2);
+    const held = nearest.get(k);
+    const dHeld =
+      held === undefined
+        ? Number.POSITIVE_INFINITY
+        : Math.abs(held * pitch - travelled + offset - (REF_W - CARD_W) / 2);
+    if (d < dHeld) nearest.set(k, i);
+  }
 
   // Both stops are mixed toward *blues*, never toward the page. The page is a
   // near-neutral, its hue in oklch is undefined, and interpolating the accent
@@ -343,16 +358,17 @@ export function CardRail({
               const x = i * pitch - travelled + offset;
               const k = ((i % shots.length) + shots.length) % shots.length;
               return (
-                <Card
-                  key={i}
-                  x={x * u}
-                  src={shots[k] ?? ""}
-                  title={title[k] ?? ""}
-                  note={note[k] ?? ""}
-                  tag={tag[k] ?? ""}
-                  t={t}
-                  u={u}
-                />
+                <Item key={i} index={k} primary={nearest.get(k) === i}>
+                  <Card
+                    x={x * u}
+                    src={shots[k] ?? ""}
+                    title={title[k] ?? ""}
+                    note={note[k] ?? ""}
+                    tag={tag[k] ?? ""}
+                    t={t}
+                    u={u}
+                  />
+                </Item>
               );
             })}
           </div>
@@ -368,29 +384,42 @@ const split = (s: string) =>
     .map((v) => v.trim())
     .filter(Boolean);
 
-/** One card: a picture, and under it a title and a line of small print. */
-function Card({
-  x,
-  src,
-  title,
-  note,
-  tag,
-  t,
-  u,
-}: {
-  x: number;
-  src: string;
-  title: string;
-  note: string;
-  tag: string;
-  t: SnapCnTheme;
-  u: number;
-}) {
+/**
+ * A per-card list: an empty entry is a card with nothing in that line, so it
+ * keeps its place — dropping it would hand every later card its neighbour's.
+ */
+const columns = (s: string) => {
+  const v = s.split("|").map((x) => x.trim());
+  while (v.length && !v[v.length - 1]) v.pop();
+  return v;
+};
+
+/**
+ * One card: a picture, and under it a title and a line of small print. Forwards
+ * its `ref` and takes a `style` on top of its own so Remotion Studio can
+ * outline it and nudge it (see `Item`) — forwardRef, not a `ref` prop, which
+ * React 18 would drop.
+ */
+const Card = forwardRef<
+  HTMLDivElement,
+  {
+    x: number;
+    src: string;
+    title: string;
+    note: string;
+    tag: string;
+    t: SnapCnTheme;
+    u: number;
+    style?: CSSProperties;
+  }
+>(function Card({ x, src, title, note, tag, t, u, style }, ref) {
   const bodied = Boolean(title || note || tag);
   const shot = CARD_W / SHOT_ASPECT;
   return (
     <div
+      ref={ref}
       style={{
+        ...style,
         position: "absolute",
         left: x,
         top: CARD_TOP * u,
@@ -456,7 +485,7 @@ function Card({
       )}
     </div>
   );
-}
+});
 
 /**
  * A root-relative asset is a `public/` file. Only the site's own Player serves
@@ -487,6 +516,12 @@ function resolveSrc(src: string): string {
  * compositor rejects for some progressive JPEGs and hangs the export.
  */
 function Plate({ src, style }: { src: string; style: CSSProperties }) {
+  // No picture is an empty surface, not an <img> that never loads and holds
+  // the render open.
+  return src ? <Picture src={src} style={style} /> : <div style={style} />;
+}
+
+function Picture({ src, style }: { src: string; style: CSSProperties }) {
   const [handle] = useState(() => delayRender(`card-rail: ${src}`));
   const release = useCallback(() => continueRender(handle), [handle]);
   return (

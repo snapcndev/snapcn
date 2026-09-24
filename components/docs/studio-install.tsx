@@ -29,6 +29,7 @@ type Outcome =
   | { kind: "no-studio" }
   | { kind: "upgrade" }
   | { kind: "blocked" }
+  | { kind: "locked"; message: string; url: string }
   | { kind: "failed"; message: string };
 
 function outcomeOf(result: InstallInStudioResult): Outcome {
@@ -72,10 +73,23 @@ export function StudioInstall({
   const send = async () => {
     setPending(true);
     try {
-      const [{ installInStudio }, payload] = await Promise.all([
+      const [{ installInStudio }, res] = await Promise.all([
         import("@remotion/studio-protocol"),
-        fetch(`/elements/${name}.json`).then((res) => res.json()),
+        fetch(`/elements/${name}.json`),
       ]);
+      // A Pro Element is the component's source, handed out only to an
+      // account that owns it: the route answers 401/402 with where to go.
+      if (res.status === 401 || res.status === 402) {
+        const why = await res.json().catch(() => ({}));
+        setOutcome({
+          kind: "locked",
+          message: why.message ?? "This one comes with the Pro catalogue.",
+          url: why.url ?? "/docs/pricing#plans",
+        });
+        return;
+      }
+      if (!res.ok) throw new Error(String(res.status));
+      const payload = await res.json();
       const result = await installInStudio({ payload });
       trackEvent("studio_install_requested", {
         component: name,
@@ -179,6 +193,17 @@ export function StudioInstall({
           <p className={cn("mt-2 text-muted-foreground", ENTER)}>
             Your browser blocked access to localhost — allow local network
             access for this site, then try again. {how}
+          </p>
+        )}
+        {note?.kind === "locked" && (
+          <p className={cn("mt-2 text-muted-foreground", ENTER)}>
+            {note.message}{" "}
+            <Link
+              href={note.url.replace("https://snapcn.dev", "")}
+              className="text-foreground underline underline-offset-4"
+            >
+              Continue
+            </Link>
           </p>
         )}
         {note?.kind === "failed" && (

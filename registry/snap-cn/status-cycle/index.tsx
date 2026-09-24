@@ -14,6 +14,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   resolveFont,
   type SnapCnTheme,
@@ -914,35 +915,36 @@ function Chips({
         const left = i % 2 === 0;
         const fill = fills[i % fills.length] ?? fills[0];
         return (
-          <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: positional chip slot
-            key={i}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: left ? CHIP_INSET * width : undefined,
-              right: left ? undefined : CHIP_INSET * width,
-              transform: `translateY(${fieldY + i * step}px)`,
-              width: w,
-              height: chipH,
-              borderRadius: radius ?? CHIP_R * chipH,
-              backgroundColor: fill,
-              // A hairline and nothing else. The reference has no shadow — cream
-              // measured through a chip's top edge recovers to its flat value
-              // within 2px on both sides, with no directional darkening — and a
-              // drop shadow under a light chip on a light page is a grey smear.
-              border: `${borderWidth ?? CHIP_BORDER * chipH}px solid ${edge}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: ink,
-              fontSize: em,
-              ...typeStyle,
-              fontWeight: weight,
-            }}
-          >
-            {text}
-          </div>
+          // biome-ignore lint/suspicious/noArrayIndexKey: positional chip slot
+          <Item key={i} index={i}>
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: left ? CHIP_INSET * width : undefined,
+                right: left ? undefined : CHIP_INSET * width,
+                transform: `translateY(${fieldY + i * step}px)`,
+                width: w,
+                height: chipH,
+                borderRadius: radius ?? CHIP_R * chipH,
+                backgroundColor: fill,
+                // A hairline and nothing else. The reference has no shadow — cream
+                // measured through a chip's top edge recovers to its flat value
+                // within 2px on both sides, with no directional darkening — and a
+                // drop shadow under a light chip on a light page is a grey smear.
+                border: `${borderWidth ?? CHIP_BORDER * chipH}px solid ${edge}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: ink,
+                fontSize: em,
+                ...typeStyle,
+                fontWeight: weight,
+              }}
+            >
+              {text}
+            </div>
+          </Item>
         );
       })}
     </div>
@@ -972,11 +974,13 @@ function Measuring({
   em: number;
   chipEm: number;
   typeStyle: React.CSSProperties;
-  letterRefs: React.RefObject<(HTMLSpanElement | null)[]>;
-  prefixRef: React.RefObject<HTMLSpanElement | null>;
-  baselineRef: React.RefObject<HTMLSpanElement | null>;
-  statusRefs: React.RefObject<(HTMLSpanElement | null)[]>;
-  chipRefs: React.RefObject<(HTMLSpanElement | null)[]>;
+  // Plain `{ current }` shapes, not RefObject: React 18's RefObject is
+  // read-only and rejects what `useRef(null)` hands back in a React 19 project.
+  letterRefs: { current: (HTMLSpanElement | null)[] };
+  prefixRef: { current: HTMLSpanElement | null };
+  baselineRef: { current: HTMLSpanElement | null };
+  statusRefs: { current: (HTMLSpanElement | null)[] };
+  chipRefs: { current: (HTMLSpanElement | null)[] };
 }) {
   return (
     <div

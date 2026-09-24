@@ -10,6 +10,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { Item } from "@/lib/snap-cn-ui";
 
 /**
  * A grid of cards that rushes in, settles on a small count, then fills the
@@ -407,6 +408,7 @@ export function CountGrid({
     x: number;
     y: number;
     o: number;
+    i: number;
     src: string;
   }[] = [];
   for (let row = -rows; row <= rows; row++) {
@@ -436,8 +438,19 @@ export function CountGrid({
           ? (2 * (((seed % SEED.length) + SEED.length) % SEED.length)) %
             cards.length
           : ((mix % cards.length) + cards.length) % cards.length;
-      cells.push({ col, row, x: cx, y: cy, o, src: cards[i] ?? "" });
+      cells.push({ col, row, x: cx, y: cy, o, i, src: cards[i] ?? "" });
     }
+  }
+
+  // The grid cycles `cards`, so one card is drawn many times. Studio outlines
+  // the copy nearest the middle of the frame; the others are only pictures of
+  // it.
+  const nearest = new Map<number, (typeof cells)[number]>();
+  const off = (c: (typeof cells)[number]) =>
+    Math.hypot(c.x - width / 2, c.y - height / 2);
+  for (const c of cells) {
+    const held = nearest.get(c.i);
+    if (!held || off(c) < off(held)) nearest.set(c.i, c);
   }
 
   const filled = now * fps >= FILL_AT;
@@ -487,45 +500,52 @@ export function CountGrid({
         }}
       >
         {cells.map((c) => (
-          <div
+          <Item
             key={`${c.col},${c.row}`}
-            style={{
-              position: "absolute",
-              left: c.x - cardW / 2,
-              top: c.y - cardH / 2,
-              width: cardW,
-              height: cardH,
-              borderRadius: CARD.radius * g * k,
-              overflow: "hidden",
-              background: "#FFFFFF",
-              // A hairline, not a shadow: a drop shadow under forty white
-              // tiles on a white page is forty grey smears.
-              boxShadow: `inset 0 0 0 ${Math.max(0.5, 0.9 * g * k)}px #ECEFF2`,
-              display: "flex",
-              alignItems: "center",
-              opacity: c.o,
-              filter:
-                late > 0.35 && c.col === LATE_CARD[0] && c.row === LATE_CARD[1]
-                  ? "url(#count-grid-late)"
-                  : undefined,
-            }}
+            index={c.i}
+            primary={nearest.get(c.i) === c}
           >
-            {c.src ? (
-              <Img
-                src={resolveSrc(c.src)}
-                style={{
-                  width: cardW,
-                  height: cardH,
-                  // Preflight's `img { max-width: 100% }` against a box that
-                  // sizes from its content is 100% of nothing — the card
-                  // renders zero px wide on the site and perfectly in the mp4.
-                  maxWidth: "none",
-                  objectFit: "cover",
-                }}
-                alt=""
-              />
-            ) : null}
-          </div>
+            <div
+              style={{
+                position: "absolute",
+                left: c.x - cardW / 2,
+                top: c.y - cardH / 2,
+                width: cardW,
+                height: cardH,
+                borderRadius: CARD.radius * g * k,
+                overflow: "hidden",
+                background: "#FFFFFF",
+                // A hairline, not a shadow: a drop shadow under forty white
+                // tiles on a white page is forty grey smears.
+                boxShadow: `inset 0 0 0 ${Math.max(0.5, 0.9 * g * k)}px #ECEFF2`,
+                display: "flex",
+                alignItems: "center",
+                opacity: c.o,
+                filter:
+                  late > 0.35 &&
+                  c.col === LATE_CARD[0] &&
+                  c.row === LATE_CARD[1]
+                    ? "url(#count-grid-late)"
+                    : undefined,
+              }}
+            >
+              {c.src ? (
+                <Img
+                  src={resolveSrc(c.src)}
+                  style={{
+                    width: cardW,
+                    height: cardH,
+                    // Preflight's `img { max-width: 100% }` against a box that
+                    // sizes from its content is 100% of nothing — the card
+                    // renders zero px wide on the site and perfectly in the mp4.
+                    maxWidth: "none",
+                    objectFit: "cover",
+                  }}
+                  alt=""
+                />
+              ) : null}
+            </div>
+          </Item>
         ))}
       </div>
 
