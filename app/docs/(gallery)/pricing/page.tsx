@@ -9,7 +9,7 @@ import { NewsletterForm } from "@/components/newsletter-form";
 import { DOCS_PAGE_META } from "@/config/site";
 import { GALLERY_COUNT, PRO_GALLERY_ITEMS } from "@/lib/gallery-data";
 import { PRO_SAMPLE } from "@/lib/plans";
-import { proDemoSrc } from "@/lib/pro-demos";
+import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import { RenderedDemo } from "@/lib/rendered-demos";
 import { planFor } from "@/lib/server/entitlements";
 import { docsBreadcrumb, JsonLd } from "@/lib/structured-data";
@@ -101,7 +101,10 @@ export default async function PricingPage({
           </div>
           {sampleVideo ? (
             <div className="surface-card relative aspect-video w-full overflow-hidden rounded-xl">
-              <RenderedDemo src={sampleVideo} />
+              <RenderedDemo
+                src={sampleVideo}
+                poster={proDemoPoster(PRO_SAMPLE.name) ?? undefined}
+              />
             </div>
           ) : null}
         </div>

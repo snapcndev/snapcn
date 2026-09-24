@@ -1,12 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
-import {
-  DOCS_PAGE_META,
-  INSTALL_ALL_NAMES,
-  INSTALL_COMMAND,
-  installCommand,
-} from "@/config/site";
+import { INSTALL_ALL_NAMES } from "@/config/catalogue";
+import { DOCS_PAGE_META, INSTALL_COMMAND, installCommand } from "@/config/site";
 import { proItemBySlugs } from "@/lib/gallery-data";
 import { firstSentence } from "@/lib/structured-data";
 import { blogSource, source } from "@/source";

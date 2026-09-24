@@ -10,9 +10,10 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import demoManifest from "@/lib/demo-manifest.json";
+import { MEDIA_BASE } from "@/lib/demo-urls";
 import {
-  RENDERED_DEMOS,
   playWhenLoaded,
+  RENDERED_DEMOS,
   renderedDemoSrc,
 } from "@/lib/rendered-demos";
 
@@ -21,7 +22,9 @@ const manifest = demoManifest as Record<string, string>;
 describe("renderedDemoSrc", () => {
   it("appends ?v=<hash> for every demo the manifest knows", () => {
     for (const [slug, version] of Object.entries(manifest)) {
-      expect(renderedDemoSrc(slug)).toBe(`/demos/${slug}.mp4?v=${version}`);
+      expect(renderedDemoSrc(slug)).toBe(
+        `${MEDIA_BASE}/demos/${slug}.mp4?v=${version}`,
+      );
     }
   });
 
@@ -57,7 +60,9 @@ describe("renderedDemoSrc", () => {
 describe("playWhenLoaded", () => {
   const video = () => {
     const el = { paused: true, play: vi.fn(async () => {}) };
-    return el as unknown as HTMLVideoElement & { play: ReturnType<typeof vi.fn> };
+    return el as unknown as HTMLVideoElement & {
+      play: ReturnType<typeof vi.fn>;
+    };
   };
 
   afterEach(() => {

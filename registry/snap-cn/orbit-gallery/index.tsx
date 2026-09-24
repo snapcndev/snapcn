@@ -12,6 +12,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   parseColor,
   resolveFont,
@@ -204,9 +205,11 @@ function OrbitTile({ src, fill }: { src: string | undefined; fill: string }) {
     <>
       <div style={{ position: "absolute", inset: 0, backgroundImage: fill }} />
       {src && !errored ? (
+        // No crossOrigin: nothing reads these pixels back, and asking for CORS
+        // fails every photo from a host that does not send it (most do not),
+        // leaving only the gradient.
         <Img
           src={resolveSrc(src)}
-          crossOrigin="anonymous"
           onError={() => setErrored(true)}
           style={{
             position: "absolute",
@@ -285,6 +288,33 @@ export function OrbitGallery({
   // Draw outer coils first, center cards last (on top), like the reference.
   cards.sort((a, b) => a.n - b.n);
 
+  // The stream cycles `images`, so one photo rides the spiral more than once.
+  // Studio outlines the largest drawn copy inside the frame (else the largest
+  // at all); the others are only pictures of it.
+  const best = new Map<
+    number,
+    { key: number; inFrame: boolean; size: number }
+  >();
+  for (const card of cards) {
+    // Only the copies the loop below draws: same fade, same cut-offs.
+    let opacity = 1;
+    if (card.tt < fadeIn) opacity = card.tt / fadeIn;
+    else if (fadeOut > 0 && card.tt > 100 - fadeOut)
+      opacity = (100 - card.tt) / fadeOut;
+    if (opacity < 0.01) continue;
+    const p = archimedeanPoint(card.n, R, turns);
+    const size = sizeScale(Math.hypot(p.x, p.y), R, sizeAttenuation);
+    if (size < 0.002) continue;
+    const inFrame = Math.abs(p.x) < width / 2 && Math.abs(p.y) < height / 2;
+    const held = best.get(card.imgIdx);
+    if (
+      !held ||
+      (inFrame && !held.inFrame) ||
+      (inFrame === held.inFrame && size > held.size)
+    )
+      best.set(card.imgIdx, { key: card.key, inFrame, size });
+  }
+
   const intro = interpolate(t, [0, 16], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -327,36 +357,44 @@ export function OrbitGallery({
         const blurPx = dist < centerBlurR ? (1 - dist / centerBlurR) * 4 : 0;
 
         return (
-          <div
+          <Item
             key={card.key}
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: cw,
-              height: ch,
-              marginLeft: -cw / 2,
-              marginTop: -ch / 2,
-              zIndex: Math.round(card.n * 8),
-              translate: `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`,
-              rotate: `${angleDeg.toFixed(2)}deg`,
-              opacity: opacity * intro,
-              filter:
-                blurPx > 0.15 ? `blur(${blurPx.toFixed(2)}px)` : undefined,
-              borderRadius: rad,
-              overflow: "hidden",
-              backgroundColor: mixOklch(stage, tokens.card, 0.35),
-              boxShadow: `0 ${(ch * 0.12).toFixed(1)}px ${(ch * 0.3).toFixed(1)}px ${withAlpha(
-                mixOklch(stage, "#000", 0.75),
-                0.4,
-              )}`,
-            }}
+            index={card.imgIdx}
+            // Gradient tiles alone (`images={[]}`) are no photo to select.
+            primary={
+              artwork.length > 0 && best.get(card.imgIdx)?.key === card.key
+            }
           >
-            <OrbitTile
-              src={artwork.length ? artwork[card.imgIdx % nImgs] : undefined}
-              fill={PLACEHOLDER_FILLS[card.imgIdx % PLACEHOLDER_FILLS.length]}
-            />
-          </div>
+            <div
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                width: cw,
+                height: ch,
+                marginLeft: -cw / 2,
+                marginTop: -ch / 2,
+                zIndex: Math.round(card.n * 8),
+                translate: `${p.x.toFixed(2)}px ${p.y.toFixed(2)}px`,
+                rotate: `${angleDeg.toFixed(2)}deg`,
+                opacity: opacity * intro,
+                filter:
+                  blurPx > 0.15 ? `blur(${blurPx.toFixed(2)}px)` : undefined,
+                borderRadius: rad,
+                overflow: "hidden",
+                backgroundColor: mixOklch(stage, tokens.card, 0.35),
+                boxShadow: `0 ${(ch * 0.12).toFixed(1)}px ${(ch * 0.3).toFixed(1)}px ${withAlpha(
+                  mixOklch(stage, "#000", 0.75),
+                  0.4,
+                )}`,
+              }}
+            >
+              <OrbitTile
+                src={artwork.length ? artwork[card.imgIdx % nImgs] : undefined}
+                fill={PLACEHOLDER_FILLS[card.imgIdx % PLACEHOLDER_FILLS.length]}
+              />
+            </div>
+          </Item>
         );
       })}
 

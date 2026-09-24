@@ -2,7 +2,7 @@
 
 import { loadFont as loadSans } from "@remotion/google-fonts/InterTight";
 import type { CSSProperties } from "react";
-import { useCallback, useState } from "react";
+import { forwardRef, useCallback, useState } from "react";
 import {
   AbsoluteFill,
   continueRender,
@@ -13,6 +13,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -175,7 +176,7 @@ export interface LogoCollapseProps {
 }
 
 export function LogoCollapse({
-  images = "/demos/posters/count-grid.webp|/demos/posters/moodboard-reveal.webp|/demos/posters/orbit-gallery.webp|/demos/posters/hero-launch.webp|/demos/posters/phone-frame.webp|/demos/posters/terminal-simulator.webp",
+  images = "https://media.snapcn.dev/demos/posters/count-grid.webp|https://media.snapcn.dev/demos/posters/moodboard-reveal.webp|https://media.snapcn.dev/demos/posters/orbit-gallery.webp|https://media.snapcn.dev/demos/posters/hero-launch.webp|https://media.snapcn.dev/demos/posters/phone-frame.webp|https://media.snapcn.dev/demos/posters/terminal-simulator.webp",
   sizes = "0.82x0.461,0.72x0.405,0.63x0.354,0.55x0.309,0.46x0.259,0.36x0.203",
   holds = "1,5,5,4,2,5",
   mark = "/logo/snapcn.png",
@@ -242,17 +243,18 @@ export function LogoCollapse({
         }}
       >
         {shot >= 0 ? (
-          <Plate
-            key={shot}
-            src={shots[shot] ?? ""}
-            style={box(
-              (size[shot]?.[0] ?? 0.4) * REF_H,
-              (size[shot]?.[1] ?? 0.4) * REF_H,
-              STAGE_X,
-              STAGE_Y,
-              u,
-            )}
-          />
+          <Item key={shot} index={shot}>
+            <Plate
+              src={shots[shot] ?? ""}
+              style={box(
+                (size[shot]?.[0] ?? 0.4) * REF_H,
+                (size[shot]?.[1] ?? 0.4) * REF_H,
+                STAGE_X,
+                STAGE_Y,
+                u,
+              )}
+            />
+          </Item>
         ) : (
           <Lockup
             frame={frame}
@@ -392,13 +394,23 @@ function resolveSrc(src: string): string {
  * silent in an mp4 until somebody watches it. Remotion's own `Img` is avoided for
  * the reason `hero-launch` documents: it awaits `decode()`, which the headless
  * compositor rejects for some progressive JPEGs and hangs the export.
+ *
+ * Takes a `ref` so Remotion Studio can outline a shot (see `Item`); its `style`
+ * already arrives with Studio's merged in.
  */
-function Plate({ src, style }: { src: string; style: CSSProperties }) {
+const Plate = forwardRef<
+  HTMLImageElement,
+  {
+    src: string;
+    style: CSSProperties;
+  }
+>(function Plate({ src, style }, ref) {
   const [handle] = useState(() => delayRender(`logo-collapse: ${src}`));
   const release = useCallback(() => continueRender(handle), [handle]);
   return (
     // biome-ignore lint/performance/noImgElement: Remotion frame, not a Next route.
     <img // eslint-disable-line @remotion/warn-native-media-tag -- onLoad releases the frame; <Img> hangs on some JPEGs
+      ref={ref}
       src={resolveSrc(src)}
       alt=""
       // Tailwind's preflight sets `img { max-width: 100% }`, which collapses an
@@ -409,4 +421,4 @@ function Plate({ src, style }: { src: string; style: CSSProperties }) {
       onError={release}
     />
   );
-}
+});

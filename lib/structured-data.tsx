@@ -108,10 +108,12 @@ const COMPONENT_QUERY: Record<string, string> = {
   // and competed with each other for it. None of these names duplicates a
   // `/elements/` slug — checked against remotion.dev's sitemap, see the
   // CATEGORY_QUERY note above.
-  "agent-chat": "Remotion AI chat animation",
+  "agent-chat": "Remotion AI chat conversation animation",
   "agent-open": "Remotion AI assistant intro animation",
   "agent-run": "Remotion AI agent demo animation",
   "agent-tools": "Remotion AI agent tools animation",
+  "task-stream": "Remotion AI agent task list animation",
+  "glass-prompt": "Remotion glass prompt animation",
   "app-reveal": "Remotion app reveal animation",
   "brief-send": "Remotion product brief animation",
   "build-out": "Remotion AI app build animation",

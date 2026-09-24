@@ -12,6 +12,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   resolveFont,
   type SnapCnTheme,
   useSnapCnTheme,
@@ -756,108 +757,114 @@ function Card({
           : { willChange: "transform" as const }),
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          transform: `translateY(${dy}px)`,
-        }}
-      >
-        {beat.lines.map((words, li) => {
-          // Each line of a slide card leaves after the one above it, and the
-          // whole travel is one critically damped move: out at speed, past the
-          // mark by 0.71em, home without ever crossing back.
-          const lt = t - (li * lineStagger) / fps;
-          const slide = (u: number) =>
-            beat.style !== "slide"
-              ? 0
-              : u <= 0
-                ? slideFrom * em
-                : (slideFrom * em + slideKick * em * u) *
-                  Math.exp(-slideSettle * u);
-          const x = slide(lt);
-          // The smear is the travel: a box blur one frame wide has a Gaussian
-          // equivalent of width/√12, and the reference measures at exactly that.
-          const sigma =
-            (motionBlur * Math.abs(x - slide(lt - 1 / fps))) / Math.sqrt(12);
-          const blurId = `punch-lines-${beatIndex}-${li}`;
+      {/* The card Studio selects is its block of lines, not the full-frame
+          fill around it; it sits inside the push, so the outline scales too. */}
+      <Item index={beatIndex}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            transform: `translateY(${dy}px)`,
+          }}
+        >
+          {beat.lines.map((words, li) => {
+            // Each line of a slide card leaves after the one above it, and the
+            // whole travel is one critically damped move: out at speed, past the
+            // mark by 0.71em, home without ever crossing back.
+            const lt = t - (li * lineStagger) / fps;
+            const slide = (u: number) =>
+              beat.style !== "slide"
+                ? 0
+                : u <= 0
+                  ? slideFrom * em
+                  : (slideFrom * em + slideKick * em * u) *
+                    Math.exp(-slideSettle * u);
+            const x = slide(lt);
+            // The smear is the travel: a box blur one frame wide has a Gaussian
+            // equivalent of width/√12, and the reference measures at exactly that.
+            const sigma =
+              (motionBlur * Math.abs(x - slide(lt - 1 / fps))) / Math.sqrt(12);
+            const blurId = `punch-lines-${beatIndex}-${li}`;
 
-          return (
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional
-              key={li}
-              style={{
-                whiteSpace: "nowrap",
-                fontSize: em,
-                lineHeight: `${L}px`,
-                letterSpacing,
-                wordSpacing,
-                transform: `translateX(${x}px)`,
-                // Under a fifth of a pixel there is nothing to smear, and a
-                // filter that is on for a still frame only costs it sharpness.
-                filter: sigma > 0.2 ? `url(#${blurId})` : undefined,
-              }}
-            >
-              {sigma > 0.2 ? (
-                <svg
-                  aria-hidden
-                  width={0}
-                  height={0}
-                  style={{ position: "absolute" }}
-                >
-                  <title>motion blur</title>
-                  <filter
-                    id={blurId}
-                    x="-25%"
-                    y="-25%"
-                    width="150%"
-                    height="150%"
-                    colorInterpolationFilters="sRGB"
+            return (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: lines are positional
+                key={li}
+                style={{
+                  whiteSpace: "nowrap",
+                  fontSize: em,
+                  lineHeight: `${L}px`,
+                  letterSpacing,
+                  wordSpacing,
+                  transform: `translateX(${x}px)`,
+                  // Under a fifth of a pixel there is nothing to smear, and a
+                  // filter that is on for a still frame only costs it sharpness.
+                  filter: sigma > 0.2 ? `url(#${blurId})` : undefined,
+                }}
+              >
+                {sigma > 0.2 ? (
+                  <svg
+                    aria-hidden
+                    width={0}
+                    height={0}
+                    style={{ position: "absolute" }}
                   >
-                    <feGaussianBlur stdDeviation={`${sigma} 0`} />
-                  </filter>
-                </svg>
-              ) : null}
-              {words.map((word, wi) => {
-                const w = wordIndex++;
-                const wt = t - (w * wordStagger) / fps;
-                const p =
-                  beat.style === "punch"
-                    ? PUNCH_EASE(
-                        Math.max(0, Math.min(1, wt / (punchFrames / fps))),
-                      )
-                    : 1;
-                const s =
-                  beat.style === "punch" ? punchFrom + (1 - punchFrom) * p : 1;
-                return (
-                  // A trailing space inside an inline-block is stripped — it
-                  // sits at the end of that box's line and CSS removes it — so
-                  // the separator goes *between* the spans, never inside one.
-                  <Fragment key={w}>
-                    {wi > 0 ? " " : null}
-                    <span
-                      style={{
-                        display: "inline-block",
-                        transform: `scale(${s})`,
-                        // Not the baseline. The reference's words plainly grow
-                        // about their own middles — at a third of their size
-                        // they sit on a shared centre line, with their baselines
-                        // nowhere near each other — and half the line box is
-                        // that middle for a face whose ascent and descent
-                        // straddle it evenly.
-                        transformOrigin: `50% ${L / 2}px`,
-                      }}
+                    <title>motion blur</title>
+                    <filter
+                      id={blurId}
+                      x="-25%"
+                      y="-25%"
+                      width="150%"
+                      height="150%"
+                      colorInterpolationFilters="sRGB"
                     >
-                      {word}
-                    </span>
-                  </Fragment>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+                      <feGaussianBlur stdDeviation={`${sigma} 0`} />
+                    </filter>
+                  </svg>
+                ) : null}
+                {words.map((word, wi) => {
+                  const w = wordIndex++;
+                  const wt = t - (w * wordStagger) / fps;
+                  const p =
+                    beat.style === "punch"
+                      ? PUNCH_EASE(
+                          Math.max(0, Math.min(1, wt / (punchFrames / fps))),
+                        )
+                      : 1;
+                  const s =
+                    beat.style === "punch"
+                      ? punchFrom + (1 - punchFrom) * p
+                      : 1;
+                  return (
+                    // A trailing space inside an inline-block is stripped — it
+                    // sits at the end of that box's line and CSS removes it — so
+                    // the separator goes *between* the spans, never inside one.
+                    <Fragment key={w}>
+                      {wi > 0 ? " " : null}
+                      <span
+                        style={{
+                          display: "inline-block",
+                          transform: `scale(${s})`,
+                          // Not the baseline. The reference's words plainly grow
+                          // about their own middles — at a third of their size
+                          // they sit on a shared centre line, with their baselines
+                          // nowhere near each other — and half the line box is
+                          // that middle for a face whose ascent and descent
+                          // straddle it evenly.
+                          transformOrigin: `50% ${L / 2}px`,
+                        }}
+                      >
+                        {word}
+                      </span>
+                    </Fragment>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </Item>
     </AbsoluteFill>
   );
 }

@@ -23,7 +23,7 @@ export const screenRecordingConfig: ComponentConfig = {
   controls: {
     src: {
       type: "image",
-      default: "/demos/answer-stream.mp4",
+      default: "https://media.snapcn.dev/demos/answer-stream.mp4",
       label: "Recording",
     },
     cropTop: {

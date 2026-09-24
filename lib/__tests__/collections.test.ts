@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { PRO_NAMES } from "@/config/site";
+import { PRO_NAMES } from "@/config/catalogue";
 import { COLLECTIONS, collectionItems } from "@/lib/collections";
 import { GALLERY_ITEMS } from "@/lib/gallery-data";
 

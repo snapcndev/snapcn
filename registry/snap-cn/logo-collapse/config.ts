@@ -18,7 +18,7 @@ import {
  * snapcn says: a great many scenes, and one library they all came out of.
  */
 const SHOTS =
-  "/demos/posters/count-grid.webp|/demos/posters/moodboard-reveal.webp|/demos/posters/orbit-gallery.webp|/demos/posters/hero-launch.webp|/demos/posters/phone-frame.webp|/demos/posters/terminal-simulator.webp";
+  "https://media.snapcn.dev/demos/posters/count-grid.webp|https://media.snapcn.dev/demos/posters/moodboard-reveal.webp|https://media.snapcn.dev/demos/posters/orbit-gallery.webp|https://media.snapcn.dev/demos/posters/hero-launch.webp|https://media.snapcn.dev/demos/posters/phone-frame.webp|https://media.snapcn.dev/demos/posters/terminal-simulator.webp";
 
 export const logoCollapseConfig: ComponentConfig = {
   componentName: "LogoCollapse",

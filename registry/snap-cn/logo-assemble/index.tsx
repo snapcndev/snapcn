@@ -10,6 +10,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   resolveFont,
   type SnapCnTheme,
@@ -264,38 +265,47 @@ export function LogoAssemble({
           const theta = (i / n) * Math.PI * 2 + a;
           const x = cx + Math.cos(theta) * R * rs;
           const y = cy + Math.sin(theta) * R * rs;
+          // The ring cycles `images`, so with more cards than images one
+          // image rides it twice. Studio outlines its first card; the others
+          // are only pictures of it.
+          const k = i % images.length;
           // Cards stay upright and just revolve around the centre — no tangent
           // spin, so no image ever tips onto its side.
           return (
-            <div
+            <Item
               // biome-ignore lint/suspicious/noArrayIndexKey: the ring is a fixed positional set — the index IS the card's identity
               key={`card-${i}`}
-              style={{
-                position: "absolute",
-                left: x - cardW / 2,
-                top: y - cardH / 2,
-                width: cardW,
-                height: cardH,
-                opacity: cOpacity,
-                transform: `scale(${cScale})`,
-                overflow: "hidden",
-                borderRadius: 4,
-                boxShadow: `0 14px 34px ${cardShadow}`,
-                ...(isRendering ? {} : { willChange: "transform" as const }),
-              }}
+              index={k}
+              primary={i === k}
             >
-              <Img
-                src={resolveSrc(images[i % images.length] ?? images[0])}
+              <div
                 style={{
                   position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  maxWidth: "none",
-                  objectFit: "cover",
+                  left: x - cardW / 2,
+                  top: y - cardH / 2,
+                  width: cardW,
+                  height: cardH,
+                  opacity: cOpacity,
+                  transform: `scale(${cScale})`,
+                  overflow: "hidden",
+                  borderRadius: 4,
+                  boxShadow: `0 14px 34px ${cardShadow}`,
+                  ...(isRendering ? {} : { willChange: "transform" as const }),
                 }}
-              />
-            </div>
+              >
+                <Img
+                  src={resolveSrc(images[k] ?? images[0])}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    maxWidth: "none",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            </Item>
           );
         })}
 

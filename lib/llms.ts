@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { DOCS_PAGE_META, INSTALL_ALL_NAMES } from "@/config/site";
+import { INSTALL_ALL_NAMES } from "@/config/catalogue";
+import { DOCS_PAGE_META } from "@/config/site";
 import { CANVAS, MAX_CLIPS, MAX_TOTAL_FRAMES } from "@/lib/video-editor/types";
 import {
   CATALOGUE_ITEMS,

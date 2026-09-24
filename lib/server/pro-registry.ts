@@ -37,3 +37,20 @@ export async function readProItem(name: string): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * A paid component's Remotion Studio Element payload — its whole source,
+ * wrapped for the Studio — or null when this server does not have it. Built by
+ * `scripts/build-elements.mts` into `elements/` beside the paid items, so it
+ * lives, and is copied to production, exactly as they are.
+ */
+export async function readProElement(name: string): Promise<string | null> {
+  try {
+    return await readFile(
+      path.join(PRIVATE_DIR, "elements", `${name}.json`),
+      "utf8",
+    );
+  } catch {
+    return null;
+  }
+}

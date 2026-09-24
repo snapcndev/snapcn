@@ -12,12 +12,12 @@ export const heroLaunchConfig: ComponentConfig = {
   controls: {
     image1: {
       type: "image",
-      default: "/demos/moodboard-reveal.mp4",
+      default: "https://media.snapcn.dev/demos/moodboard-reveal.mp4",
       label: "Left card (image/video)",
     },
     image2: {
       type: "image",
-      default: "/demos/orbit-gallery.mp4",
+      default: "https://media.snapcn.dev/demos/orbit-gallery.mp4",
       label: "Right card (image/video)",
     },
     heading: {

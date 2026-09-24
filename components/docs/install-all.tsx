@@ -1,4 +1,4 @@
-import { INSTALL_ALL_COMMAND } from "@/config/site";
+import { INSTALL_ALL_COMMAND } from "@/config/catalogue";
 import { convertNpmCommand } from "@/lib/convert-npm-command";
 import { CodeBlockCommand } from "./code-block-command";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { loadFont as loadSans } from "@remotion/google-fonts/Inter";
-import { type ReactNode, useMemo } from "react";
+import { type CSSProperties, forwardRef, type ReactNode, useMemo } from "react";
 import {
   AbsoluteFill,
   getRemotionEnvironment,
@@ -10,6 +10,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   parseColor,
   resolveFont,
@@ -728,10 +729,28 @@ export function RosterGrant({
   );
 
   const groups: ReactNode[] = [];
+  // An entry's index in `rows` read row by row — what Studio calls it by.
+  let base = 0;
   for (const row of [0, 1, 2] as const) {
     const roster = rows[row] ?? [];
+    const first = base;
+    base += roster.length;
     if (roster.length === 0) continue;
     const seed = grantSeed(row, roster.length, half);
+    // A row repeats its entries across the frame. Studio outlines the copy
+    // nearest the middle of the frame; the others are only pictures of it.
+    const nearest = new Map<number, number>();
+    const held = new Map<number, number>();
+    for (const slot of ranges[row] ?? []) {
+      const i = ((slot % roster.length) + roster.length) % roster.length;
+      const d = Math.abs(
+        slotRest(row, slot, half) + rowShift(row, slot, t) + pan(t),
+      );
+      if (d < (held.get(i) ?? Number.POSITIVE_INFINITY)) {
+        held.set(i, d);
+        nearest.set(i, slot);
+      }
+    }
     const y = ORIGIN.y + (row - 1) * ROW_PITCH - CARD.h / 2;
     // One group per thing that moves: a whole row, or — for the middle row —
     // each side of the pill, which close in at different rates.
@@ -756,16 +775,21 @@ export function RosterGrant({
             const entry = roster[i];
             if (!entry) return null;
             return (
-              <Card
+              <Item
                 key={slot}
-                accent={accent}
-                edge={edge}
-                entry={entry}
-                left={slotRest(row, slot, half) + ORIGIN.x - CARD.w / 2}
-                on={granted(grantOrderOf(row, i, roster.length, seed), t)}
-                th={th}
-                top={y}
-              />
+                index={first + i}
+                primary={nearest.get(i) === slot}
+              >
+                <Card
+                  accent={accent}
+                  edge={edge}
+                  entry={entry}
+                  left={slotRest(row, slot, half) + ORIGIN.x - CARD.w / 2}
+                  on={granted(grantOrderOf(row, i, roster.length, seed), t)}
+                  th={th}
+                  top={y}
+                />
+              </Item>
             );
           })}
         </div>,
@@ -835,26 +859,28 @@ export function RosterGrant({
    Pieces — all laid out in reference px, none of them animated
    ───────────────────────────────────────────────────────────────────────── */
 
-function Card({
-  accent,
-  edge,
-  entry,
-  left,
-  on,
-  th,
-  top,
-}: {
-  accent: string;
-  edge: string;
-  entry: RosterEntry;
-  left: number;
-  on: boolean;
-  th: SnapCnTheme;
-  top: number;
-}) {
+/**
+ * One roster card. Takes a `ref` and a `style` on top of its own so Remotion
+ * Studio can outline it and nudge it (see `Item`).
+ */
+const Card = forwardRef<
+  HTMLDivElement,
+  {
+    accent: string;
+    edge: string;
+    entry: RosterEntry;
+    left: number;
+    on: boolean;
+    th: SnapCnTheme;
+    top: number;
+    style?: CSSProperties;
+  }
+>(function Card({ accent, edge, entry, left, on, th, top, style }, ref) {
   return (
     <div
+      ref={ref}
       style={{
+        ...style,
         position: "absolute",
         left,
         top,
@@ -925,7 +951,7 @@ function Card({
       </div>
     </div>
   );
-}
+});
 
 function Pill({
   accent,

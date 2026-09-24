@@ -36,7 +36,7 @@ afterEach(() => {
 describe("with a CDN configured", () => {
   it("lists every published pro component", async () => {
     const { PRO_GALLERY_ITEMS } = await load(CDN);
-    const { PRO_NAMES } = await import("@/config/site");
+    const { PRO_NAMES } = await import("@/config/catalogue");
     const listed = PRO_GALLERY_ITEMS.map((item) =>
       item.href.split("/").pop(),
     ).sort();
@@ -45,7 +45,7 @@ describe("with a CDN configured", () => {
 
   it("marks them paid, and gives each one its own address", async () => {
     const { PRO_GALLERY_ITEMS } = await load(CDN);
-    const { PRO_ITEMS } = await import("@/config/site");
+    const { PRO_ITEMS } = await import("@/config/catalogue");
     const joined = new Map(PRO_ITEMS.map((i) => [i.name, i.added]));
     for (const item of PRO_GALLERY_ITEMS) {
       expect(item.pro).toBe(true);
@@ -148,7 +148,7 @@ describe("with a CDN configured", () => {
     vi.resetModules();
     vi.stubEnv("NEXT_PUBLIC_PRO_DEMO_BASE", `${CDN}/`);
     const { proDemoSrc } = await import("@/lib/pro-demos");
-    const { PRO_NAMES } = await import("@/config/site");
+    const { PRO_NAMES } = await import("@/config/catalogue");
     for (const slug of PRO_NAMES) {
       // The trailing slash on the base is stripped, never doubled.
       expect(proDemoSrc(slug)).toMatch(

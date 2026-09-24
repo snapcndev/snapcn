@@ -129,6 +129,15 @@ export function wallGeometry(stageWidth: number, cards: number): WallGeometry {
 export const mod = (n: number, m: number) => ((n % m) + m) % m;
 
 /**
+ * Where card `i` sits, in pitches from the stage's left edge, before the wall
+ * has moved: `wallOffset(i, pitch, span, 0) / pitch`. The row runs backwards —
+ * the last card is the one at the left edge, then the one before it — which is
+ * why the cards on the first screen are the *end* of the list.
+ */
+export const startSlot = (i: number, count: number) =>
+  ((count - i) % count) - 1;
+
+/**
  * Card `i`'s offset inside the track, when the track has travelled `travel`
  * (`mod(travelled, span)`) to the left. `offset - travel` is the card's stage x,
  * `mod(-travelled - i·pitch, span) - pitch`: one pitch of slack on the left, so a
@@ -163,6 +172,23 @@ export function wallScale(u: number, foldStart: number): number {
  */
 const EDGE_STEP = 12;
 
+/**
+ * The picture a curved card is cut from: the video's current frame when it has
+ * one, its poster until then.
+ *
+ * Never the `<video>` element itself. A card is laid in as up to 96 strips, and
+ * every `drawImage(video, …)` converts the whole decoded frame again — YUV to
+ * RGB, off the GPU and back — before cropping a strip out of it. Measured with
+ * the GPU off (the machines people were getting stuck on), that was 1.9s of every
+ * 6s of main thread, the page frozen under a wall. The carousel copies each new
+ * frame into a canvas once and the strips come out of that.
+ */
+export type WallArt = {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+};
+
 export type WallPaint = {
   /** Left edge of the card, stage space. */
   x: number;
@@ -187,12 +213,12 @@ export type WallPaint = {
  *
  * Assumes the source video matches the card's 16:9 box, which every rendered
  * demo does (960×540 — see `retimeTo60`; the strips are taken off
- * `videoWidth`/`videoHeight`, so the size itself does not matter, only the
+ * the art's own width and height, so the size itself does not matter, only the
  * ratio). A demo of another shape would stretch rather than letterbox.
  */
 export function drawWallCard(
   ctx: CanvasRenderingContext2D,
-  video: HTMLVideoElement | null,
+  art: WallArt | null,
   geo: WallGeometry,
   stageWidth: number,
   { x, cy, half, radius, fill, stroke, dpr }: WallPaint,
@@ -223,7 +249,7 @@ export function drawWallCard(
   ctx.fillStyle = fill;
   ctx.fill(path);
 
-  if (video?.videoWidth && video.readyState >= 2) {
+  if (art && art.width > 0 && art.height > 0) {
     // Enough strips that the step between two neighbours stays well under a
     // pixel at the card's own top edge, where it is worst. Scaled to the sweep
     // rather than fixed: the cap used to be 48, which was fine when a card's
@@ -248,11 +274,11 @@ export function drawWallCard(
       // silhouette is exact no matter how coarse the strips are.
       const e = Math.max(edge(a), edge(b));
       ctx.drawImage(
-        video,
-        ((a - x) / width) * video.videoWidth,
+        art.source,
+        ((a - x) / width) * art.width,
         0,
-        ((b - a) / width) * video.videoWidth,
-        video.videoHeight,
+        ((b - a) / width) * art.width,
+        art.height,
         a,
         cy - e,
         b - a,

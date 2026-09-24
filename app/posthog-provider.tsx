@@ -64,7 +64,13 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // it resets it surfaces as a bare `TypeError: fetch failed` with
       // ECONNRESET and no application frames, next to four "could not load
       // recorder" lines. Both disappear when nothing asks for the recorder.
-      disable_session_recording: process.env.NODE_ENV === "development",
+      //
+      // And off at startup in production too — it is turned on below, once the
+      // page has loaded and gone idle. Starting it here put the recorder's 67KB
+      // download and its snapshot of the entire page into the same second as
+      // the hero, on every visit, and on a slow phone that second is several.
+      // Pageviews, clicks and identify are untouched: only the recording waits.
+      disable_session_recording: true,
 
       // `pnpm dev` would otherwise post local clicking-around into the same
       // project the conversion numbers are read from. Events are still built and
@@ -82,6 +88,32 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         return event;
       },
     });
+  }, []);
+
+  // Session replay, after the page is up. `startSessionRecording()` with no
+  // override still honours the project's sampling and triggers — this changes
+  // when recording starts, never who is recorded.
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") return;
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    let idle = 0;
+    const start = () => {
+      idle =
+        w.requestIdleCallback?.(() => posthog.startSessionRecording(), {
+          timeout: 3000,
+        }) ?? window.setTimeout(() => posthog.startSessionRecording(), 1000);
+    };
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
+    return () => {
+      window.removeEventListener("load", start);
+      if (w.cancelIdleCallback) w.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+    };
   }, []);
 
   return <PHProvider client={posthog}>{children}</PHProvider>;

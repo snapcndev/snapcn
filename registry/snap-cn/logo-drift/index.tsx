@@ -10,6 +10,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   resolveFont,
   type SnapCnTheme,
@@ -461,8 +462,9 @@ export function LogoDrift({
           />
         ) : null}
 
-        {/* ---- The field */}
-        {tiles.map((tile) => {
+        {/* ---- The field. Each tile is one object to Remotion Studio (`Item`),
+            numbered by its place in `tiles`. */}
+        {tiles.map((tile, i) => {
           const p = placeTile(tile, now, {
             rate: pullback,
             fade: tileFade,
@@ -472,53 +474,54 @@ export function LogoDrift({
           if (p.opacity <= 0.002 || p.size < 1) return null;
           const fg = tile.color ?? t.background;
           return (
-            <div
-              key={`${tile.glyph}-${tile.x}-${tile.y}`}
-              style={{
-                position: "absolute",
-                left: p.left,
-                top: p.top,
-                width: p.size,
-                height: p.size,
-                borderRadius: p.size * (tile.radius ?? tileRadius),
-                background: tile.background,
-                opacity: p.opacity,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: p.size * 0.04,
-                color: fg,
-                fontFamily: face,
-                overflow: "hidden",
-                willChange,
-              }}
-            >
-              <span
+            <Item key={`${tile.glyph}-${tile.x}-${tile.y}`} index={i}>
+              <div
                 style={{
-                  fontSize: p.size * glyphScale,
-                  fontWeight: 600,
-                  lineHeight: 1,
-                  letterSpacing: "-0.03em",
-                  textRendering: "geometricPrecision",
+                  position: "absolute",
+                  left: p.left,
+                  top: p.top,
+                  width: p.size,
+                  height: p.size,
+                  borderRadius: p.size * (tile.radius ?? tileRadius),
+                  background: tile.background,
+                  opacity: p.opacity,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: p.size * 0.04,
+                  color: fg,
+                  fontFamily: face,
+                  overflow: "hidden",
+                  willChange,
                 }}
               >
-                {tile.glyph}
-              </span>
-              {tile.label && p.size > 74 ? (
                 <span
                   style={{
-                    fontSize: p.size * 0.1,
-                    fontWeight: 500,
+                    fontSize: p.size * glyphScale,
+                    fontWeight: 600,
                     lineHeight: 1,
-                    opacity: 0.72,
+                    letterSpacing: "-0.03em",
                     textRendering: "geometricPrecision",
                   }}
                 >
-                  {tile.label}
+                  {tile.glyph}
                 </span>
-              ) : null}
-            </div>
+                {tile.label && p.size > 74 ? (
+                  <span
+                    style={{
+                      fontSize: p.size * 0.1,
+                      fontWeight: 500,
+                      lineHeight: 1,
+                      opacity: 0.72,
+                      textRendering: "geometricPrecision",
+                    }}
+                  >
+                    {tile.label}
+                  </span>
+                ) : null}
+              </div>
+            </Item>
           );
         })}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import { forwardRef } from "react";
 import {
   Easing,
   getRemotionEnvironment,
@@ -12,6 +13,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   parseColor,
   resolveFont,
   type SnapCnTheme,
@@ -253,9 +255,17 @@ export function inlineImage(frame: number, count: number): InlineDrop {
   return { index, scale, opacity };
 }
 
-function Card({ src, style }: { src: string; style: CSSProperties }) {
+/**
+ * Forwards its `ref` so Remotion Studio can outline an intro card (see `Item`);
+ * its `style` already arrives with Studio's merged in.
+ */
+const Card = forwardRef<
+  HTMLImageElement,
+  { src: string; style: CSSProperties }
+>(function Card({ src, style }, ref) {
   return (
     <Img
+      ref={ref}
       src={resolveSrc(src)}
       style={{
         width: "100%",
@@ -267,7 +277,7 @@ function Card({ src, style }: { src: string; style: CSSProperties }) {
       }}
     />
   );
-}
+});
 
 /** Rewrite root-relative assets through staticFile everywhere but the Player. */
 function resolveSrc(src: string): string {
@@ -385,6 +395,23 @@ export function MoodboardReveal({
   const mBlur = mergeBlur(frame);
   const merge = mergeProgress(frame);
   const isRendering = getRemotionEnvironment().isRendering;
+  // The index into `images` each gallery position shows this frame; -1 when it
+  // is hidden, or holds a `heroImage` that isn't one of `images`.
+  const slotImage = SLOTS.map((s, i) => {
+    if (slotPose(frame, s, i).opacity <= 0) return -1;
+    if (i === SLOTS.length - 1 && frame >= MERGE_START)
+      return hero ? images.indexOf(hero) : -1;
+    return flickerImage(frame, i, images.length);
+  });
+  // One photo can be on screen twice — an intro card still fading as the
+  // gallery opens, two positions on the same picture. Studio outlines the
+  // front-most copy (drawn last); the others are only pictures of it.
+  const front = new Map<number, string>();
+  if (sentenceOp > 0)
+    for (let i = 0; i <= inline.index; i++) front.set(i, `in-${i}`);
+  slotImage.forEach((k, i) => {
+    if (k >= 0) front.set(k, `slot-${i}`);
+  });
 
   return (
     <div
@@ -444,18 +471,21 @@ export function MoodboardReveal({
               if (i > inline.index) return null; // future image, not yet dropped
               const isActive = i === inline.index;
               return (
-                <Card
-                  key={src}
-                  src={src}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    zIndex: i,
-                    opacity: isActive ? inline.opacity : 1,
-                    transform: isActive ? `scale(${inline.scale})` : undefined,
-                    transformOrigin: "center center",
-                  }}
-                />
+                <Item key={src} index={i} primary={front.get(i) === `in-${i}`}>
+                  <Card
+                    src={src}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      zIndex: i,
+                      opacity: isActive ? inline.opacity : 1,
+                      transform: isActive
+                        ? `scale(${inline.scale})`
+                        : undefined,
+                      transformOrigin: "center center",
+                    }}
+                  />
+                </Item>
               );
             })}
           </div>
@@ -488,26 +518,31 @@ export function MoodboardReveal({
           // Un-rotate as they merge so the stack aligns into one clean image.
           const rot = s.rot * (1 - merge);
           return (
-            <div
+            <Item
               key={`slot-${s.x}-${s.y}`}
-              style={{
-                position: "absolute",
-                left: cx + pose.x - s.w / 2,
-                top: cy + pose.y - h / 2,
-                width: s.w,
-                height: h,
-                opacity: pose.opacity,
-                transform: `rotate(${rot}deg) scale(${pose.scale})`,
-                // Shadow gives depth in the spread, but 8 stacked shadows pile
-                // into a dark halo — so fade it out as they merge to one.
-                boxShadow:
-                  merge > 0.98
-                    ? "none"
-                    : `0 18px 40px ${withAlpha(dark.background, 0.28 * (1 - merge))}`,
-              }}
+              index={slotImage[i] ?? -1}
+              primary={front.get(slotImage[i] ?? -1) === `slot-${i}`}
             >
-              <Card src={src} style={{}} />
-            </div>
+              <div
+                style={{
+                  position: "absolute",
+                  left: cx + pose.x - s.w / 2,
+                  top: cy + pose.y - h / 2,
+                  width: s.w,
+                  height: h,
+                  opacity: pose.opacity,
+                  transform: `rotate(${rot}deg) scale(${pose.scale})`,
+                  // Shadow gives depth in the spread, but 8 stacked shadows pile
+                  // into a dark halo — so fade it out as they merge to one.
+                  boxShadow:
+                    merge > 0.98
+                      ? "none"
+                      : `0 18px 40px ${withAlpha(dark.background, 0.28 * (1 - merge))}`,
+                }}
+              >
+                <Card src={src} style={{}} />
+              </div>
+            </Item>
           );
         })}
       </div>

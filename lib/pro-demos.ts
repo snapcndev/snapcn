@@ -1,21 +1,21 @@
+import { MEDIA_BASE } from "./demo-urls";
 import manifest from "./pro-demo-manifest.json";
 
 /**
- * Where the pro demos are served from.
+ * Where the pro demos are served from: `media.snapcn.dev/pro-demos`, the same
+ * R2 bucket and Cloudflare edge as the free ones (see `MEDIA_BASE`).
  *
- * Not `public/demos` like the free ones, and that is forced: `registry/snap-cn-pro`
- * is gitignored, so a public checkout cannot carry its demos and a build cannot
- * emit them. They are rendered by `scripts/pro-demos.mts`, uploaded to R2 by
- * `scripts/pro-upload.mts`, and played from that origin — the video is the
- * advertisement, exactly like the title and description `PRO_ITEMS` already
- * publishes, and none of it is the source.
+ * Not `public/demos`, and that is forced: `registry/snap-cn-pro` is gitignored,
+ * so a public checkout cannot carry its demos and a build cannot emit them. They
+ * are rendered by `scripts/pro-demos.mts` and uploaded by
+ * `scripts/media-upload.mts <dir> pro-demos`.
  *
- * Unset means there is no CDN yet, and the gallery then lists no pro cards at
- * all (see `PRO_GALLERY_ITEMS`) rather than fourteen grey boxes. Set it to the
- * bucket's public origin — no trailing slash.
+ * `NEXT_PUBLIC_PRO_DEMO_BASE` still overrides it, and an empty value means there
+ * is no CDN, so the gallery lists no pro cards at all (see `PRO_GALLERY_ITEMS`)
+ * rather than fourteen grey boxes. No trailing slash.
  */
 export const PRO_DEMO_BASE = (
-  process.env.NEXT_PUBLIC_PRO_DEMO_BASE ?? ""
+  process.env.NEXT_PUBLIC_PRO_DEMO_BASE ?? `${MEDIA_BASE}/pro-demos`
 ).replace(/\/$/, "");
 
 /** Byte hash of each demo, for `?v=` — same contract as `lib/demo-manifest.json`. */
@@ -33,4 +33,16 @@ export function proDemoSrc(slug: string): string | null {
   const v = version(slug);
   if (!PRO_DEMO_BASE || !v) return null;
   return `${PRO_DEMO_BASE}/${slug}.mp4?v=${v}`;
+}
+
+/**
+ * A still of a pro demo, shown until the video has a frame — and for good when
+ * it never gets one (a failed load, a refused autoplay, a data saver). Beside
+ * the free posters at `media.snapcn.dev/demos/pro-posters`. Versioned by the
+ * video's own hash, so it moves with it.
+ */
+export function proDemoPoster(slug: string): string | null {
+  const v = version(slug);
+  if (!v) return null;
+  return `${MEDIA_BASE}/demos/pro-posters/${slug}.webp?v=${v}`;
 }

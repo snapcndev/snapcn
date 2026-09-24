@@ -3,7 +3,7 @@
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { INSTALL_ALL_COMMAND } from "@/config/site";
+import { INSTALL_ALL_COMMAND } from "@/config/catalogue";
 import { useTrackEvent } from "@/lib/analytics";
 
 export function InstallAll() {

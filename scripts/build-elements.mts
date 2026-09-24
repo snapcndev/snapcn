@@ -1,6 +1,8 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   createElementPayload,
   type ElementDependency,
@@ -16,6 +18,8 @@ import {
   elementDefaults,
   hideLayers,
   type Studio,
+  slotKeys,
+  studioItemsWrapper,
   studioWrapper,
   TAIL,
 } from "./lib/element-wrapper.mts";
@@ -150,7 +154,9 @@ const ELEMENTS: Record<string, Studio> = {
       "speed",
     ],
     // Sized off the short side by default, which is the strip's height here.
-    props: { fontSize: 45 },
+    // The karaoke look, pinned: the component's default is the plain boxed
+    // caption, which paints none of accent, emphasis or font.
+    props: { fontSize: 45, preset: "karaoke" },
     // A light/dark select wired to `theme`, which takes token overrides.
     drop: ["theme"],
     // Fades its own line out, and spreads the line across its own length.
@@ -185,6 +191,9 @@ const ELEMENTS: Record<string, Studio> = {
       "floatLoop",
       "speed",
     ],
+    // A phone's screen is a recording more often than a still; the scene
+    // plays either, and the picker is Studio's only way to replace it.
+    assets: { screenSrc: "video" },
     // `showcase` is a crane move across the frame; "" is the built-in screen.
     props: { variant: "tilt", screenSrc: "" },
   },
@@ -207,6 +216,27 @@ const ELEMENTS: Record<string, Studio> = {
       // tail, it is what the fade out carries away.
       holds: `48,48,${48 + TAIL}`,
     },
+    items: {
+      noun: "Card",
+      nameFrom: "text",
+      // The scene drops a blank one; so does the stage, so the rest keep their outlines.
+      keep: `(x) => Boolean(x.text?.trim())`,
+      // Lines slide in one at a time, each on its own transform.
+      outline: "content",
+      fields: {
+        text: {
+          label: "Text (/ breaks a line)",
+          type: "text",
+          from: "script",
+          sep: "|",
+        },
+      },
+      // The last card holds through the Element's fade-out, whichever it is.
+      build: `(o) => ({
+        script: o.map((x) => clean(x.text, "|")).join("|"),
+        holds: o.map((_, i) => (i === o.length - 1 ? ${48 + TAIL} : 48)).join(","),
+      })`,
+    },
   },
   "screen-recording": {
     box: [1280, 720],
@@ -214,19 +244,30 @@ const ELEMENTS: Record<string, Studio> = {
       "src",
       "fit",
       "radius",
-      "cropTop",
-      "cropRight",
-      "cropBottom",
-      "cropLeft",
+      "cutTop",
+      "cutRight",
+      "cutBottom",
+      "cutLeft",
       "audio",
       "speed",
     ],
+    // The recording's crop, renamed: Studio owns `crop*` on every layer and
+    // would take these into its own Crop section, in its own units.
+    alias: {
+      cutTop: "cropTop",
+      cutRight: "cropRight",
+      cutBottom: "cropBottom",
+      cutLeft: "cropLeft",
+    },
     props: { backdropColor: "transparent" },
     // The Sequence's trim, not the recording's.
     drop: ["trimBefore"],
   },
   "text-build": {
-    box: [1100, 160],
+    // Cropped to the ink it draws over its whole run, measured, 16px clear.
+    box: [1100, 101],
+    stage: [1100, 160],
+    at: [0, 37],
     controls: [
       "text",
       "fontSize",
@@ -265,7 +306,9 @@ const ELEMENTS: Record<string, Studio> = {
     ],
   },
   "text-rewrite": {
-    box: [1000, 160],
+    // Cropped to the ink it draws over its whole run, measured, 16px clear.
+    box: [1000, 113],
+    at: [140, 297],
     // Scales a 16:9 stage to fit: laid out at it, cropped to the line.
     stage: [1280, 720],
     controls: [
@@ -286,7 +329,9 @@ const ELEMENTS: Record<string, Studio> = {
     },
   },
   "text-select": {
-    box: [1280, 160],
+    // Cropped to the ink it draws over its whole run, measured, 16px clear.
+    box: [1280, 109],
+    at: [0, 302],
     // Scales a 16:9 stage to fit: laid out at it, cropped to the line.
     stage: [1280, 720],
     controls: ["headline", "accentColor", "mode", "fontFamily", "speed"],
@@ -332,7 +377,9 @@ const ELEMENTS: Record<string, Studio> = {
       "fontFamily",
       "speed",
     ],
-    props: { fontSize: 45 },
+    // The default "boxed" look paints neither the accent nor the font; the
+    // YouTube look is the plainest one that does.
+    props: { fontSize: 45, preset: "youtube" },
     // Pages cut out on their last word, like speech does.
     exit: false,
     // The whole transcript: 16 words at 14 frames, and a beat.
@@ -362,7 +409,12 @@ const ELEMENTS: Record<string, Studio> = {
     props: { theme: { background: "transparent" } },
   },
   "word-wheel": {
-    box: [700, 532],
+    // The scene lays out in 700 × 532; the reel's rows travel 63px above and
+    // 53px below it on the way round (measured), so the box is taller than
+    // the stage and the outline holds the whole turn.
+    box: [700, 720],
+    stage: [700, 532],
+    at: [0, -94],
     controls: ["headline", "words", "spin", "mode", "fontFamily"],
     props: { headline: "Made for", theme: { background: "transparent" } },
     // The shared speed knob, which this component never read.
@@ -388,6 +440,35 @@ const ELEMENTS: Record<string, Studio> = {
       "fontFamily",
       "speed",
     ],
+    items: {
+      noun: "Step",
+      nameFrom: "done",
+      fields: {
+        running: { label: "While running", type: "text", from: "steps" },
+        done: { label: "When done (the last step never is)", type: "text" },
+        icon: {
+          label: "Icon when done",
+          type: "enum",
+          options: ["check", "globe"],
+        },
+      },
+      build: `(o) => ({ steps: o.map((x) => clean(x.running, ";>") + " > " + clean(x.done, ";>") + (x.icon === "globe" ? " @globe" : "")).join("; ") })`,
+      starter: (d) =>
+        String(d.steps ?? "")
+          .split(";")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((e) => {
+            const icon = /@globe$/.test(e) ? "globe" : "check";
+            const body = e.replace(/@globe$/, "").trim();
+            const cut = body.indexOf(">");
+            return {
+              running: (cut < 0 ? body : body.slice(0, cut)).trim(),
+              done: (cut < 0 ? body : body.slice(cut + 1)).trim(),
+              icon,
+            };
+          }),
+    },
     props: {
       paperColor: "transparent",
       glowColor: "transparent",
@@ -450,6 +531,63 @@ const ELEMENTS: Record<string, Studio> = {
     ],
     // A start frame; the Sequence owns `from`.
     drop: ["speed", "from"],
+    items: {
+      noun: "Card",
+      nameFrom: "title",
+      // Three cards in frame, and a flick carries the rail about one card on:
+      // three flicks show six. More cards get more flicks, closer together, so
+      // every card still comes past inside the Element's length.
+      build: `(o) => {
+        const join = (k: "title" | "note" | "tag" | "image") => o.map((x) => clean(x[k], "|")).join("|");
+        const flicks = Math.max(3, o.length - 3);
+        return { titles: join("title"), notes: join("note"), tags: join("tag"), images: join("image"), flicks, every: Math.min(30, Math.floor(90 / flicks)) };
+      }`,
+      starter: (d) => {
+        const list = (k: string) => String(d[k] ?? "").split("|");
+        const [titles, notes, tags, images] = [
+          "titles",
+          "notes",
+          "tags",
+          "images",
+        ].map(list);
+        return Array.from({ length: 6 }, (_, i) => ({
+          title: titles[i] ?? "",
+          note: notes[i] ?? "",
+          tag: tags[i] ?? "",
+          image: images[i] ?? "",
+        }));
+      },
+      fields: {
+        title: {
+          label: "Title",
+          type: "text",
+          from: "titles",
+          sep: "|",
+          node: "title",
+        },
+        note: {
+          label: "Small print",
+          type: "text",
+          from: "notes",
+          sep: "|",
+          node: "note",
+        },
+        tag: {
+          label: "Tag",
+          type: "text",
+          from: "tags",
+          sep: "|",
+          node: "tag",
+        },
+        image: {
+          label: "Image",
+          type: "image",
+          from: "images",
+          sep: "|",
+          node: "src",
+        },
+      },
+    },
     props: {
       heading: "Browse templates",
       images: [...PHOTOS, PHOTOS[0]].join("|"),
@@ -470,6 +608,69 @@ const ELEMENTS: Record<string, Studio> = {
     // The shared speed knob, which this component never read.
     drop: ["speed"],
     controls: ["script", "people", "mode", "fontFamily"],
+    items: {
+      noun: "Message",
+      nameFrom: "text",
+      // The scene drops a blank one; so does the stage, so the rest keep their outlines.
+      keep: `(x) => Boolean(x.text?.trim())`,
+      // A line box is set solid, so descenders hang below it.
+      outline: "content",
+      fields: {
+        text: {
+          label: "Message",
+          type: "text",
+          from: "script",
+          node: "children",
+        },
+        author: { label: "Author", type: "text", from: "people" },
+        time: { label: "Time", type: "text" },
+        avatar: { label: "Avatar", type: "image", from: "avatars" },
+      },
+      // Consecutive messages from one author are one group: `;` between groups,
+      // `|` between a group's lines; `people` and `avatars` carry one per group.
+      build: `(o) => {
+        const groups: { author: string; time: string; avatar: string; lines: string[] }[] = [];
+        for (const x of o) {
+          const last = groups[groups.length - 1];
+          // A message joins the group above only if it has the same header, so a
+          // time or avatar set on any message is one that shows.
+          if (last && last.author === (x.author ?? "") && last.time === (x.time ?? "") && last.avatar === (x.avatar ?? "")) last.lines.push(clean(x.text, "|;"));
+          else groups.push({ author: x.author ?? "", time: x.time ?? "", avatar: x.avatar ?? "", lines: [clean(x.text, "|;")] });
+        }
+        return {
+          script: groups.map((g) => g.lines.join("|")).join(";"),
+          // A name runs to the first space; a two-word name keeps its space as a
+          // no-break one.
+          people: groups.map((g) => \`\${clean(g.author, ";").split(" ").join("\\u00A0")} \${clean(g.time, ";")}\`.trim()).join(";"),
+          avatars: groups.map((g) => g.avatar).join("|"),
+          // One landing and one opening frame per message: the four measured
+          // ones, then a message every 24 frames, typing for 12 before it.
+          beats: o.map((_, i) => [0, 12, 60, 84][i] ?? 84 + 24 * (i - 3)).join(","),
+          opens: o.map((_, i) => [0, 12, 37, 72][i] ?? 72 + 24 * (i - 3)).join(","),
+        };
+      }`,
+      starter: (d) => {
+        const heads = String(d.people ?? "")
+          .split(";")
+          .map((p) => p.trim());
+        const pics = String(d.avatars ?? "")
+          .split("|")
+          .map((a) => a.trim());
+        return String(d.script ?? "")
+          .split(";")
+          .flatMap((g, i) => {
+            const head = heads[i] ?? "";
+            const cut = head.indexOf(" ");
+            const author = cut < 0 ? head : head.slice(0, cut);
+            const time = cut < 0 ? "" : head.slice(cut + 1);
+            return g
+              .split("|")
+              .map((m) => m.trim())
+              .filter(Boolean)
+              .map((text) => ({ text, author, time, avatar: pics[i] ?? "" }));
+          });
+      },
+    },
     props: {
       mode: "light",
       script:
@@ -485,10 +686,19 @@ const ELEMENTS: Record<string, Studio> = {
     alias: { start: "from" },
     // Its own cards are this site's files through staticFile(): a 404 in
     // anyone else's project, and half of them are snapcn's posters.
+    items: {
+      noun: "Card",
+      fields: {
+        image: { label: "Image", type: "image", from: "cards" },
+      },
+    },
     props: { background: "transparent", cards: PHOTOS },
   },
   "follower-rush": {
-    box: [1280, 720],
+    // Cropped to the ink it draws over its whole run, measured, 16px clear.
+    box: [1280, 305],
+    stage: [1280, 720],
+    at: [0, 209],
     clip: true,
     controls: ["totalFollowers", "accentColor", "fontFamily", "speed"],
     // A light/dark select wired to `theme`, which takes token overrides.
@@ -500,7 +710,19 @@ const ELEMENTS: Record<string, Studio> = {
     clip: true,
     // The shared speed knob, which this component never read.
     drop: ["speed"],
-    controls: ["image1", "image2", "heading", "fontFamily"],
+    controls: ["heading", "fontFamily"],
+    items: {
+      noun: "Card",
+      fields: { image: { label: "Image", type: "image" } },
+      // The left card zooms in from full frame, inside its box.
+      outline: "content",
+      // Two cards, left and right: one card fills both, a third has nowhere to go.
+      build: `(o) => ({ image1: o[0]?.image || undefined, image2: o[1 % Math.max(o.length, 1)]?.image || undefined })`,
+      starter: (d) => [
+        { image: String(d.image1) },
+        { image: String(d.image2) },
+      ],
+    },
     props: {
       // Lit for a dark page by default; on a transparent one, its ink is dark.
       mode: "light",
@@ -521,6 +743,15 @@ const ELEMENTS: Record<string, Studio> = {
       middleText: "Everything your team ships",
       logoSrc: MARK,
       background: "transparent",
+      images: PHOTOS,
+    },
+    items: {
+      noun: "Image",
+      // The ring's cards cycle the images: a blank one would be a card with no picture.
+      keep: `(x) => Boolean(x.image?.trim())`,
+      fields: { image: { label: "Image", type: "image", from: "images" } },
+      // Ten cards is the ring's density; past ten, a card per image so every image rides it.
+      build: `(o) => ({ images: o.map((x) => x.image ?? ""), count: Math.max(10, o.length) })`,
     },
   },
   "logo-collapse": {
@@ -532,6 +763,22 @@ const ELEMENTS: Record<string, Studio> = {
     // The shared speed knob, which this component never read.
     drop: ["speed"],
     controls: ["images", "mark", "wordmark", "accent", "mode", "fontFamily"],
+    items: {
+      noun: "Shot",
+      // The scene drops a blank one; so does the stage, so the rest keep their outlines.
+      keep: `(x) => Boolean(x.image?.trim())`,
+      fields: {
+        image: {
+          label: "Image",
+          type: "image",
+          from: "images",
+          sep: "|",
+          node: "src",
+        },
+      },
+      // A shot past the sixth has no hold of its own and would never show.
+      build: `(o) => ({ images: o.map((x) => x.image ?? "").join("|"), holds: o.map((_, i) => [1, 5, 5, 4, 2, 5][i] ?? 5).join(",") })`,
+    },
     props: {
       images: PHOTOS.slice(0, 6).join("|"),
       mark: MARK,
@@ -552,6 +799,21 @@ const ELEMENTS: Record<string, Studio> = {
     ],
     // Its tiles name Remotion, React, Vercel and six more: the same fitted
     // choreography, with generic app names.
+    items: {
+      noun: "Tile",
+      nameFrom: "label",
+      fields: {
+        glyph: { label: "Glyph", type: "text" },
+        label: { label: "Label", type: "text" },
+      },
+      // Each tile keeps its place and paint from the scene's own stack.
+      build: `(o) => ({ tiles: o.map((x, i) => ({ ...SNAPCN_STACK[i % SNAPCN_STACK.length], glyph: x.glyph ?? "", label: x.label || undefined })) })`,
+      starter: (d) =>
+        (d.tiles as { glyph: string; label?: string }[]).map((t) => ({
+          glyph: t.glyph,
+          label: t.label ?? "",
+        })),
+    },
     props: { theme: CLEAR, tiles: DRIFT_TILES },
   },
   "logo-flicker": {
@@ -564,7 +826,11 @@ const ELEMENTS: Record<string, Studio> = {
       brandName: "Acme",
       logoSrc: MARK,
       background: "transparent",
+      images: PHOTOS,
     },
+    // The pictures flash two frames each: not objects to select, so numbered
+    // picture fields rather than one per call site.
+    slots: { prop: "images", key: "image", count: 8, label: "Image" },
   },
   "moodboard-reveal": {
     box: [1280, 720],
@@ -584,6 +850,14 @@ const ELEMENTS: Record<string, Studio> = {
       // ink; set either and that page comes back.
       darkColor: "transparent",
       lightColor: "transparent",
+      images: PHOTOS,
+    },
+    // Eight slots swap through the photos, one object each; the hero stays
+    // its own control.
+    items: {
+      noun: "Photo",
+      fields: { image: { label: "Photo", type: "image", from: "images" } },
+      keep: `(x) => Boolean(x.image?.trim())`,
     },
   },
   "orbit-gallery": {
@@ -602,6 +876,16 @@ const ELEMENTS: Record<string, Studio> = {
       mode: "light",
       background: "transparent",
       textColor: "#141414",
+      // Its own default is a set of picsum.photos URLs: another site's, and
+      // random. The neutral photos every other Element starts with.
+      images: PHOTOS,
+    },
+    // The spiral repeats its photos to fill its slots; each photo outlines its
+    // largest copy in frame.
+    items: {
+      noun: "Photo",
+      fields: { image: { label: "Photo", type: "image", from: "images" } },
+      keep: `(x) => Boolean(x.image?.trim())`,
     },
   },
   "roster-grant": {
@@ -609,6 +893,26 @@ const ELEMENTS: Record<string, Studio> = {
     clip: true,
     controls: ["label", "accentColor", "fontFamily", "speed"],
     drop: ["theme"],
+    items: {
+      noun: "Entry",
+      nameFrom: "title",
+      fields: {
+        // `from` only marks `rows` as an item prop; `build` regroups it.
+        title: { label: "Name", type: "text", from: "rows" },
+        role: { label: "Role", type: "text", from: "rows" },
+      },
+      // The scene draws three rows: the flat list, cut into three in order.
+      build: `(o) => {
+        const e = o.map((x) => ({ name: x.title ?? "", role: x.role ?? "" }));
+        const n = Math.ceil(e.length / 3);
+        return { rows: [e.slice(0, n), e.slice(n, 2 * n), e.slice(2 * n)] };
+      }`,
+      // Each row pans three entries across the frame; a fourth never arrives.
+      starter: (defaults) =>
+        ((defaults.rows ?? []) as { name: string; role: string }[][])
+          .flatMap((row) => row.slice(0, 3))
+          .map((e) => ({ title: e.name, role: e.role })),
+    },
     props: {
       // Its own roster is snapcn's component list.
       rows: [
@@ -656,6 +960,15 @@ const ELEMENTS: Record<string, Studio> = {
       // The act-one field too: the prefix and the pill read on the footage.
       fieldColor: "transparent",
     },
+    items: {
+      noun: "Chip",
+      nameFrom: "label",
+      // The scene drops a blank one; so does the stage, so the rest keep their outlines.
+      keep: `(x) => Boolean(x.label?.trim())`,
+      fields: {
+        label: { label: "Label", type: "text", from: "chips", sep: ", " },
+      },
+    },
   },
   "terminal-simulator": {
     box: [1280, 720],
@@ -675,6 +988,35 @@ const ELEMENTS: Record<string, Studio> = {
       theme: CLEAR,
       background: "#ffffff",
       borderColor: "#e4e4e7",
+    },
+    items: {
+      noun: "Line",
+      nameFrom: "text",
+      // A row is the column's width; the outline is the text typed so far.
+      outline: "content",
+      fields: {
+        text: { label: "Text", type: "text", from: "lines" },
+        type: {
+          label: "Kind",
+          type: "enum",
+          options: ["command", "log", "success", "error"],
+        },
+      },
+      // A line's lead-in is its kind's: a command follows its prompt at once,
+      // output takes a beat, a plain log line a longer one. The first line
+      // starts as the camera lands.
+      build: `(o) => ({
+        lines: o.map((x, i) => {
+          const type = (x.type ?? "command") as "command" | "log" | "success" | "error";
+          return { text: x.text ?? "", type, delay: i === 0 ? 0 : { command: 4, success: 6, error: 6, log: 10 }[type] };
+        }),
+      })`,
+      starter: [
+        { text: "{labels: ['bug']})", type: "log" },
+        { text: "→   label added", type: "success" },
+        { text: "$", type: "log" },
+        { text: "One task", type: "command" },
+      ],
     },
   },
   "wordmark-cut": {
@@ -698,6 +1040,60 @@ const ELEMENTS: Record<string, Studio> = {
       "speed",
     ],
     props: { theme: CLEAR },
+    items: {
+      noun: "Card",
+      nameFrom: "title",
+      fields: {
+        // `from` only marks `cards` as an item prop; `build` assembles the objects.
+        title: { label: "Title", type: "text", from: "cards" },
+        body: { label: "Body", type: "text", from: "cards" },
+        // "auto" keeps the scene's own icon for the card's position.
+        icon: {
+          label: "Icon",
+          type: "enum",
+          options: ["auto", "pencil", "link", "shield", "globe"],
+          from: "cards",
+        },
+      },
+      build: `(o) => {
+        const ICONS: Record<string, string> = {
+          pencil: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z",
+          link: "M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7L12 19",
+          shield: "M12 2 4 6v6c0 5 3.4 8.9 8 10 4.6-1.1 8-5 8-10V6l-8-4Z",
+          globe: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20ZM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z",
+        };
+        return {
+          cards: o.map((x) => ({
+            title: x.title ?? "",
+            body: x.body ?? "",
+            ...(x.icon && ICONS[x.icon] ? { icon: ICONS[x.icon] } : {}),
+          })),
+        };
+      }`,
+      // `cards` has no control, so the scene's own four are written out.
+      starter: [
+        {
+          title: "Content",
+          body: "Build pages around the exact questions buyers ask, so there is something accurate to cite.",
+          icon: "auto",
+        },
+        {
+          title: "Citations",
+          body: "Run outreach to the sources that already get quoted for those questions.",
+          icon: "auto",
+        },
+        {
+          title: "Authority",
+          body: "Earn links from the publishers the models already trust.",
+          icon: "auto",
+        },
+        {
+          title: "Coverage",
+          body: "Place press so the name turns up wherever people go looking.",
+          icon: "auto",
+        },
+      ],
+    },
   },
   "prompt-send": {
     box: [1280, 720],
@@ -712,6 +1108,21 @@ const ELEMENTS: Record<string, Studio> = {
       "speed",
     ],
     props: { theme: CLEAR },
+    items: {
+      noun: "Chip",
+      nameFrom: "label",
+      // The scene drops a blank one; so does the stage, so the rest keep their outlines.
+      keep: `(x) => Boolean(x.label?.trim())`,
+      fields: {
+        label: {
+          label: "Label",
+          type: "text",
+          from: "chips",
+          sep: ", ",
+          node: "children",
+        },
+      },
+    },
   },
   "prompt-zoom": {
     box: [1280, 720],
@@ -751,6 +1162,82 @@ const ELEMENTS: Record<string, Studio> = {
   },
 };
 
+/**
+ * Pro components that ship as Elements. Their payloads are the component's
+ * whole source, so they are built into `registry/.private/elements/` — beside
+ * the paid registry items, never under `public/` — and handed out by
+ * `app/elements/[file]/route.ts` only to an account whose plan carries the
+ * components. The committed list, `lib/studio-elements-pro.json`, is names
+ * only: it tells a page to offer the button, and costs nothing to publish.
+ *
+ * Built straight from `registry/snap-cn-pro/<name>/index.tsx` and its
+ * `config.ts`, which is why a config listed here must stand on its own in
+ * plain Node (no import of the component). A checkout without the pro tier
+ * skips this whole section and leaves the committed list alone.
+ */
+const PRO_ELEMENTS: Record<string, Studio> = {
+  "glass-prompt": {
+    // A whole scene: it paints the frame, so it is laid out at 1280x720 and
+    // clipped to it.
+    box: [1280, 720],
+    clip: true,
+    controls: [
+      "prompt",
+      "backdrop",
+      "fontFamily",
+      "textScale",
+      "ink",
+      "showCaret",
+      "frost",
+      "rim",
+      "lensZoom",
+      "focus",
+      "motionBlur",
+      "showPointer",
+      "pointer",
+      "pointerFill",
+      "ringScale",
+      "ringBlur",
+      "tileRadius",
+      "print",
+      "printDark",
+      "printMid",
+      "printLight",
+      "background",
+      "speed",
+    ],
+    // The ring's nine pictures, one object each, back of the pile first.
+    items: {
+      noun: "Picture",
+      fields: { image: { label: "Image", type: "image" } },
+      // Nine tiles: fewer pictures go round again, more are left out.
+      build: `(o) => Object.fromEntries(Array.from({ length: 9 }, (_, i) => [\`image\${i + 1}\`, o[i % Math.max(o.length, 1)]?.image || undefined]))`,
+      starter: (d) =>
+        Array.from({ length: 9 }, (_, i) => ({
+          image: String(d[`image${i + 1}`]),
+        })),
+    },
+    // Starter content that is not ours: a neutral prompt and generic photos
+    // instead of snapcn's own posters (the Element guidelines).
+    props: {
+      prompt: "Turn this week's photos into a launch reel",
+      ...Object.fromEntries(
+        Array.from({ length: 9 }, (_, i) => [
+          `image${i + 1}`,
+          PHOTOS[i % PHOTOS.length],
+        ]),
+      ),
+    },
+  },
+};
+const PRO_DIR = path.join(root, "registry", "snap-cn-pro");
+const PRO_OUT = path.join(
+  process.env.PRO_PRIVATE_DIR
+    ? path.resolve(process.env.PRO_PRIVATE_DIR)
+    : path.join(root, "registry", ".private"),
+  "elements",
+);
+
 const readItem = async (file: string): Promise<Item> =>
   JSON.parse(await readFile(path.join(PUBLIC_R, file), "utf8"));
 
@@ -780,13 +1267,17 @@ const configs = await loadConfigs();
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
 
-const built: string[] = [];
-for (const [name, studio] of Object.entries(ELEMENTS)) {
-  const item = await readItem(`${name}.json`);
-  const config = configs[name];
+/** One Element payload: the component inlined, wrapped for the Studio, formatted. */
+async function buildPayload(
+  name: string,
+  studio: Studio,
+  item: Item,
+  config: (typeof configs)[string] | undefined,
+) {
+  if (!config) throw new Error(`${name} has no config`);
   // The component stays as it is, under another name; its name goes to the
   // schema-enabled wrapper, which is the one export Studio imports.
-  const own = config?.componentName;
+  const own = config.componentName;
   const scene = `${own}Scene`;
   const declaration = `export function ${own}(`;
   const file = item.files?.find((f) => f.content.includes(declaration));
@@ -811,11 +1302,11 @@ for (const [name, studio] of Object.entries(ELEMENTS)) {
       studio,
       defaults,
     ) +
-      studioWrapper({
+      (studio.items ? studioItemsWrapper : studioWrapper)({
         name: own,
         scene,
         title: item.title ?? name,
-        studio,
+        studio: studio as Studio & { items: NonNullable<Studio["items"]> },
         controls: config.controls,
         defaults,
       }),
@@ -829,7 +1320,12 @@ for (const [name, studio] of Object.entries(ELEMENTS)) {
   const sourceCode = execFileSync(
     path.join(root, "node_modules", ".bin", "biome"),
     ["format", `--stdin-file-path=registry/snap-cn/${name}/element.tsx`],
-    { input: hideLayers(element.sourceCode), encoding: "utf8" },
+    {
+      // A stock Remotion template compiles with \`lib: ["es2015"]\`: without
+      // these the DOM types the scene uses do not exist there.
+      input: `/// <reference lib="dom" />\n/// <reference lib="dom.iterable" />\n${hideLayers(element.sourceCode)}`,
+      encoding: "utf8",
+    },
   );
 
   const imported = [...new Set(element.modules.map(packageName))].filter(
@@ -860,18 +1356,35 @@ for (const [name, studio] of Object.entries(ELEMENTS)) {
     ),
     dimensions: { width, height },
     durationInFrames: studio.durationInFrames ?? config.durationInFrames + TAIL,
-    installationMode: "component-owned-sequence",
-    // The starter content Studio writes onto the component, where the
-    // Inspector edits it: the controls it shows, at the Element's values.
-    initialProps: Object.fromEntries(
-      studio.controls.flatMap((key) =>
-        key in defaults
-          ? [[key, defaults[key] as string | number | boolean]]
-          : [],
-      ),
-    ),
+    ...(studio.items
+      ? // Its objects are call sites in the file, one outline each; Studio
+        // puts the Sequence around it.
+        { installationMode: "wrapped" as const, initialProps: null }
+      : {
+          installationMode: "component-owned-sequence" as const,
+          // The starter content Studio writes onto the component, where the
+          // Inspector edits it: the controls it shows, at the Element's values.
+          initialProps: Object.fromEntries(
+            [...studio.controls, ...slotKeys(studio)].flatMap((key) =>
+              key in defaults
+                ? [[key, defaults[key] as string | number | boolean]]
+                : [],
+            ),
+          ),
+        }),
   });
 
+  return payload;
+}
+
+const built: string[] = [];
+for (const [name, studio] of Object.entries(ELEMENTS)) {
+  const payload = await buildPayload(
+    name,
+    studio,
+    await readItem(`${name}.json`),
+    configs[name],
+  );
   await writeFile(
     path.join(OUT, `${name}.json`),
     `${JSON.stringify(payload, null, 2)}\n`,
@@ -884,3 +1397,52 @@ await writeFile(
   `${JSON.stringify(built, null, 2)}\n`,
 );
 console.log(`elements: built ${built.length}`);
+
+// ── The paid half ──────────────────────────────────────────────────────────
+if (existsSync(PRO_DIR)) {
+  await mkdir(PRO_OUT, { recursive: true });
+  const proBuilt: string[] = [];
+  for (const [name, studio] of Object.entries(PRO_ELEMENTS)) {
+    const dir = path.join(PRO_DIR, name);
+    const content = await readFile(path.join(dir, "index.tsx"), "utf8");
+    const mod = await import(pathToFileURL(path.join(dir, "config.ts")).href);
+    const config = Object.values(mod).find(
+      (v): v is (typeof configs)[string] =>
+        typeof v === "object" &&
+        v !== null &&
+        "controls" in v &&
+        "componentName" in v,
+    );
+    const source: Item = JSON.parse(
+      await readFile(path.join(PRO_DIR, "registry.json"), "utf8"),
+    ).items.find((i: Item) => i.name === name);
+    const item: Item = {
+      name,
+      title: source?.title ?? name,
+      type: "registry:component",
+      files: [
+        {
+          path: `${name}/index.tsx`,
+          content,
+          type: "registry:component",
+          target: `components/snap-cn/${name}.tsx`,
+        } as RegistryFile,
+      ],
+    };
+    const payload = await buildPayload(name, studio, item, config);
+    await writeFile(
+      path.join(PRO_OUT, `${name}.json`),
+      `${JSON.stringify(payload, null, 2)}\n`,
+    );
+    proBuilt.push(name);
+  }
+  await writeFile(
+    path.join(root, "lib", "studio-elements-pro.json"),
+    `${JSON.stringify(proBuilt, null, 2)}\n`,
+  );
+  console.log(
+    `elements: built ${proBuilt.length} pro, into ${path.relative(root, PRO_OUT)}`,
+  );
+} else {
+  console.log("elements: no pro tier here — pro Elements left as they were");
+}

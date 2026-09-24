@@ -12,6 +12,7 @@ import { inputStyleContext } from "@/components/snap-cn/input";
 import {
   clamp01,
   easings,
+  Item,
   mixOklch,
   resolveFont,
   type SnapCnTheme,
@@ -657,63 +658,64 @@ export function AnswerStream({
                 if (fc < boxF) return null;
                 const fill = boxF + 4;
                 return (
-                  <div
-                    key={c.title}
-                    style={{
-                      position: "absolute",
-                      left: ROW.x + i * (ROW.w + ROW.gap),
-                      top: ROW.top,
-                      width: ROW.w,
-                      height: ROW.h,
-                      borderRadius: ROW.r,
-                      background: t.card,
-                      border,
-                      opacity: clamp01((fc - boxF) / 3),
-                    }}
-                  >
-                    <div style={{ position: "absolute", left: 12, top: 12 }}>
-                      <Glyph
-                        d={c.icon ?? CARD_ICONS[i % CARD_ICONS.length]}
-                        size={11}
-                        color={t.mutedForeground}
+                  <Item key={c.title} index={i}>
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: ROW.x + i * (ROW.w + ROW.gap),
+                        top: ROW.top,
+                        width: ROW.w,
+                        height: ROW.h,
+                        borderRadius: ROW.r,
+                        background: t.card,
+                        border,
+                        opacity: clamp01((fc - boxF) / 3),
+                      }}
+                    >
+                      <div style={{ position: "absolute", left: 12, top: 12 }}>
+                        <Glyph
+                          d={c.icon ?? CARD_ICONS[i % CARD_ICONS.length]}
+                          size={11}
+                          color={t.mutedForeground}
+                        />
+                      </div>
+                      <Stream
+                        text={c.title}
+                        fc={fc}
+                        startF={fill}
+                        wordsPerFrame={wpf}
+                        coolF={coolF}
+                        ramp={ramp}
+                        style={{
+                          position: "absolute",
+                          left: 12,
+                          top: 32,
+                          right: 12,
+                          fontFamily: SERIF,
+                          fontWeight: 600,
+                          fontSize: 8,
+                          lineHeight: 1.2,
+                        }}
+                      />
+                      <Stream
+                        text={c.body}
+                        fc={fc}
+                        startF={fill + 2}
+                        wordsPerFrame={wpf}
+                        coolF={coolF}
+                        ramp={ramp}
+                        style={{
+                          position: "absolute",
+                          left: 12,
+                          top: 46,
+                          right: 12,
+                          fontFamily: face,
+                          fontSize: 7,
+                          lineHeight: "10px",
+                        }}
                       />
                     </div>
-                    <Stream
-                      text={c.title}
-                      fc={fc}
-                      startF={fill}
-                      wordsPerFrame={wpf}
-                      coolF={coolF}
-                      ramp={ramp}
-                      style={{
-                        position: "absolute",
-                        left: 12,
-                        top: 32,
-                        right: 12,
-                        fontFamily: SERIF,
-                        fontWeight: 600,
-                        fontSize: 8,
-                        lineHeight: 1.2,
-                      }}
-                    />
-                    <Stream
-                      text={c.body}
-                      fc={fc}
-                      startF={fill + 2}
-                      wordsPerFrame={wpf}
-                      coolF={coolF}
-                      ramp={ramp}
-                      style={{
-                        position: "absolute",
-                        left: 12,
-                        top: 46,
-                        right: 12,
-                        fontFamily: face,
-                        fontSize: 7,
-                        lineHeight: "10px",
-                      }}
-                    />
-                  </div>
+                  </Item>
                 );
               })}
 

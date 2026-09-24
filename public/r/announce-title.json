@@ -18,6 +18,6 @@
       "target": "components/snap-cn/announce-title.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/scenes/announce-title?ref=cli — its colours are explicit props (`paperColor`, `titleColor`, `voidColor`, …) rather than a palette, and it takes no `mode`. — 48 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/pro?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/announce-title?ref=cli — its colours are explicit props (`paperColor`, `titleColor`, `voidColor`, …) rather than a palette, and it takes no `mode`. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }

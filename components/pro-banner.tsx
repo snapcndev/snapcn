@@ -2,7 +2,6 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { PRO_ITEMS } from "@/config/site";
 import { useOwnsCatalogue } from "@/hooks/use-owns-catalogue";
 import { useTrackEvent } from "@/lib/analytics";
 import {
@@ -27,7 +26,19 @@ const HREF = "/docs/pricing?ref=banner#plans";
  * only after that, on the client: the gallery is prerendered, and a deadline
  * baked into its HTML would outlive the deadline.
  */
-export function ProBanner({ className }: { className?: string }) {
+export function ProBanner({
+  count,
+  className,
+}: {
+  /**
+   * How many Pro components there are. Handed in by a server component rather
+   * than read here: the list is built out of the registry JSON, and importing
+   * it into this client component put ~230KB of that JSON on every page that
+   * shows the banner — to render one number.
+   */
+  count: number;
+  className?: string;
+}) {
   const owns = useOwnsCatalogue();
   const trackEvent = useTrackEvent();
   if (owns) return null;
@@ -52,8 +63,8 @@ export function ProBanner({ className }: { className?: string }) {
         Pro
       </span>
       <span className="text-foreground">
-        {PRO_ITEMS.length} components, the MCP server and{" "}
-        {CATALOGUE_PROMISE.templates} templates — {CATALOGUE_PRICE.annual}/yr
+        {count} components, the MCP server and {CATALOGUE_PROMISE.templates}{" "}
+        templates — {CATALOGUE_PRICE.annual}/yr
         {early ? ` until ${EARLY_BIRD.endsOnShort}` : ""}
       </span>
       {bonus ? (

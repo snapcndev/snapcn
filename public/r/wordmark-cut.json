@@ -18,6 +18,6 @@
       "target": "components/snap-cn/wordmark-cut.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/scenes/wordmark-cut?ref=cli — pass word for the wordmark and dotFrom/dotTo for the gradient. — 48 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/pro?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/wordmark-cut?ref=cli — pass word for the wordmark and dotFrom/dotTo for the gradient. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }

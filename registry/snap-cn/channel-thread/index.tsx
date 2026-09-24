@@ -13,6 +13,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   mixOklch,
   resolveFont,
   type SnapCnTheme,
@@ -418,19 +419,23 @@ export function ChannelThread({
                 </>
               )}
               {shown ? (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: TEXT_X * u,
-                    top: (y - ASC) * u,
-                    fontSize: SIZE * u,
-                    lineHeight: 1,
-                    color: ink,
-                    opacity: bodyA,
-                  }}
-                >
-                  {l.text}
-                </div>
+                // The message is the object Studio selects: its body line, by
+                // its index across the whole script.
+                <Item index={i}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: TEXT_X * u,
+                      top: (y - ASC) * u,
+                      fontSize: SIZE * u,
+                      lineHeight: 1,
+                      color: ink,
+                      opacity: bodyA,
+                    }}
+                  >
+                    {l.text}
+                  </div>
+                </Item>
               ) : (
                 l.head &&
                 arrived && (

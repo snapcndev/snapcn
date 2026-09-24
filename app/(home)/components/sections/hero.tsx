@@ -17,7 +17,7 @@ import { FeaturedQuote } from "./featured-quote";
 const RISE =
   "animate-in fade-in slide-in-from-bottom-6 blur-in-8 duration-200 ease-[cubic-bezier(0,0,0.58,1)] fill-mode-backwards motion-reduce:animate-none";
 
-export function Hero() {
+export function Hero({ proCount }: { proCount: number }) {
   const trackEvent = useTrackEvent();
 
   return (
@@ -130,7 +130,10 @@ export function Hero() {
           </div>
 
           <div className={`${RISE} delay-[240ms]`}>
-            <ProBanner className="mt-6 rounded-2xl sm:rounded-full" />
+            <ProBanner
+              count={proCount}
+              className="mt-6 rounded-2xl sm:rounded-full"
+            />
           </div>
         </div>
       </div>

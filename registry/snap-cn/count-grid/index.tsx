@@ -10,6 +10,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
+import { Item } from "@/lib/snap-cn-ui";
 
 /**
  * A grid of cards that rushes in, settles on a small count, then fills the
@@ -276,7 +277,9 @@ export interface CountGridProps {
  * Through `staticFile`, not as a bare path. A Remotion bundle copies the public
  * directory to `<bundle>/public/` and serves it from there, so a hard-coded
  * `/demos/posters/x.webp` is a 404 in every render while looking perfect in the
- * app — `staticFile` is what knows the difference.
+ * app — `staticFile` is what knows the difference. The stills are the
+ * exception: they live on snapcn's media host now, not in `public/`, so they
+ * are full URLs and need no rewriting.
  *
  * Both kinds on purpose. Eight frames alone tile visibly across forty cells;
  * the registry's stills alone are 16:9 scenes of dark text on white, and a 3:4
@@ -295,44 +298,44 @@ const ART = [
   "showcase-assets/c9ebc6337aa2268ac4b357f9cb1ac547.jpg",
 ];
 const STILLS = [
-  "demos/posters/agent-steps.webp",
-  "demos/posters/announce-title.webp",
-  "demos/posters/answer-highlight.webp",
-  "demos/posters/answer-stream.webp",
-  "demos/posters/block-wordmark.webp",
-  "demos/posters/cursor-track.webp",
-  "demos/posters/follower-rush.webp",
-  "demos/posters/hero-launch.webp",
-  "demos/posters/karaoke-captions.webp",
-  "demos/posters/laptop-frame.webp",
-  "demos/posters/logo-assemble.webp",
-  "demos/posters/logo-drift.webp",
-  "demos/posters/logo-flicker.webp",
-  "demos/posters/moodboard-reveal.webp",
-  "demos/posters/orbit-gallery.webp",
-  "demos/posters/phone-frame.webp",
-  "demos/posters/prompt-send.webp",
-  "demos/posters/prompt-zoom.webp",
-  "demos/posters/punch-lines.webp",
-  "demos/posters/screen-recording.webp",
-  "demos/posters/search-typing.webp",
-  "demos/posters/status-cycle.webp",
-  "demos/posters/terminal-simulator.webp",
-  "demos/posters/text-build.webp",
-  "demos/posters/text-highlight.webp",
-  "demos/posters/text-reveal.webp",
-  "demos/posters/text-rewrite.webp",
-  "demos/posters/text-select.webp",
-  "demos/posters/text-swap.webp",
-  "demos/posters/text-swell.webp",
-  "demos/posters/type-morph.webp",
-  "demos/posters/word-captions.webp",
-  "demos/posters/word-flip.webp",
+  "https://media.snapcn.dev/demos/posters/agent-steps.webp",
+  "https://media.snapcn.dev/demos/posters/announce-title.webp",
+  "https://media.snapcn.dev/demos/posters/answer-highlight.webp",
+  "https://media.snapcn.dev/demos/posters/answer-stream.webp",
+  "https://media.snapcn.dev/demos/posters/block-wordmark.webp",
+  "https://media.snapcn.dev/demos/posters/cursor-track.webp",
+  "https://media.snapcn.dev/demos/posters/follower-rush.webp",
+  "https://media.snapcn.dev/demos/posters/hero-launch.webp",
+  "https://media.snapcn.dev/demos/posters/karaoke-captions.webp",
+  "https://media.snapcn.dev/demos/posters/laptop-frame.webp",
+  "https://media.snapcn.dev/demos/posters/logo-assemble.webp",
+  "https://media.snapcn.dev/demos/posters/logo-drift.webp",
+  "https://media.snapcn.dev/demos/posters/logo-flicker.webp",
+  "https://media.snapcn.dev/demos/posters/moodboard-reveal.webp",
+  "https://media.snapcn.dev/demos/posters/orbit-gallery.webp",
+  "https://media.snapcn.dev/demos/posters/phone-frame.webp",
+  "https://media.snapcn.dev/demos/posters/prompt-send.webp",
+  "https://media.snapcn.dev/demos/posters/prompt-zoom.webp",
+  "https://media.snapcn.dev/demos/posters/punch-lines.webp",
+  "https://media.snapcn.dev/demos/posters/screen-recording.webp",
+  "https://media.snapcn.dev/demos/posters/search-typing.webp",
+  "https://media.snapcn.dev/demos/posters/status-cycle.webp",
+  "https://media.snapcn.dev/demos/posters/terminal-simulator.webp",
+  "https://media.snapcn.dev/demos/posters/text-build.webp",
+  "https://media.snapcn.dev/demos/posters/text-highlight.webp",
+  "https://media.snapcn.dev/demos/posters/text-reveal.webp",
+  "https://media.snapcn.dev/demos/posters/text-rewrite.webp",
+  "https://media.snapcn.dev/demos/posters/text-select.webp",
+  "https://media.snapcn.dev/demos/posters/text-swap.webp",
+  "https://media.snapcn.dev/demos/posters/text-swell.webp",
+  "https://media.snapcn.dev/demos/posters/type-morph.webp",
+  "https://media.snapcn.dev/demos/posters/word-captions.webp",
+  "https://media.snapcn.dev/demos/posters/word-flip.webp",
 ];
 const OWN_CARDS = STILLS.flatMap((s, i) => [
   ART[i % ART.length] as string,
   s,
-]).map((f) => staticFile(f));
+]).map((f) => (f.startsWith("https://") ? f : staticFile(f)));
 // index 0, 2, 4 … are ART by construction, and the five seed cells only ever
 // reach the first `SEED.length` of them.
 
@@ -407,6 +410,7 @@ export function CountGrid({
     x: number;
     y: number;
     o: number;
+    i: number;
     src: string;
   }[] = [];
   for (let row = -rows; row <= rows; row++) {
@@ -436,8 +440,19 @@ export function CountGrid({
           ? (2 * (((seed % SEED.length) + SEED.length) % SEED.length)) %
             cards.length
           : ((mix % cards.length) + cards.length) % cards.length;
-      cells.push({ col, row, x: cx, y: cy, o, src: cards[i] ?? "" });
+      cells.push({ col, row, x: cx, y: cy, o, i, src: cards[i] ?? "" });
     }
+  }
+
+  // The grid cycles `cards`, so one card is drawn many times. Studio outlines
+  // the copy nearest the middle of the frame; the others are only pictures of
+  // it.
+  const nearest = new Map<number, (typeof cells)[number]>();
+  const off = (c: (typeof cells)[number]) =>
+    Math.hypot(c.x - width / 2, c.y - height / 2);
+  for (const c of cells) {
+    const held = nearest.get(c.i);
+    if (!held || off(c) < off(held)) nearest.set(c.i, c);
   }
 
   const filled = now * fps >= FILL_AT;
@@ -487,45 +502,52 @@ export function CountGrid({
         }}
       >
         {cells.map((c) => (
-          <div
+          <Item
             key={`${c.col},${c.row}`}
-            style={{
-              position: "absolute",
-              left: c.x - cardW / 2,
-              top: c.y - cardH / 2,
-              width: cardW,
-              height: cardH,
-              borderRadius: CARD.radius * g * k,
-              overflow: "hidden",
-              background: "#FFFFFF",
-              // A hairline, not a shadow: a drop shadow under forty white
-              // tiles on a white page is forty grey smears.
-              boxShadow: `inset 0 0 0 ${Math.max(0.5, 0.9 * g * k)}px #ECEFF2`,
-              display: "flex",
-              alignItems: "center",
-              opacity: c.o,
-              filter:
-                late > 0.35 && c.col === LATE_CARD[0] && c.row === LATE_CARD[1]
-                  ? "url(#count-grid-late)"
-                  : undefined,
-            }}
+            index={c.i}
+            primary={nearest.get(c.i) === c}
           >
-            {c.src ? (
-              <Img
-                src={resolveSrc(c.src)}
-                style={{
-                  width: cardW,
-                  height: cardH,
-                  // Preflight's `img { max-width: 100% }` against a box that
-                  // sizes from its content is 100% of nothing — the card
-                  // renders zero px wide on the site and perfectly in the mp4.
-                  maxWidth: "none",
-                  objectFit: "cover",
-                }}
-                alt=""
-              />
-            ) : null}
-          </div>
+            <div
+              style={{
+                position: "absolute",
+                left: c.x - cardW / 2,
+                top: c.y - cardH / 2,
+                width: cardW,
+                height: cardH,
+                borderRadius: CARD.radius * g * k,
+                overflow: "hidden",
+                background: "#FFFFFF",
+                // A hairline, not a shadow: a drop shadow under forty white
+                // tiles on a white page is forty grey smears.
+                boxShadow: `inset 0 0 0 ${Math.max(0.5, 0.9 * g * k)}px #ECEFF2`,
+                display: "flex",
+                alignItems: "center",
+                opacity: c.o,
+                filter:
+                  late > 0.35 &&
+                  c.col === LATE_CARD[0] &&
+                  c.row === LATE_CARD[1]
+                    ? "url(#count-grid-late)"
+                    : undefined,
+              }}
+            >
+              {c.src ? (
+                <Img
+                  src={resolveSrc(c.src)}
+                  style={{
+                    width: cardW,
+                    height: cardH,
+                    // Preflight's `img { max-width: 100% }` against a box that
+                    // sizes from its content is 100% of nothing — the card
+                    // renders zero px wide on the site and perfectly in the mp4.
+                    maxWidth: "none",
+                    objectFit: "cover",
+                  }}
+                  alt=""
+                />
+              ) : null}
+            </div>
+          </Item>
         ))}
       </div>
 

@@ -1,5 +1,5 @@
 import "server-only";
-import { PRO_ITEMS } from "@/config/site";
+import { PRO_ITEMS } from "@/config/catalogue";
 import { PRO_SAMPLE } from "@/lib/plans";
 import { isSuppressed } from "@/lib/server/suppression";
 

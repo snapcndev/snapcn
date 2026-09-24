@@ -7,6 +7,8 @@ export {
   withAlpha,
 } from "./color";
 export { FONT_NAMES, FONTS, resolveFont } from "./fonts";
+export type { ItemHost } from "./item";
+export { Item, ItemHostProvider } from "./item";
 export type { EasingName, SpringName } from "./motion";
 export { easings, springs } from "./motion";
 export type { SnapCnTheme, SnapCnUIProviderProps } from "./theme";

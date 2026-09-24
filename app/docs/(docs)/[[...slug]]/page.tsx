@@ -19,7 +19,7 @@ import {
 } from "@/lib/gallery-data";
 import { collectDocsPages } from "@/lib/llms";
 import { CATALOGUE_PRICE, PRO_SAMPLE } from "@/lib/plans";
-import { proDemoSrc } from "@/lib/pro-demos";
+import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import { RenderedDemo } from "@/lib/rendered-demos";
 import { installCounts, MIN_SHOWN } from "@/lib/server/install-counts";
 import {
@@ -442,7 +442,10 @@ function ProComponentPage({
           // The free pages' preview frame (`ComponentPreview`), so the two read
           // as one kind of page.
           <div className="not-prose surface-card relative aspect-video w-full overflow-hidden rounded-2xl">
-            <RenderedDemo src={demoSrc} />
+            <RenderedDemo
+              src={demoSrc}
+              poster={proDemoPoster(slug) ?? undefined}
+            />
           </div>
         ) : null}
         {/* Pricing for a reader without Pro, the install for one with it —

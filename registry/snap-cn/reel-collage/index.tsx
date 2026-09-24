@@ -79,7 +79,7 @@ const FONT_FAMILY =
  *  becomes `staticFile()` in a render and 404s in the project this file was
  *  just copied into. Pass your own — root-relative or remote, both resolve. */
 const POSTER = (slug: string) =>
-  `https://snapcn.dev/demos/posters/${slug}.webp`;
+  `https://media.snapcn.dev/demos/posters/${slug}.webp`;
 const DEFAULT_SLIDES = [
   "orbit-gallery",
   "card-rail",

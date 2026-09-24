@@ -166,3 +166,20 @@ describe("wallOffset", () => {
     expect(writes).toBeLessThanOrEqual(CARDS * 5);
   });
 });
+
+describe("startSlot", () => {
+  it("is where wallOffset puts each card before the wall moves", async () => {
+    const { startSlot, wallGeometry, wallOffset } = await import(
+      "../showcase-wall"
+    );
+    for (const count of [1, 2, 11, 42]) {
+      const { pitch, span } = wallGeometry(1440, count);
+      for (let i = 0; i < count; i++) {
+        expect(startSlot(i, count) * pitch).toBeCloseTo(
+          wallOffset(i, pitch, span, 0),
+          6,
+        );
+      }
+    }
+  });
+});

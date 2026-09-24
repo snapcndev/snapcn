@@ -224,7 +224,15 @@ export const RENDERED_DEMOS: readonly string[] = [
 ];
 
 /**
- * Public path of a slug's rendered demo, or null if it has none.
+ * Where every rendered demo, poster and pro demo is served from: R2 (bucket
+ * `snapcn`) behind Cloudflare, uploaded by `scripts/media-upload.mts`. Not the
+ * app: from `public/demos` they came off one server with no CDN in front, a
+ * round trip per file per visit, and 16MB of video in the repository.
+ */
+export const MEDIA_BASE = "https://media.snapcn.dev";
+
+/**
+ * Public URL of a slug's rendered demo, or null if it has none.
  *
  * The `?v=` is a hash of the file's own bytes, written by `pnpm run render:previews`
  * into `lib/demo-manifest.json`. Every demo ships to the same path forever, so
@@ -240,7 +248,8 @@ export const RENDERED_DEMOS: readonly string[] = [
 export function renderedDemoSrc(slug: string): string | null {
   if (!RENDERED_DEMOS.includes(slug)) return null;
   const version = (demoManifest as Record<string, string>)[slug];
-  return version ? `/demos/${slug}.mp4?v=${version}` : `/demos/${slug}.mp4`;
+  const base = `${MEDIA_BASE}/demos/${slug}.mp4`;
+  return version ? `${base}?v=${version}` : base;
 }
 
 /**
@@ -250,6 +259,6 @@ export function renderedDemoSrc(slug: string): string | null {
 export function renderedDemoPoster(slug: string): string | null {
   if (!RENDERED_DEMOS.includes(slug)) return null;
   const version = (demoManifest as Record<string, string>)[slug];
-  const base = `/demos/posters/${slug}.webp`;
+  const base = `${MEDIA_BASE}/demos/posters/${slug}.webp`;
   return version ? `${base}?v=${version}` : base;
 }

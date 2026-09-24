@@ -940,6 +940,11 @@
           "target": "lib/snap-cn-ui/motion.ts"
         },
         {
+          "path": "registry/snap-cn-ui/core/item.tsx",
+          "type": "registry:lib",
+          "target": "lib/snap-cn-ui/item.tsx"
+        },
+        {
           "path": "registry/snap-cn-ui/core/types.ts",
           "type": "registry:lib",
           "target": "lib/snap-cn-ui/types.ts"
@@ -2137,6 +2142,52 @@
         }
       ],
       "docs": "Docs and props: https://snapcn.dev/docs/scenes/pack-up?ref=cli — pass headline for the line that types itself (its last word is the one that falls into the box), copies for how many go in, accent for the colour a character arrives in and the caret, and carton for the box's lit paper, which defaults to your card surface. capHeight, tracking, shape and beats are there for when the copy is not fifteen characters long.",
+      "type": "registry:component",
+      "meta": {
+        "access": "pro"
+      }
+    },
+    {
+      "name": "task-stream",
+      "title": "Task Stream",
+      "description": "AI agent task list animation: steps stream in with spinners and tick off. An agent's task list, streaming in and ticking off. A heading writes itself a word at a time and a chevron lands after it; a spinner slides in and each task streams in beside it, every word fading up as it drifts into place. A band of blue sweeps through the line while the task runs, then the spinner flashes into a glowing check that draws itself, cools from cyan to blue and settles into ink before the next task starts. The shot opens close on the first task and pulls back to the whole list as the work gets going. Replayed from a 60fps screen recording measured frame by frame: the camera, the rail, every word's arrival and the check's flash are tables and fitted curves, not taste.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "task-stream/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/task-stream.tsx"
+        }
+      ],
+      "docs": "Docs and props: https://snapcn.dev/docs/ai-input/task-stream?ref=cli — 60fps. Pass title for the heading and steps (up to five) for the tasks; accent, shimmerColor, flashColor and glowColor paint the running task and its check, speed scales the whole timeline.",
+      "type": "registry:component",
+      "meta": {
+        "access": "pro"
+      }
+    },
+    {
+      "name": "glass-prompt",
+      "title": "Glass Prompt",
+      "description": "AI prompt animation: a glass prompt bar, a send click and a dive into a ring of results. A prompt typed into a pane of glass, and a dive through its send button into the ring of pictures it asked for. A glass pill floats over rolling hills and the request types itself in; an arrow pops in at its end. The shot cuts in close on the arrow with the hills gone soft behind the glass, a pointer rises to it and presses, and the pane rolls and rushes the lens — the arrow swelling into a band of light, the glass washing out to white — until the camera is through it and nine pictures fan out of the arrow's middle into a ring, each one developing out of a blue negative into its own colours as the ring comes round. Replayed from a 4.1s screen recording measured frame by frame: the camera is an affine per frame, the roll a similarity fitted on the pill's own edges, the glass a fixed window onto a small copy of the backdrop, and every tile tracked from its final rect.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "glass-prompt/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/glass-prompt.tsx"
+        }
+      ],
+      "docs": "Docs and props: https://snapcn.dev/docs/ai-input/glass-prompt?ref=cli — 151 frames at 30fps. prompt (a long one shrinks to fit the glass), backdrop (empty draws hills), images or image1…image9 for the ring, fontFamily and textScale; frost, rim and lensZoom for the glass; focus and motionBlur for the camera; showPointer, pointer and pointerFill; ringScale, ringBlur and tileRadius; print and printDark/Mid/Light for the blue negative; background and speed. Also installs into Remotion Studio from the gallery, with every prop in the Inspector.",
       "type": "registry:component",
       "meta": {
         "access": "pro"

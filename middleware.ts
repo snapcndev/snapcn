@@ -3,13 +3,14 @@ import {
   ALL_COMPONENT_NAMES,
   INSTALL_ALL_NAMES,
   PRO_NAMES,
-} from "@/config/site";
+} from "@/config/catalogue";
 import {
   anonymousId,
   captureServer,
   classifyClient,
   distinctIdFromCookie,
 } from "@/lib/analytics-server";
+import { MEDIA_BASE } from "@/lib/demo-urls";
 import { suggestComponents } from "@/lib/registry-suggest";
 
 /**
@@ -58,9 +59,9 @@ const PRO_COMPONENTS = new Set(PRO_NAMES);
  *
  * ## Cost
  *
- * The matcher is three paths. Middleware does not run on the landing page, the
- * docs, `/_next/*`, or any other request, so this adds nothing to the site's
- * latency. On the paths it does match, `after()` runs the capture once the
+ * The matcher is a handful of paths (plus `/demos/*`, which only redirects).
+ * Middleware does not run on the landing page, the docs, `/_next/*`, or any
+ * other request, so this adds nothing to the site's latency. On the paths it does match, `after()` runs the capture once the
  * response has already been handed back, so the CLI waits on nothing either.
  */
 
@@ -79,8 +80,39 @@ function componentFromPath(pathname: string): string | null {
   return match[1];
 }
 
+/**
+ * The demos moved to `media.snapcn.dev` (R2 behind Cloudflare; `MEDIA_BASE` in
+ * lib/demo-urls.ts). `/demos/...` still answers, with a permanent redirect to
+ * the same path there, query and all, because those URLs are out in the world:
+ * in Studio Elements already installed in people's projects (the
+ * screen-recording default was `snapcn.dev/demos/…mp4`), in posts, in caches.
+ *
+ * Here and not in `next.config` redirects, for one header: Studio reads that
+ * footage with a cross-origin ranged `fetch()`, and CORS is checked on every
+ * hop — a redirect without `Access-Control-Allow-Origin` fails the fetch before
+ * it reaches the file. Config redirects cannot carry headers.
+ */
+const DEMO_CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+  "Access-Control-Allow-Headers": "Range",
+  "Access-Control-Expose-Headers": "Content-Range, Content-Length",
+};
+
+function demoRedirect(request: NextRequest): NextResponse {
+  if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 204, headers: DEMO_CORS });
+  }
+  const { pathname, search } = request.nextUrl;
+  return new NextResponse(null, {
+    status: 308,
+    headers: { ...DEMO_CORS, Location: `${MEDIA_BASE}${pathname}${search}` },
+  });
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/demos/")) return demoRedirect(request);
   const requested = componentFromPath(pathname);
   // Answer the miss here rather than letting it fall through to the HTML 404.
   // The analytics below still runs either way — `after()` is attached to
@@ -198,6 +230,7 @@ function unknownComponent(component: string, origin: string): NextResponse {
  */
 export const config = {
   matcher: [
+    "/demos/:path*",
     "/r/:path*",
     "/llms.txt",
     "/llms-full.txt",

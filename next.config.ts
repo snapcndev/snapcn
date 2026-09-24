@@ -52,6 +52,7 @@ const nextConfig: NextConfig = {
     // cache the same pages sat at 0% CPU, and cold compiles were no slower
     // (/docs/components 5.3s without it, 8.4s with). Re-enable once Next prunes it.
     turbopackFileSystemCacheForDev: false,
+    inlineCss: true,
   },
   // One canonical host. `www.` and the apex both served a 200, so Google saw two
   // copies of every page and split the ranking signal between them — while the
@@ -99,33 +100,6 @@ const nextConfig: NextConfig = {
       // docs URL, which is the whole point — an agent appends `.md` to the link
       // it already has and does not need to learn a second URL shape.
       { source: "/docs/:path*.md", destination: "/docs-md/:path*" },
-    ];
-  },
-  // Rendered demos always ship to the SAME path (`/demos/<slug>.mp4`), so a
-  // browser that has one will happily keep replaying it after the file underneath
-  // has been re-rendered — <video> caches especially hard. That cost two rounds of
-  // "why am I still seeing the old one". In dev, never cache them; in production,
-  // always revalidate (a 304 is cheap and these change on every deploy).
-  async headers() {
-    return [
-      {
-        source: "/demos/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value:
-              process.env.NODE_ENV === "development"
-                ? "no-store"
-                : "public, max-age=0, must-revalidate",
-          },
-          // A Studio Element's default footage lives here, and the Studio it is
-          // installed into (localhost) reads it with ranged fetch() for the
-          // timeline filmstrip — cross-origin, so it fails without these. The
-          // size of the file comes from Content-Range, which CORS hides.
-          { key: "Access-Control-Allow-Origin", value: "*" },
-          { key: "Access-Control-Expose-Headers", value: "Content-Range" },
-        ],
-      },
     ];
   },
   typescript: {

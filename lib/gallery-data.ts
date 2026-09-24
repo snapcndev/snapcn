@@ -9,7 +9,7 @@ import {
   Type,
   Users,
 } from "lucide-react";
-import { PRO_ITEMS } from "@/config/site";
+import { PRO_ITEMS } from "@/config/catalogue";
 import { PRO_DEMO_BASE } from "@/lib/pro-demos";
 
 /**
@@ -591,6 +591,8 @@ const PRO_CATEGORY: Record<string, CategoryId> = {
   "agent-tools": "ai-input",
   "prompt-dive": "ai-input",
   "files-drop": "ai-input",
+  "task-stream": "ai-input",
+  "glass-prompt": "ai-input",
 };
 
 /**

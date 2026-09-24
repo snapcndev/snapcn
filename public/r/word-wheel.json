@@ -18,6 +18,6 @@
       "target": "components/snap-cn/word-wheel.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/text/word-wheel?ref=cli — headline is the part of the line that never changes; words is the reel, comma separated, and its FIRST entry is the one the scene comes to rest on; spin is how many rows the reel travels, and left at the list's own length it turns exactly once and comes home. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette. — 48 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/pro?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/text/word-wheel?ref=cli — headline is the part of the line that never changes; words is the reel, comma separated, and its FIRST entry is the one the scene comes to rest on; spin is how many rows the reel travels, and left at the list's own length it turns exactly once and comes home. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }
