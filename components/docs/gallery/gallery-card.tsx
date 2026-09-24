@@ -10,7 +10,6 @@ import {
   slugFromHref,
   TILE_RATIOS,
 } from "@/lib/gallery-data";
-import { CATALOGUE_PRICE } from "@/lib/plans";
 import { previewMeta } from "@/lib/preview-meta";
 import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import {
@@ -136,22 +135,11 @@ export function GalleryCard({
         ) : null}
       </div>
 
-      {/* The price, at rest rather than on hover.
-          47 people had reached a price page in this site's entire history, and
-          2,436 a month reach this grid — so the number has to be ON the card,
-          not one click behind a badge that says "Pro" and nothing else. A badge
-          that only appears under the pointer is one they meet after deciding.
-          Same chip as the hover arrow, so it reads as card furniture rather
-          than a sticker on the video.
-
-          "all for" is load-bearing and is not padding. A bare `Pro · $99` on a
-          tile showing ONE animation reads as the price OF that animation, which
-          is an absurd price for one and hides the only offer there is — there
-          is no per-component sale, the catalogue is sold whole. Naming the unit
-          turns the same number from a deterrent into the value statement. */}
+      {/* Just "Pro": the price lives on the pricing page and the banner above
+          the grid, not on every tile. */}
       {item.pro ? (
         <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-gallery-chip px-2.5 py-1 text-xs font-medium text-foreground backdrop-blur-md">
-          Pro · all for {CATALOGUE_PRICE.annual}/yr
+          Pro
         </span>
       ) : null}
 
