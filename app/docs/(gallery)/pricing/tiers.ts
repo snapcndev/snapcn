@@ -1,6 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
-import { PRO_ITEMS } from "@/config/site";
+import { PRO_ITEMS } from "@/config/catalogue";
 import { GALLERY_COUNT } from "@/lib/gallery-data";
 import {
   CATALOGUE_PRICE,

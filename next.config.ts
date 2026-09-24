@@ -52,6 +52,7 @@ const nextConfig: NextConfig = {
     // cache the same pages sat at 0% CPU, and cold compiles were no slower
     // (/docs/components 5.3s without it, 8.4s with). Re-enable once Next prunes it.
     turbopackFileSystemCacheForDev: false,
+    inlineCss: true,
   },
   // One canonical host. `www.` and the apex both served a 200, so Google saw two
   // copies of every page and split the ranking signal between them — while the

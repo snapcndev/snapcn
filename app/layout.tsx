@@ -23,6 +23,15 @@ import { ThemeShortcut } from "./theme-shortcut";
 const saans = localFont({
   variable: "--font-sans",
   display: "swap",
+  // Not preloaded. Production serves HTTP/2 without honouring request
+  // priority, so a preload is not "early", it is "at the same time as the
+  // stylesheet" — and the stylesheet blocks the first paint. Measured on a
+  // slow phone profile, the live site's CSS took 3s to arrive because 112KB of
+  // Saans was downloading beside it, and the hero painted at 3.6s. Without the
+  // preload the faces are requested once the CSS is parsed, the hero paints in
+  // the fallback (metric-matched, so nothing moves) and swaps to Saans a moment
+  // later.
+  preload: false,
   src: [
     { path: "./fonts/Saans-Regular.woff2", weight: "400", style: "normal" },
     { path: "./fonts/Saans-Medium.woff2", weight: "500", style: "normal" },
@@ -45,10 +54,13 @@ const geistSans = Geist({
   preload: false,
 });
 
-// Preloaded, unlike its siblings: the hero's install button is set in it.
+// Not preloaded any more: nothing on the first screen is set in it (the hero's
+// install button, which was, is gone), and a preload competes with the
+// stylesheet for the same connection — see `saans`.
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 // `--font-display`: docs headings, showcase and the video editor.
@@ -145,6 +157,12 @@ export default function RootLayout({
                   defaultTheme: "system",
                   enableSystem: true,
                 }}
+                // The search dialog is lazy, but `preload` (on by default)
+                // mounts it closed on every page — which loads it, and the
+                // search index client with it: three chunks, ~300KB, on the
+                // critical path of pages nobody searches from. Off, it loads
+                // on first open.
+                search={{ preload: false }}
               >
                 <ThemeShortcut />
                 <SnapCnThemeBridge>{children}</SnapCnThemeBridge>

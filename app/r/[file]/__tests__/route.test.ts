@@ -16,7 +16,7 @@ vi.mock("@/lib/server/api-key", () => ({
 }));
 vi.mock("@/lib/server/pro-registry", () => ({ readProItem: async () => null }));
 
-import { PRO_NAMES } from "@/config/site";
+import { PRO_NAMES } from "@/config/catalogue";
 import { GET } from "../route";
 
 const name = PRO_NAMES[0];

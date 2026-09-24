@@ -3,7 +3,7 @@ import {
   ALL_COMPONENT_NAMES,
   INSTALL_ALL_NAMES,
   PRO_NAMES,
-} from "@/config/site";
+} from "@/config/catalogue";
 import {
   anonymousId,
   captureServer,

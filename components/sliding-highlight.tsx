@@ -1,43 +1,42 @@
 "use client";
 
-import { motion, type Transition } from "motion/react";
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_TRANSITION: Transition = {
-  type: "tween",
-  duration: 0.15,
-  ease: "easeOut",
-};
 
 /**
  * Absolutely-positioned highlight that glides to a target rect. Driven by transform
  * (left:0 + translateX) rather than animating layout, so it slides between
  * targets instead of popping. `rect={null}` retracts it (opacity 0). The parent
  * owns positioning context and measurement; this only renders the moving span.
+ *
+ * A CSS transition, not `motion/react`: this sits in the site header, so the
+ * animation library was loading on every page of the site for one hover.
+ * Retracted, it holds the last rect it had — it fades out where it was, and the
+ * next hover slides from there rather than in from the left edge.
  */
 export function SlidingHighlight({
   rect,
   className,
-  transition = DEFAULT_TRANSITION,
 }: {
   rect: { left: number; width: number } | null;
   className?: string;
-  transition?: Transition;
 }) {
+  const last = useRef(rect);
+  if (rect) last.current = rect;
+  const at = rect ?? last.current;
+
   return (
-    <motion.span
+    <span
       aria-hidden
-      initial={false}
       className={cn(
-        "pointer-events-none absolute left-0 top-0 -z-10 h-full rounded-md bg-muted",
+        "pointer-events-none absolute left-0 top-0 -z-10 h-full rounded-md bg-muted transition-[translate,width,opacity] duration-150 ease-out motion-reduce:transition-none",
         className,
       )}
-      animate={{
-        x: rect?.left ?? 0,
-        width: rect?.width ?? 0,
+      style={{
+        translate: `${at?.left ?? 0}px 0`,
+        width: at?.width ?? 0,
         opacity: rect ? 1 : 0,
       }}
-      transition={transition}
     />
   );
 }

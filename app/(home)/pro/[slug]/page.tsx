@@ -1,5 +1,5 @@
 import { permanentRedirect } from "next/navigation";
-import { PRO_NAMES } from "@/config/site";
+import { PRO_NAMES } from "@/config/catalogue";
 import { ITEM_BY_SLUG } from "@/lib/gallery-data";
 
 /**

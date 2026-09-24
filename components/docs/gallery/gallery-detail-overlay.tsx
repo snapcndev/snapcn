@@ -32,7 +32,7 @@ import {
 } from "@/lib/gallery-data";
 import { CATALOGUE_PRICE } from "@/lib/plans";
 import { previewMeta } from "@/lib/preview-meta";
-import { proDemoSrc } from "@/lib/pro-demos";
+import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import {
   RenderedDemo,
   renderedDemoPoster,
@@ -243,9 +243,10 @@ function OverlayBody({
    * one is not.
    */
   const demoSrc = item.pro ? proDemoSrc(slug) : renderedDemoSrc(slug);
-  // No poster for a paid card: it autoplays the moment it is on screen and a
-  // still in front of it is a frame of the video shown as a photograph.
-  const demoPoster = item.pro ? null : renderedDemoPoster(slug);
+  // A poster for a paid card too. It autoplays the moment it is on screen —
+  // when it can: until its bytes arrive, or if they never do, or if the
+  // browser refuses the autoplay, a card with no poster is an empty box.
+  const demoPoster = item.pro ? proDemoPoster(slug) : renderedDemoPoster(slug);
   const category = CATEGORY_LABEL.get(item.category) ?? item.category;
   // One string for both the label and the clipboard. They used to be written out
   // separately, so the row showed a bare `@snapcn/text-reveal` — which is not a

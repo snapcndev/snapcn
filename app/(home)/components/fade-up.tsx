@@ -1,34 +1,58 @@
 "use client";
 
-import { motion, useInView, useReducedMotion } from "motion/react";
-import { type ReactNode, useRef } from "react";
-import { EASE_OUT } from "@/config/site";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
+/**
+ * Rise into place the first time a fifth of it is on screen: 24px, from an 8px
+ * blur, over 200ms ease-out.
+ *
+ * A CSS transition and one IntersectionObserver. This was `motion/react`, which
+ * put the whole animation library on the home page for a fade — and imported
+ * its easing from `config/site`, which carried the registry JSON with it.
+ * Reduced motion shows the content where it lands, with nothing to wait for.
+ */
 export function FadeUp({
   children,
   delay = 0,
   className = "",
 }: {
   children: ReactNode;
+  /** Seconds. */
   delay?: number;
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.2 });
-  const reduced = useReducedMotion();
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setShown(true);
+        io.disconnect();
+      },
+      { threshold: 0.2 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <motion.div
+    <div
       ref={ref}
-      className={className}
-      initial={reduced ? false : { opacity: 0, y: 24, filter: "blur(8px)" }}
-      animate={
-        inView
-          ? { opacity: 1, y: 0, filter: "blur(0px)" }
-          : { opacity: 0, y: 24, filter: "blur(8px)" }
-      }
-      transition={{ ...EASE_OUT, delay }}
+      className={cn(
+        "transition-[opacity,translate,filter] duration-200 ease-out motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:blur-none motion-reduce:transition-none",
+        shown
+          ? "translate-y-0 opacity-100 blur-none"
+          : "translate-y-6 opacity-0 blur-[8px]",
+        className,
+      )}
+      style={delay ? { transitionDelay: `${delay}s` } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

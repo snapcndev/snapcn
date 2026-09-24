@@ -3,7 +3,7 @@
 import { ArrowUpRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { proDemoSrc } from "@/lib/pro-demos";
+import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import {
   RenderedDemo,
   renderedDemoPoster,
@@ -61,7 +61,11 @@ function CardPreview({ item }: { item: CardItem }) {
     return (
       <div ref={containerRef} className="size-full">
         {mounted && src ? (
-          <RenderedDemo src={src} className="bg-card" />
+          <RenderedDemo
+            src={src}
+            poster={proDemoPoster(slug) ?? undefined}
+            className="bg-card"
+          />
         ) : (
           <PreviewPlaceholder />
         )}

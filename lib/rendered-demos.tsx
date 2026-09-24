@@ -102,6 +102,12 @@ export function RenderedDemo({
       loop
       muted
       playsInline
+      // A picture of the component, not a player: no picture-in-picture, no
+      // cast button, nothing to download. `demo-video` hides what the
+      // browsers that ignore these draw anyway — see globals.css.
+      disablePictureInPicture
+      disableRemotePlayback
+      controlsList="nodownload nofullscreen noremoteplayback"
       // `none`, still, and no `src` until the governor gives it one. The bytes
       // arrive when the card is actually being looked at and not before —
       // `auto` would tell the browser to pull every demo on the page at once.
@@ -116,7 +122,7 @@ export function RenderedDemo({
       onBlur={pointerStop}
       // `contain`, not `cover`: the Player letterboxes rather than crops, and a
       // demo that silently crops its own composition is a lie about the output.
-      className={cn("size-full object-contain", className)}
+      className={cn("demo-video size-full object-contain", className)}
     />
   );
 }

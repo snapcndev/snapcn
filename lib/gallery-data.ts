@@ -9,7 +9,7 @@ import {
   Type,
   Users,
 } from "lucide-react";
-import { PRO_ITEMS } from "@/config/site";
+import { PRO_ITEMS } from "@/config/catalogue";
 import { PRO_DEMO_BASE } from "@/lib/pro-demos";
 
 /**

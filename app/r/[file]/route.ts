@@ -1,4 +1,4 @@
-import { PRO_NAMES } from "@/config/site";
+import { PRO_NAMES } from "@/config/catalogue";
 import { GALLERY_COUNT, ITEM_BY_SLUG } from "@/lib/gallery-data";
 import {
   CATALOGUE_PRICE,

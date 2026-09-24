@@ -34,3 +34,15 @@ export function proDemoSrc(slug: string): string | null {
   if (!PRO_DEMO_BASE || !v) return null;
   return `${PRO_DEMO_BASE}/${slug}.mp4?v=${v}`;
 }
+
+/**
+ * A still of a pro demo, shown until the video has a frame — and for good when
+ * it never gets one (a failed load, a refused autoplay, a data saver). Beside
+ * the free posters at `media.snapcn.dev/demos/pro-posters`. Versioned by the
+ * video's own hash, so it moves with it.
+ */
+export function proDemoPoster(slug: string): string | null {
+  const v = version(slug);
+  if (!v) return null;
+  return `${MEDIA_BASE}/demos/pro-posters/${slug}.webp?v=${v}`;
+}

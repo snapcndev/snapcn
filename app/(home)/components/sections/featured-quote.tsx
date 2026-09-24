@@ -20,9 +20,11 @@ export function FeaturedQuote({ className }: { className?: string }) {
         className,
       )}
     >
-      {/* biome-ignore lint/performance/noImgElement: local, fixed-size avatar. */}
+      {/* biome-ignore lint/performance/noImgElement: local, fixed-size avatar.
+          The 64px copy (2x its box): the 400px original is 20KB, on the first
+          screen, fetched beside the stylesheet the first paint waits for. */}
       <img
-        src={`/wall-of-love/${post.handle}.jpg`}
+        src={`/wall-of-love/${post.handle}-64.webp`}
         alt=""
         width={32}
         height={32}

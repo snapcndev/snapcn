@@ -3,6 +3,7 @@ import { auth, getConfiguredProviders, isEmailSignInConfigured } from "@/auth";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { ProBanner } from "@/components/pro-banner";
 import { VideoEditor } from "@/components/video-editor/video-editor";
+import { PRO_ITEMS } from "@/config/catalogue";
 import { DOCS_PAGE_META } from "@/config/site";
 import { planFor } from "@/lib/server/entitlements";
 import {
@@ -102,7 +103,10 @@ export default async function VideoEditorPage({
     <GalleryFrame fill>
       <JsonLd graph={jsonLd} />
       <div className="flex h-full flex-col">
-        <ProBanner className="shrink-0 border-x-0 border-t-0" />
+        <ProBanner
+          count={PRO_ITEMS.length}
+          className="shrink-0 border-x-0 border-t-0"
+        />
         <div className="min-h-0 flex-1">
           <VideoEditor
             signedIn={Boolean(session?.user)}

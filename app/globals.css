@@ -340,6 +340,28 @@
   top: calc(var(--wall-card-w) * 0.5625 * var(--wall-headroom) / 2);
 }
 
+/**
+ * The demo videos are pictures of a component, not players: no controls, no
+ * sound, nothing to press. Some browsers draw buttons over a video anyway —
+ * Safari's big play button when an autoplay is refused (iOS Low Power Mode,
+ * a per-site setting), Chrome on Android's cast button, a picture-in-picture
+ * button on hover — and on a card that is a player's chrome pasted over a
+ * thumbnail. The poster stays; the buttons do not. The attributes on each
+ * `<video>` (`disablePictureInPicture`, `disableRemotePlayback`,
+ * `controlsList`) cover the browsers that honour those instead.
+ */
+video.demo-video::-webkit-media-controls,
+video.demo-video::-webkit-media-controls-panel,
+video.demo-video::-webkit-media-controls-overlay-play-button,
+video.demo-video::-webkit-media-controls-start-playback-button,
+video.demo-video::-webkit-media-controls-play-button,
+video.demo-video::-webkit-media-controls-overlay-enclosure {
+  display: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  opacity: 0 !important;
+}
+
 .bg-grid-fade {
   background-image: radial-gradient(
     color-mix(in oklab, var(--color-foreground) 9%, transparent) 1px,

@@ -12,7 +12,7 @@ import {
 } from "@/lib/gallery-data";
 import { CATALOGUE_PRICE } from "@/lib/plans";
 import { previewMeta } from "@/lib/preview-meta";
-import { proDemoSrc } from "@/lib/pro-demos";
+import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import {
   RenderedDemo,
   renderedDemoPoster,
@@ -59,9 +59,10 @@ export function GalleryCard({
   // Cards only ever show the default scene, so a rendered demo is always the
   // right picture for the slugs that have one. See lib/rendered-demos.tsx.
   const demoSrc = item.pro ? proDemoSrc(slug) : renderedDemoSrc(slug);
-  // No poster for a paid card: it autoplays the moment it is on screen and a
-  // still in front of it is a frame of the video shown as a photograph.
-  const demoPoster = item.pro ? null : renderedDemoPoster(slug);
+  // A poster for a paid card too. It autoplays the moment it is on screen —
+  // when it can: until its bytes arrive, or if they never do, or if the
+  // browser refuses the autoplay, a card with no poster is an empty box.
+  const demoPoster = item.pro ? proDemoPoster(slug) : renderedDemoPoster(slug);
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     // No handler (e.g. the pre-hydration server fallback) → navigate normally.

@@ -1,8 +1,4 @@
 import { CATALOGUE_PRICE, CATALOGUE_PROMISE } from "@/lib/plans";
-import proCatalogue from "@/lib/pro-catalogue.json";
-import builtRegistry from "@/public/r/registry.json";
-import snapCnRegistry from "@/registry/snap-cn/registry.json";
-import snapCnUiRegistry from "@/registry/snap-cn-ui/registry.json";
 
 // Pastel palette used only inside demo/sample video content (code snippet
 // accents). Site chrome sticks to the snapcn design system tokens — neutral
@@ -29,77 +25,6 @@ export const installCommand = (name: string) =>
 
 /** Canonical example install command shown on the landing page. */
 export const INSTALL_COMMAND = installCommand("text-reveal");
-
-export const INSTALL_ALL_NAMES: string[] = [
-  ...snapCnRegistry.items,
-  ...snapCnUiRegistry.items,
-].map((item) => item.name);
-
-export interface ProItem {
-  name: string;
-  title: string;
-  description: string;
-  /** Day it joined the catalogue, when that was after the tier was first listed. */
-  added?: string;
-}
-
-/**
- * The paid components.
- *
- * Read off two committed files, never off the pro manifest: `registry/snap-cn-pro/`
- * is gitignored, so a public checkout does not have it and an import of it would
- * not compile.
- *
- * `lib/pro-catalogue.json` is written by `scripts/pro-demos.mts` and lists every
- * paid component that has a demo video — that is the live list. `public/r/registry.json`
- * is the older source: correct, but only as current as the last build that ran
- * with `SNAPCN_PRO_PUBLIC=1`, which is how this came to advertise 14 of 35.
- *
- * Title and description come along because `/pro` has to describe what somebody
- * just failed to install. Carrying them is safe for the same reason listing the
- * row is: the built index has no `files[].content`, so this is the
- * advertisement and not the source.
- */
-export const PRO_ITEMS: ProItem[] = (() => {
-  const byName = new Map<string, ProItem>();
-  // The catalogue first: it is written from the pro manifest itself and is the
-  // only list that is current. The built index is a snapshot of whichever build
-  // last ran with SNAPCN_PRO_PUBLIC=1, and it had drifted to 14 of 35 — so it
-  // fills gaps here rather than deciding the set.
-  for (const item of proCatalogue as ProItem[]) byName.set(item.name, item);
-  for (const i of builtRegistry.items) {
-    if ((i as { meta?: { access?: string } }).meta?.access !== "pro") continue;
-    if (byName.has(i.name)) continue;
-    byName.set(i.name, {
-      name: i.name,
-      title: (i as { title?: string }).title ?? i.name,
-      description: (i as { description?: string }).description ?? "",
-    });
-  }
-  return [...byName.values()];
-})();
-
-/** The same list, as bare names — what every gate and lookup actually wants. */
-export const PRO_NAMES: string[] = PRO_ITEMS.map((i) => i.name);
-
-/**
- * Every name that resolves to something, free or paid.
- *
- * Deliberately *not* `INSTALL_ALL_NAMES`. A pro component has to be a name the
- * site admits exists — the middleware's unknown-name 404 fires before the route
- * that would answer 402, so without this a paying customer's `shadcn add` is
- * told the component was never real. But it must stay out of the install-all
- * command, which would otherwise hand every free reader a line that fails
- * halfway through.
- */
-export const ALL_COMPONENT_NAMES: string[] = [
-  ...INSTALL_ALL_NAMES,
-  ...PRO_NAMES,
-];
-
-export const INSTALL_ALL_COMMAND = `npx shadcn@latest add ${INSTALL_ALL_NAMES.map(
-  (name) => `@snapcn/${name}`,
-).join(" ")}`;
 
 // snapcn design system motion: fast, subtle ease-out tweens — no bounce or
 // overshoot anywhere in the site chrome.

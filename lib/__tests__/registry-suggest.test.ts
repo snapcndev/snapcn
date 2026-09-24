@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { INSTALL_ALL_NAMES } from "@/config/site";
+import { INSTALL_ALL_NAMES } from "@/config/catalogue";
 import { suggestComponents } from "@/lib/registry-suggest";
 
 const suggest = (q: string) => suggestComponents(q, INSTALL_ALL_NAMES);
