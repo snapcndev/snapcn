@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  existsSync,
   copyFileSync,
   mkdirSync,
   readdirSync,
@@ -21,12 +22,16 @@ import { enableTailwind } from "@remotion/tailwind-v4";
 import { tsconfigWebpackAlias } from "./tsconfig-webpack-alias.mts";
 
 /**
- * Render each component in `lib/rendered-demos.tsx` to `public/demos/<slug>.mp4`.
+ * Render each component in `lib/rendered-demos.tsx` to `out/demos/<slug>.mp4`
+ * (and its poster to `out/demos/posters/`), then upload them:
+ *
+ *   node scripts/media-upload.mts out/demos demos
  *
  * These files are what the site plays instead of a live `<Player>` — see the
  * long note in `lib/rendered-demos.tsx` for why, and CONTRIBUTING.md for the
- * workflow. They are committed, because the site serves them statically and a
- * build must not depend on a headless Chrome round-trip.
+ * workflow. They are served from `media.snapcn.dev` (see `MEDIA_BASE`), not the
+ * repository: `out/` is gitignored. What is committed is `lib/demo-manifest.json`,
+ * the hash in every demo URL.
  *
  * Run:
  *   pnpm run render:previews                 # every slug in RENDERED_DEMOS
@@ -52,7 +57,7 @@ function remotionConcurrency(): number {
 
 async function main() {
   const only = getFlag("only");
-  const outDir = path.join(root, "public", "demos");
+  const outDir = path.join(root, "out", "demos");
   mkdirSync(outDir, { recursive: true });
 
   await ensureBrowser();
@@ -99,7 +104,7 @@ async function main() {
 
   const concurrency = remotionConcurrency();
   console.log(
-    `Rendering ${comps.length} preview(s) → public/demos (concurrency=${concurrency})`,
+    `Rendering ${comps.length} preview(s) → out/demos (concurrency=${concurrency})`,
   );
 
   let i = 0;
@@ -131,6 +136,10 @@ async function main() {
   }
 
   writeManifest(outDir);
+  console.log(
+    "\nUpload them — the site plays demos from media.snapcn.dev, not from here:\n" +
+      "  CLOUDFLARE_ACCOUNT_ID=… CLOUDFLARE_API_TOKEN=… node scripts/media-upload.mts out/demos demos",
+  );
 }
 
 /**
@@ -192,7 +201,18 @@ function retimeTo60(file: string, tag: string) {
       "-i",
       file,
       "-vf",
-      "fps=60,scale=960:-2",
+      // Limited range, BT.709 — what every browser and hardware decoder
+      // expects of H.264. Remotion's output is full-range BT.601 (`yuvj420p`,
+      // `pc`/`bt470bg`), and `-pix_fmt yuv420p` below does not convert the
+      // range on its own: every demo shipped as `yuvj420p`, a deprecated format
+      // some decoders refuse outright and others hand to the CPU — the demo
+      // that doesn't play, or plays and takes the page down with it on a
+      // machine with no headroom. Converted here, and tagged below, so no
+      // browser has to guess the colours either.
+      // `setparams` writes the tags onto the frames, which is where this ffmpeg
+      // reads them from — `-color_primaries`/`-color_trc` alone came out
+      // "unknown".
+      "fps=60,scale=960:-2:out_range=tv:out_color_matrix=bt709:flags=lanczos,setparams=range=tv:colorspace=bt709:color_primaries=bt709:color_trc=bt709",
       "-c:v",
       "libx264",
       "-crf",
@@ -348,7 +368,13 @@ function writePoster(file: string, tag: string) {
  * never goes half-stale.
  */
 function writeManifest(outDir: string) {
-  const manifest: Record<string, string> = {};
+  // Merged into the committed manifest, not rebuilt from the folder: `out/` is
+  // not committed, so after `--only text-swell` on a fresh checkout it holds one
+  // demo, and a rebuilt manifest would drop the hash of every other.
+  const target = path.join(root, "lib", "demo-manifest.json");
+  const manifest: Record<string, string> = existsSync(target)
+    ? JSON.parse(readFileSync(target, "utf8"))
+    : {};
   for (const file of readdirSync(outDir).sort()) {
     if (!file.endsWith(".mp4")) continue;
     const slug = file.slice(0, -4);
@@ -357,7 +383,6 @@ function writeManifest(outDir: string) {
       .digest("hex")
       .slice(0, 10);
   }
-  const target = path.join(root, "lib", "demo-manifest.json");
   writeFileSync(target, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(
     `Wrote lib/demo-manifest.json (${Object.keys(manifest).length} demos)`,

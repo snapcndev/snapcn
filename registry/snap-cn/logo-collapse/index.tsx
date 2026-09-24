@@ -176,7 +176,7 @@ export interface LogoCollapseProps {
 }
 
 export function LogoCollapse({
-  images = "/demos/posters/count-grid.webp|/demos/posters/moodboard-reveal.webp|/demos/posters/orbit-gallery.webp|/demos/posters/hero-launch.webp|/demos/posters/phone-frame.webp|/demos/posters/terminal-simulator.webp",
+  images = "https://media.snapcn.dev/demos/posters/count-grid.webp|https://media.snapcn.dev/demos/posters/moodboard-reveal.webp|https://media.snapcn.dev/demos/posters/orbit-gallery.webp|https://media.snapcn.dev/demos/posters/hero-launch.webp|https://media.snapcn.dev/demos/posters/phone-frame.webp|https://media.snapcn.dev/demos/posters/terminal-simulator.webp",
   sizes = "0.82x0.461,0.72x0.405,0.63x0.354,0.55x0.309,0.46x0.259,0.36x0.203",
   holds = "1,5,5,4,2,5",
   mark = "/logo/snapcn.png",

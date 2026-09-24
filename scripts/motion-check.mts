@@ -100,7 +100,7 @@ const PRODUCT_SHOTS = new Set([
  * default will do — it is a differ, not a fixture, and `subjectArea` reports
  * nothing rather than 0 when a component ignores the prop.
  */
-const ALT_SOURCE = "/showcase-videos/iphone-17-reveal.mp4";
+const ALT_SOURCE = "https://media.snapcn.dev/showcase-videos/iphone-17-reveal.mp4";
 
 /** Edge band depth, in px, shared by the bleed check and the capacity predictor. */
 const BAND = 8;

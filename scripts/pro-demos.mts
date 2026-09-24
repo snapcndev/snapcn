@@ -3,7 +3,7 @@
  *
  * The pro tier is gitignored, so its demos cannot ride in `public/demos` the way
  * the free ones do — they are built here and uploaded to R2 by
- * `scripts/pro-upload.mts`, and the gallery plays them off that origin. What
+ * `scripts/media-upload.mts <dir> pro-demos`, and the gallery plays them off that origin. What
  * comes out of this script is therefore what the *site* serves, not a scratch
  * render to look at: same 60fps / 960-wide web pass as `render-previews.mts`,
  * same byte-hash manifest so a re-render is a new
@@ -12,7 +12,7 @@
  *     node scripts/pro-demos.mts <out-dir> [slug ...]
  *
  * With no slugs it renders the whole tier; the gallery only needs the published
- * set, which is what `PRO_NAMES` in config/site.ts lists.
+ * set, which is what `PRO_NAMES` in config/catalogue.ts lists.
  */
 
 import { spawnSync } from "node:child_process";

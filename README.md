@@ -22,7 +22,7 @@ device frames, captions — as components you install with the shadcn CLI and ow
 <img alt="Remotion 4" src="https://img.shields.io/badge/Remotion-4.0-blue?style=flat-square">
 </p>
 
-<img src="./public/hero.gif" alt="snapcn components animating" width="100%">
+<img src="https://media.snapcn.dev/site/hero.gif" alt="snapcn components animating" width="100%">
 
 </div>
 

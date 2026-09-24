@@ -24,7 +24,7 @@ export const phoneFrameConfig: ComponentConfig = {
     },
     screenSrc: {
       type: "image",
-      default: "/showcase-mobile-videos/boss-energy-roundup.mp4",
+      default: "https://media.snapcn.dev/showcase-mobile-videos/boss-energy-roundup.mp4",
       label: "Screen (image or video)",
     },
     bezelColor: { type: "color", default: "#C7C9CE", label: "Bezel color" },

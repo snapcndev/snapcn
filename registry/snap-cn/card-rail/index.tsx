@@ -211,7 +211,7 @@ export interface CardRailProps {
 }
 
 export function CardRail({
-  images = "/demos/posters/orbit-gallery.webp|/demos/posters/moodboard-reveal.webp|/demos/posters/hero-launch.webp|/demos/posters/phone-frame.webp|/demos/posters/count-grid.webp|/demos/posters/terminal-simulator.webp|/demos/posters/logo-flicker.webp|/demos/posters/laptop-frame.webp|/demos/posters/announce-title.webp",
+  images = "https://media.snapcn.dev/demos/posters/orbit-gallery.webp|https://media.snapcn.dev/demos/posters/moodboard-reveal.webp|https://media.snapcn.dev/demos/posters/hero-launch.webp|https://media.snapcn.dev/demos/posters/phone-frame.webp|https://media.snapcn.dev/demos/posters/count-grid.webp|https://media.snapcn.dev/demos/posters/terminal-simulator.webp|https://media.snapcn.dev/demos/posters/logo-flicker.webp|https://media.snapcn.dev/demos/posters/laptop-frame.webp|https://media.snapcn.dev/demos/posters/announce-title.webp",
   titles = "Orbit Gallery|Moodboard Reveal|Hero Launch|Phone Frame|Count Grid|Terminal Simulator|Logo Flicker|Laptop Frame|Announce Title",
   notes = "Scene · 300 frames|Scene · 150 frames|Scene · 170 frames|Scene · 240 frames|Scene · 47 frames|Scene · 200 frames|Scene · 100 frames|Scene · 240 frames|Scene · 170 frames",
   tags = "@snapcn/orbit-gallery|@snapcn/moodboard-reveal|@snapcn/hero-launch|@snapcn/phone-frame|@snapcn/count-grid|@snapcn/terminal-simulator|@snapcn/logo-flicker|@snapcn/laptop-frame|@snapcn/announce-title",

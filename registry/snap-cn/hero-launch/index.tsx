@@ -73,8 +73,8 @@ const placeholder = (t: SnapCnTheme) =>
 // component they just installed. Swap them for your own media, root-relative or
 // not; `resolveSrc` handles both.
 const SHOWCASE = [
-  "https://snapcn.dev/demos/moodboard-reveal.mp4",
-  "https://snapcn.dev/demos/orbit-gallery.mp4",
+  "https://media.snapcn.dev/demos/moodboard-reveal.mp4",
+  "https://media.snapcn.dev/demos/orbit-gallery.mp4",
 ];
 
 const isVideo = (src: string) => /\.(mp4|webm|mov|m4v)(\?|$)/i.test(src);

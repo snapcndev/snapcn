@@ -15,7 +15,7 @@ import {
  * is for is showing that there are more where those came from.
  */
 const SHOTS =
-  "/demos/posters/orbit-gallery.webp|/demos/posters/moodboard-reveal.webp|/demos/posters/hero-launch.webp|/demos/posters/phone-frame.webp|/demos/posters/count-grid.webp|/demos/posters/terminal-simulator.webp|/demos/posters/logo-flicker.webp|/demos/posters/laptop-frame.webp|/demos/posters/announce-title.webp";
+  "https://media.snapcn.dev/demos/posters/orbit-gallery.webp|https://media.snapcn.dev/demos/posters/moodboard-reveal.webp|https://media.snapcn.dev/demos/posters/hero-launch.webp|https://media.snapcn.dev/demos/posters/phone-frame.webp|https://media.snapcn.dev/demos/posters/count-grid.webp|https://media.snapcn.dev/demos/posters/terminal-simulator.webp|https://media.snapcn.dev/demos/posters/logo-flicker.webp|https://media.snapcn.dev/demos/posters/laptop-frame.webp|https://media.snapcn.dev/demos/posters/announce-title.webp";
 
 export const cardRailConfig: ComponentConfig = {
   componentName: "CardRail",
