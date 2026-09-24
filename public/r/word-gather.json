@@ -18,6 +18,6 @@
       "target": "components/snap-cn/word-gather.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/text/word-gather?ref=cli — text is the sentence and its first word is the one that holds the frame alone; maxWidth is where the line breaks, in card pixels; accent is the colour a word wears while it is still travelling. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette. — 48 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/pro?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/text/word-gather?ref=cli — text is the sentence and its first word is the one that holds the frame alone; maxWidth is where the line breaks, in card pixels; accent is the colour a word wears while it is still travelling. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }
