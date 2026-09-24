@@ -591,6 +591,8 @@ const PRO_CATEGORY: Record<string, CategoryId> = {
   "agent-tools": "ai-input",
   "prompt-dive": "ai-input",
   "files-drop": "ai-input",
+  "task-stream": "ai-input",
+  "glass-prompt": "ai-input",
 };
 
 /**

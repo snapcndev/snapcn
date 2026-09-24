@@ -131,6 +131,10 @@ const SEARCH_LEADS: Record<string, string> = {
   "agent-run":
     "AI agent run animation: a prompt sent and answered with visible tool steps.",
   "agent-tools": "AI agent tools animation for agent and MCP product demos.",
+  "task-stream":
+    "AI agent task list animation: steps stream in with spinners and tick off.",
+  "glass-prompt":
+    "AI prompt animation: a glass prompt bar, a send click and a dive into a ring of results.",
   "app-reveal":
     "App reveal animation: a wordmark folds into an app UI with a 3D camera move.",
   "brief-send": "Product demo scene: a project brief typed and sent.",

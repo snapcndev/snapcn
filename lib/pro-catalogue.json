@@ -72,6 +72,12 @@
     "description": "A wall of screenshots that opens one column at a time. The columns rise into place from below, the one you are being shown first and the wall building outward from it, on a white page washed with the accent in two corners. Then the focus walks: the open column hands its width to its neighbour, the strip slides to keep whichever is open in the middle, and the whole wall creeps forward. Width is the whole trick — each column is a fixed-height box with the screenshot cropped to fill it, so narrowing a column does not shrink the picture, it crops it, and a site at rest reads as a tall slice of itself while the open one reads as a page."
   },
   {
+    "name": "glass-prompt",
+    "title": "Glass Prompt",
+    "description": "A prompt typed into a pane of glass, and a dive through its send button into the ring of pictures it asked for. A glass pill floats over rolling hills and the request types itself in; an arrow pops in at its end. The shot cuts in close on the arrow with the hills gone soft behind the glass, a pointer rises to it and presses, and the pane rolls and rushes the lens — the arrow swelling into a band of light, the glass washing out to white — until the camera is through it and nine pictures fan out of the arrow's middle into a ring, each one developing out of a blue negative into its own colours as the ring comes round. Replayed from a 4.1s screen recording measured frame by frame: the camera is an affine per frame, the roll a similarity fitted on the pill's own edges, the glass a fixed window onto a small copy of the backdrop, and every tile tracked from its final rect.",
+    "added": "2026-09-23"
+  },
+  {
     "name": "hex-tally",
     "title": "Hex Tally",
     "description": "A metric card that lands while a hex unit chart fills in under a running total. The card settles up 19px onto its resting place; 150 hexagons out of a 22×15 field light up one at a time in a measured scatter — faster through the middle of the run, seeding the blob's rim before its interior — and the headline counts flat, 217 a frame, landing a tenth of a second before the chart does. The legend under it never moves: it is the still thing the two moving clocks are read against, and every percentage in it is counted off the grid rather than typed beside it, so a share can never be a number somebody forgot to update. Card settle, per-cell reveal times and the blob itself are measured tables."
@@ -199,6 +205,12 @@
     "name": "tap-through",
     "title": "Tap Through",
     "description": "Somebody's feed, the button they press, and the line that press was for. A phone hangs in the dark with a wall of posts on it; the camera falls down the glass until the two actions at the bottom are the only thing left; one of them is tapped; the fall keeps going until the frame is the phone's own milled edge — and then the picture is gone and only the sentence is left. Four beats, three hard cuts. The whole thing lives on one plane, so the camera is a projective map and the useful fact about a plane under perspective is that screen y is affine in the magnification: fitting that to the buttons' own trapezoid (they are rectangles on the device, so their taper is the perspective) gives a magnification, a framing and a camera distance per frame, and leaves the device's geometry falling out as constants — the button is 71.3 units tall on all 29 frames it can be measured on, ±0.5, and the phone's bottom edge sits 150.5 under the button's top, ±0.6. It is handed to the browser as one matrix3d rather than a perspective and a rotateX, because the tilt angle and the perspective distance trade off exactly and solving for both is solving for a number that is not there. The cut moves the camera, it does not cut it: the distance runs 36700 → 3800 through the first beat and 4030 → 175 through the second, one fall all the way in. The tap is a scale and a colour together — 0.87 over two frames and back inside four, a white that peaks at 0.36 and is gone eight frames later — and the closing lines do not scale at all: both hold their width to a twentieth of a pixel while their centres climb."
+  },
+  {
+    "name": "task-stream",
+    "title": "Task Stream",
+    "description": "An agent's task list, streaming in and ticking off. A heading writes itself a word at a time and a chevron lands after it; a spinner slides in and each task streams in beside it, every word fading up as it drifts into place. A band of blue sweeps through the line while the task runs, then the spinner flashes into a glowing check that draws itself, cools from cyan to blue and settles into ink before the next task starts. The shot opens close on the first task and pulls back to the whole list as the work gets going. Replayed from a 60fps screen recording measured frame by frame: the camera, the rail, every word's arrival and the check's flash are tables and fitted curves, not taste.",
+    "added": "2026-09-23"
   },
   {
     "name": "thank-you-swarm",
