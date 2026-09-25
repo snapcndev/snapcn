@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/upload-sourcemaps.mts",
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
@@ -34,6 +34,7 @@
     "@base-ui/react": "^1.3.0",
     "@ip-location-db/geo-whois-asn-country-mmdb": "^2.3.2026061719",
     "@paper-design/shaders-react": "0.0.76",
+    "@posthog/cli": "^0.18.7",
     "@remotion/bundler": "4.0.473",
     "@remotion/google-fonts": "4.0.473",
     "@remotion/player": "4.0.473",
