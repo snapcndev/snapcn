@@ -99,6 +99,14 @@ export interface GalleryItem {
 
 export const GALLERY_ITEMS: GalleryItem[] = [
   {
+    name: "Orb Swarm",
+    description:
+      "A sentence told one beat at a time while glass orbs burst out of it, split into eight and sixteen, wind into a vortex, pay out as a chain and loop around the last words",
+    category: "scenes",
+    href: "/docs/scenes/orb-swarm",
+    added: "2026-09-25",
+  },
+  {
     name: "Card Rail",
     description:
       "A rail of cards flicked sideways across a tilted plane — pushed three times, each flick leaving at speed and decelerating for over a second into the next, while the plane's foot runs a fifth wider than its head",
