@@ -1,0 +1,155 @@
+---
+title: TikTok-style captions in Remotion
+seoTitle: Remotion TikTok captions — word-by-word subtitles from a transcript
+description: Burn TikTok-style, word-by-word captions into a Remotion video — the @remotion/captions building blocks, a from-scratch page renderer, and drop-in components that take your Whisper or SRT transcript as-is.
+date: 2026-09-24
+tags:
+  - remotion
+  - captions
+faq:
+  - question: How do you add TikTok-style captions in Remotion?
+    answer: Transcribe the audio into captions with startMs and endMs per word, group them into pages with createTikTokStyleCaptions from @remotion/captions, and render each page in a Sequence that highlights the word being spoken.
+  - question: What does createTikTokStyleCaptions do?
+    answer: It takes an array of Caption objects and a combineTokensWithinMilliseconds value, and returns pages. Each page has text, startMs, durationMs and tokens with their own fromMs and toMs, so you can highlight the active word.
+  - question: Why are there no spaces between my caption words?
+    answer: createTikTokStyleCaptions uses the whitespace before each word as the delimiter, so every caption's text must start with a space except the first.
+  - question: Can I use an SRT file for Remotion captions?
+    answer: Yes. snapcn's Word Captions component takes an srt string directly and splits each cue into words, or a captions array in the same millisecond shape Whisper and @remotion/captions use.
+---
+
+**Short answer:** get a word-level transcript in milliseconds (Whisper gives you
+one), group it into pages with `createTikTokStyleCaptions()` from
+`@remotion/captions`, and render each page in a `<Sequence>` that highlights the
+word being spoken. Or drop the transcript into a caption component and skip the
+maths.
+
+<ComponentPreview name="word-captions" />
+
+## The shape everything speaks
+
+Whisper, `@remotion/captions` and most caption tools produce the same thing: one
+entry per word, timed in milliseconds.
+
+```ts
+import type { Caption } from "@remotion/captions";
+
+const captions: Caption[] = [
+  { text: "Stop", startMs: 0, endMs: 380, timestampMs: 190, confidence: null },
+  { text: " losing", startMs: 380, endMs: 760, timestampMs: 570, confidence: null },
+  { text: " hours", startMs: 760, endMs: 1200, timestampMs: 980, confidence: null },
+];
+```
+
+Note the **leading space** on every word after the first. The page builder splits
+on it; leave it out and the words run together.
+
+## Group into pages
+
+TikTok captions show a few words at a time, not the whole sentence.
+`createTikTokStyleCaptions()` groups words into pages; once a page runs longer than
+`combineTokensWithinMilliseconds`, the next word starts a new one:
+
+```ts
+import { createTikTokStyleCaptions } from "@remotion/captions";
+
+const { pages } = createTikTokStyleCaptions({
+  captions,
+  combineTokensWithinMilliseconds: 1200,
+});
+```
+
+Each page has `text`, `startMs`, `durationMs` and `tokens` — the words, each with
+`fromMs` and `toMs`.
+
+## Render a page, highlight the active word
+
+```tsx
+import type { TikTokPage } from "@remotion/captions";
+import { AbsoluteFill, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
+
+const Page = ({ page }: { page: TikTokPage }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  // Inside a <Sequence>, frame 0 is the page's start.
+  const nowMs = page.startMs + (frame / fps) * 1000;
+
+  return (
+    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: "20%" }}>
+      <div style={{ fontSize: 72, fontWeight: 800, color: "white", whiteSpace: "pre" }}>
+        {page.tokens.map((t) => (
+          <span key={t.fromMs} style={{ color: nowMs >= t.fromMs && nowMs < t.toMs ? "#facc15" : "white" }}>
+            {t.text}
+          </span>
+        ))}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const Captions = ({ pages }: { pages: TikTokPage[] }) => {
+  const { fps } = useVideoConfig();
+  return pages.map((page) => (
+    <Sequence
+      key={page.startMs}
+      from={Math.round((page.startMs / 1000) * fps)}
+      durationInFrames={Math.max(1, Math.round((page.durationMs / 1000) * fps))}
+    >
+      <Page page={page} />
+    </Sequence>
+  ));
+};
+```
+
+`whiteSpace: "pre"` keeps the leading spaces. Put `<Captions>` in an
+`<AbsoluteFill>` above your video and it overlays it.
+
+Keep captions in the **safe area**: on 9:16 the bottom fifth is covered by the
+like, comment and share buttons, which is why this sits 20% up.
+
+## Or use a component
+
+That renderer is the minimum. The look — stroke, pill, pop on the active word,
+paging on the speaker's pauses rather than a fixed word count — is where the time
+goes. snapcn's [Word Captions](/docs/captions/word-captions) takes the same
+transcript as-is:
+
+```bash
+npx shadcn@latest add @snapcn/word-captions
+```
+
+```tsx
+import { WordCaptions } from "@/components/snap-cn/word-captions";
+
+<WordCaptions captions={captions} preset="youtube" />;
+// or paste an .srt file's contents
+<WordCaptions srt={srtFileContents} preset="youtube" />;
+```
+
+Milliseconds are converted against the composition's fps, so one transcript is
+right at 24, 30 or 60fps. `maxWords`, `maxChars` and `pageBreakMs` override how it
+pages.
+
+For a whole line on screen with a fill sweeping across the spoken words, use
+[Karaoke Captions](/docs/captions/karaoke-captions):
+
+```tsx
+import { KaraokeCaptions } from "@/components/snap-cn/karaoke-captions";
+
+<KaraokeCaptions
+  lines={[
+    {
+      text: "Acme reconciles every transaction automatically",
+      startFrame: 10,
+      endFrame: 120,
+      wordTimings: [10, 28, 52, 68, 92],
+      emphasize: [4],
+    },
+  ]}
+  aspect="portrait"
+/>;
+```
+
+<ComponentPreview name="karaoke-captions" />
+
+Next: [how to animate text in Remotion](/remotion-text-animations) — the same
+rules apply to a caption that pops.

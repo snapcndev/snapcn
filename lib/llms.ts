@@ -17,6 +17,7 @@ import { firstSentence } from "./structured-data";
 export const SITE_URL = "https://snapcn.dev";
 
 const DOCS_DIR = path.join(process.cwd(), "content", "docs");
+const BLOG_DIR = path.join(process.cwd(), "content", "blog");
 
 export interface LlmsPage {
   url: string;
@@ -257,6 +258,23 @@ export function collectDocsPages(): LlmsPage[] {
     }
   };
   walk(DOCS_DIR);
+
+  // Posts, at the root URL they are served from. Sorted after every docs
+  // category (not in CATEGORY_ORDER), which is the order an agent needs them.
+  for (const name of fs.readdirSync(BLOG_DIR)) {
+    if (!name.endsWith(".mdx")) continue;
+    const url = `/${name.replace(/\.mdx$/, "")}`;
+    const raw = fs.readFileSync(path.join(BLOG_DIR, name), "utf8");
+    const m = raw.match(/^---\n([\s\S]*?)\n---\n?/);
+    const fm = m?.[1] ?? "";
+    pages.push({
+      url,
+      title: frontmatterField(fm, "title") || url,
+      description: frontmatterField(fm, "description"),
+      body: toPlainMarkdown(m ? raw.slice(m[0].length) : raw, url),
+      category: "blog",
+    });
+  }
 
   return pages.sort((a, b) => {
     const ai = CATEGORY_ORDER.indexOf(a.category);

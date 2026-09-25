@@ -1,0 +1,149 @@
+---
+title: Product tour and onboarding videos in React
+seoTitle: Onboarding videos in React — product tour clips with Remotion
+description: Make product tour and onboarding videos in React with Remotion — one short captioned clip per feature, a screen recording with a camera and a cursor, and every variant rendered from props.
+date: 2026-09-25
+tags:
+  - remotion
+  - onboarding
+  - product demo
+faq:
+  - question: How long should an onboarding video be?
+    answer: Short. One feature per clip, roughly 10 to 30 seconds, placed next to the feature it explains. A single five-minute tour gets skipped; a 15-second clip in an empty state gets watched.
+  - question: Do onboarding videos need captions?
+    answer: Yes. Videos inside an app usually autoplay muted, so the words have to be on screen. Burn the captions into the video so they show everywhere it is embedded.
+  - question: How do I keep onboarding videos up to date when the UI changes?
+    answer: Build each clip as a Remotion composition that takes props — the recording, the copy, the cursor path. When the UI changes you re-record one clip or edit one prop, then re-render, instead of re-editing a video by hand.
+---
+
+**Short answer:** make **one short clip per feature**, not one long tour. Each
+clip is a Remotion composition: a screen recording with a camera that pushes in on
+the control, a cursor that clicks it, and burned-in captions because in-app video
+plays muted. Parameterise the clip with props and render every feature from one
+template.
+
+For a launch video — one job, end to end, for people who have never seen the
+product — see [how to make a product demo video in React](/product-demo-video-react).
+Onboarding is the other audience: people who already signed up and need the next
+step.
+
+## One clip per feature
+
+A single tour video fails in-app for three reasons: nobody watches past the part
+they needed, it cannot sit next to the feature it explains, and one UI change
+means re-editing the whole thing.
+
+Short clips fix all three. Each one answers a single question — "how do I invite
+my team?" — and lives in the empty state, tooltip or help panel where that
+question comes up.
+
+## The clip: recording, camera, cursor
+
+A raw capture shows the whole screen at the size of the whole screen. Onboarding
+needs the opposite: the one button, big.
+[Screen Recording](/docs/screens/screen-recording) crops the browser chrome off
+and runs a camera; [Cursor Track](/docs/screens/cursor-track) puts a pointer back
+on top, because most capture tools drop it:
+
+```tsx
+import { CursorTrack } from "@/components/snap-cn/cursor-track";
+import { ScreenRecording } from "@/components/snap-cn/screen-recording";
+
+export const FeatureClip = ({ src }: { src: string }) => (
+  <CursorTrack
+    path={[
+      { at: 0, x: -0.06, y: 0.86, duration: 6 },
+      { at: 30, x: 0.72, y: 0.18, duration: 22, click: true },
+    ]}
+  >
+    <ScreenRecording
+      src={src}
+      crop={{ top: 0.11 }}
+      camera={[
+        { at: 20, duration: 25, zoom: 1.8, x: 0.72, y: 0.2 },
+        { at: 90, duration: 25, zoom: 1 },
+      ]}
+    />
+  </CursorTrack>
+);
+```
+
+Two things from the component docs worth knowing:
+
+- **The cursor goes outside, the recording inside.** The cursor has to be the top
+  layer to read as a cursor.
+- **The cursor does not ride the camera.** Its waypoints are frame coordinates, so
+  a push-in moves the UI under a still cursor. Either push in on a shot the cursor
+  is already resting in, or keyframe both.
+
+<ComponentPreview name="cursor-track" />
+
+## Captions, because it plays muted
+
+[Word Captions](/docs/captions/word-captions) burns a timed transcript into the
+frame, one word popping as it is spoken. Layer it over the clip:
+
+```tsx
+import { AbsoluteFill } from "remotion";
+import { WordCaptions } from "@/components/snap-cn/word-captions";
+
+export const CaptionedClip = ({ src }: { src: string }) => (
+  <AbsoluteFill>
+    <FeatureClip src={src} />
+    <WordCaptions
+      words={[
+        { text: "Click", startFrame: 30 },
+        { text: "Invite", startFrame: 42 },
+        { text: "to", startFrame: 54 },
+        { text: "add", startFrame: 62 },
+        { text: "your", startFrame: 72 },
+        { text: "team", startFrame: 82, endFrame: 110 },
+      ]}
+      aspect="16:9"
+    />
+  </AbsoluteFill>
+);
+```
+
+A word's `endFrame` defaults to the next word's `startFrame`, so a transcript
+only needs start times. More on styles in
+[TikTok-style captions in Remotion](/remotion-tiktok-captions).
+
+## Every feature from one template
+
+The clip takes props, so one composition renders every feature. Register it with
+defaults:
+
+```tsx
+import { Composition } from "remotion";
+
+export const RemotionRoot = () => (
+  <Composition
+    id="Onboarding"
+    component={CaptionedClip}
+    durationInFrames={120}
+    fps={30}
+    width={1280}
+    height={720}
+    defaultProps={{ src: "/recordings/invite.mp4" }}
+  />
+);
+```
+
+Then render one file per feature from the CLI with `--props`:
+
+```bash
+npx remotion render Onboarding out/invite.mp4 --props='{"src":"/recordings/invite.mp4"}'
+npx remotion render Onboarding out/billing.mp4 --props='{"src":"/recordings/billing.mp4"}'
+```
+
+Move the transcript and cursor path into props too, and a UI change becomes:
+re-record one clip, re-render one file.
+
+## Install
+
+```bash
+npx shadcn@latest add @snapcn/screen-recording @snapcn/cursor-track @snapcn/word-captions
+```
+
+Next: [animated cursor and click effects in Remotion](/remotion-cursor-animation).

@@ -261,34 +261,81 @@ export function layout(
   return out;
 }
 
-export interface ChannelThreadProps {
-  /** Groups split by `;`, messages within a group split by `|`. */
-  script?: string;
-  /** One `name time` per group, split by `;`. */
-  people?: string;
-  /** Frame each message lands on, in order, comma separated. */
-  beats?: string;
-  /** Frame each row opens on, in order. A row waits here before its words land. */
-  opens?: string;
+/**
+ * One message. A message with the same author, time and avatar as the one
+ * above it joins that group, under one name, the way the channel reads.
+ */
+export interface ThreadMessage {
+  text: string;
+  author?: string;
+  time?: string;
+  avatar?: string;
+  /** Frame the words land on. Default: the measured 0, 12, 60, 84, then every 24. */
+  at?: number;
   /**
-   * One image per group, split by `|`.
-   *
-   * Not by comma: a `data:` URL has one of its own right after the encoding, and
-   * splitting on it hands the browser half a URL and an `<img>` that renders a
-   * broken-image glyph where a face should be.
+   * Frame the row opens on, before the words land — typing dots, if it starts
+   * a group. Default: the measured 0, 12, 37, 72, then every 24.
    */
-  avatars?: string;
+  opens?: number;
+}
+
+export const DEFAULT_MESSAGES: readonly ThreadMessage[] = [
+  ["rhea", "9:41 AM", "07", "Launch video by Thursday?"],
+  ["rhea", "9:41 AM", "07", "We have nothing shot."],
+  ["sam", "9:42 AM", "13", "Already done."],
+  ["sam", "9:42 AM", "13", "Built it out of snapcn."],
+].map(([author, time, face, text]) => ({
+  author,
+  time,
+  avatar: `/avatars/${face}.jpg`,
+  text: text ?? "",
+}));
+
+/** The recording's four arrivals; after them, a message every 24 frames. */
+const BEATS = [0, 12, 60, 84];
+const OPENS = [0, 12, 37, 72];
+
+/**
+ * The string form of `messages`, for the customizer and for quick edits:
+ * messages split by `|`, each `avatar > name time > text`. The name runs to
+ * the first space. A message that is only text continues the one above it.
+ *
+ *   "/avatars/07.jpg > rhea 9:41 AM > Launch video? | Nothing shot."
+ */
+export function toMessages(
+  input: readonly ThreadMessage[] | string,
+): readonly ThreadMessage[] {
+  if (typeof input !== "string") return input;
+  let head = { author: "", time: "", avatar: "" };
+  return input
+    .split("|")
+    .filter((m) => m.trim())
+    .map((m) => {
+      const parts = m.split(">").map((v) => v.trim());
+      const text = parts.pop() ?? "";
+      const who = parts.pop();
+      if (who !== undefined) {
+        const cut = who.indexOf(" ");
+        head = {
+          author: cut < 0 ? who : who.slice(0, cut),
+          time: cut < 0 ? "" : who.slice(cut + 1),
+          avatar: parts.pop() ?? "",
+        };
+      }
+      return { ...head, text };
+    });
+}
+
+export interface ChannelThreadProps {
+  /** The conversation, in order. Also takes the string form: see `toMessages`. */
+  messages?: readonly ThreadMessage[] | string;
   theme?: Partial<SnapCnTheme>;
   mode?: "light" | "dark";
   fontFamily?: string;
 }
 
 export function ChannelThread({
-  script = "Launch video by Thursday?|We have nothing shot.;Already done.|Built it out of snapcn.",
-  people = "rhea 9:41 AM;sam 9:42 AM",
-  beats = "0,12,60,84",
-  opens = "0,12,37,72",
-  avatars = "/avatars/07.jpg|/avatars/13.jpg",
+  messages = DEFAULT_MESSAGES,
   theme,
   mode = "dark",
   fontFamily = "Default",
@@ -302,28 +349,31 @@ export function ChannelThread({
   const ox = (width - REF_W * u) / 2;
   const now = frame / fps;
 
-  const heads = people.split(";").map((p) => p.trim());
-  const pics = avatars.split("|").map((a) => a.trim());
-  const at = beats.split(",").map((b) => Number(b.trim()));
-  const open = opens.split(",").map((b) => Number(b.trim()));
-
-  const groups = script.split(";").map((g, i) => {
-    const head = heads[i] ?? "";
-    const cut = head.indexOf(" ");
-    return {
-      person: cut < 0 ? head : head.slice(0, cut),
-      time: cut < 0 ? "" : head.slice(cut + 1),
-      lines: g
-        .split("|")
-        .map((m) => m.trim())
-        .filter(Boolean),
-    };
-  });
+  const said = toMessages(messages).filter((m) => m.text.trim());
+  const groups: {
+    person: string;
+    time: string;
+    avatar: string;
+    lines: string[];
+  }[] = [];
+  for (const m of said) {
+    const [person = "", time = "", avatar = ""] = [m.author, m.time, m.avatar];
+    const g = groups[groups.length - 1];
+    if (g && g.person === person && g.time === time && g.avatar === avatar) {
+      g.lines.push(m.text.trim());
+    } else {
+      groups.push({ person, time, avatar, lines: [m.text.trim()] });
+    }
+  }
 
   const lines = layout(groups);
   lines.forEach((l, i) => {
-    l.at = at[i] ?? 0;
-    l.opens = i === 0 ? Number.NEGATIVE_INFINITY : (open[i] ?? l.at);
+    const m = said[i];
+    l.at = m?.at ?? BEATS[i] ?? 84 + 24 * (i - 3);
+    l.opens =
+      i === 0
+        ? Number.NEGATIVE_INFINITY
+        : (m?.opens ?? OPENS[i] ?? 72 + 24 * (i - 3));
   });
 
   // Each opened row moves the target to however far its baseline falls past the
@@ -378,7 +428,7 @@ export function ChannelThread({
               {l.head && g && arrived && (
                 <>
                   <Avatar
-                    src={pics[l.group] ?? ""}
+                    src={g.avatar}
                     name={g.person}
                     y={(y - NAME_GAP - AVATAR_RISE) * u}
                     u={u}
@@ -420,7 +470,7 @@ export function ChannelThread({
               )}
               {shown ? (
                 // The message is the object Studio selects: its body line, by
-                // its index across the whole script.
+                // its index across the whole conversation.
                 <Item index={i}>
                   <div
                     style={{

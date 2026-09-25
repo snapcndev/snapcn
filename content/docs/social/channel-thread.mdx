@@ -37,7 +37,7 @@ moment, not from the scroll, or it sits a step out of phase for its whole life.
 
 ## The two clocks
 
-`beats` is the frame each message's words land on. `opens` is the frame its row
+A message's `at` is the frame its words land on. Its `opens` is the frame its row
 appears. Splitting them is what lets a pause be a pause: a group's row shows
 typing dots until its words arrive, and a later message's row simply waits.
 
@@ -57,10 +57,9 @@ Avatars default to two of the twenty-four photos the registry already ships in
 `public/avatars`. Faces are the difference between a chat that reads as a chat and
 one that reads as a wireframe.
 
-`avatars` is split by `|`, not by comma: a `data:` URL has a comma of its own
-right after the encoding, and splitting on it hands the browser half a URL and an
-`<img>` that renders a broken-image glyph where a face should be. Leave an entry
-blank and that person gets their initial on a tile tinted with your accent.
+Each message carries its own author, time and avatar, and consecutive messages
+that share all three are one group under one name. Leave `avatar` out and that
+person gets their initial on a tile tinted with your accent.
 
 The avatar holds the render until the picture has actually loaded. Without that a
 frame can be captured before it arrives and the square comes out empty —
@@ -84,10 +83,17 @@ The exact file `shadcn add` copies into your project.
 import { Composition } from "remotion";
 import { ChannelThread } from "@/components/snap-cn/channel-thread";
 
+const rhea = { author: "rhea", time: "9:41 AM", avatar: "/avatars/07.jpg" };
+const sam = { author: "sam", time: "9:42 AM", avatar: "/avatars/13.jpg" };
+
 const Chat = () => (
   <ChannelThread
-    script="Launch video by Thursday?|We have nothing shot.;Already done.|Built it out of snapcn."
-    people="rhea 9:41 AM;sam 9:42 AM"
+    messages={[
+      { ...rhea, text: "Launch video by Thursday?" },
+      { ...rhea, text: "We have nothing shot." },
+      { ...sam, text: "Already done." },
+      { ...sam, text: "Built it out of snapcn." },
+    ]}
   />
 );
 
@@ -108,35 +114,10 @@ export const RemotionRoot = () => (
 <PropsTable
   rows={[
     {
-      name: "script",
-      type: "string",
+      name: "messages",
+      type: "ThreadMessage[] | string",
       description:
-        "The conversation. Groups split by `;`, a group's messages by `|`",
-    },
-    {
-      name: "people",
-      type: "string",
-      description: "One `name time` per group, split by `;`",
-    },
-    {
-      name: "beats",
-      type: "string",
-      default: '"0,12,60,84"',
-      description: "Frame each message's words land on, in order",
-    },
-    {
-      name: "opens",
-      type: "string",
-      default: '"0,12,37,72"',
-      description:
-        "Frame each row appears on. A row waits here — showing dots if it heads a group — before its words land",
-    },
-    {
-      name: "avatars",
-      type: "string",
-      default: '"/avatars/07.jpg|/avatars/13.jpg"',
-      description:
-        "One image per group, split by `|`. A blank entry falls back to the person's initial",
+        "The conversation, one `{ text, author?, time?, avatar?, at?, opens? }` per message. `at` is the frame its words land on, `opens` the frame its row appears (dots first, if it heads a group); both default to the measured 0, 12, 60, 84 and 0, 12, 37, 72, then every 24 frames. Also takes one string: `avatar > name time > text`, `|` between messages, a bare text continuing the speaker above",
     },
     {
       name: "fontFamily",

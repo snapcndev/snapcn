@@ -12,12 +12,12 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
   alternates: {
-    canonical: "/blog",
-    types: { "application/rss+xml": "/blog/rss.xml" },
+    canonical: "/blogs",
+    types: { "application/rss+xml": "/blogs/rss.xml" },
   },
   openGraph: {
     type: "website",
-    url: "/blog",
+    url: "/blogs",
     title: TITLE,
     description: DESCRIPTION,
     siteName: "snapcn",
@@ -50,7 +50,7 @@ export default function BlogIndexPage() {
             "@type": "Blog",
             name: `snapcn — ${TITLE}`,
             description: DESCRIPTION,
-            url: `${SITE_URL}/blog`,
+            url: `${SITE_URL}/blogs`,
             publisher: PUBLISHER,
           },
         ]}

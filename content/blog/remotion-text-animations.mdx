@@ -1,0 +1,137 @@
+---
+title: How to animate text in Remotion
+seoTitle: Remotion text animations — word by word, scale and reveal, done right
+description: Animate text in Remotion with useCurrentFrame(), interpolate() and spring() — a word-by-word reveal from scratch, the three bugs that make scaled type look cheap, and ready-made components.
+date: 2026-09-24
+tags:
+  - remotion
+  - text
+  - typography
+faq:
+  - question: How do you animate text in Remotion?
+    answer: Read the current frame with useCurrentFrame(), map it to opacity and transform with interpolate() or spring(), and apply the result as inline style. Split the text into words or letters and offset each one's start frame to stagger them.
+  - question: Why does scaled text look jittery in a Remotion render?
+    answer: Browsers snap glyphs to whole pixels vertically and re-hint letter stems at every size. Pivot the scale on the text baseline and set text-rendering to geometricPrecision; both are measurable fixes.
+  - question: Should I use CSS animations or keyframes in Remotion?
+    answer: No. Remotion renders frames out of order and in parallel, so every animated value must be a pure function of the frame number. CSS transitions and keyframes run on wall-clock time and will not render correctly.
+  - question: Are there ready-made Remotion text animations?
+    answer: Yes. snapcn ships twelve free text animation components for Remotion, installed with npx shadcn@latest add @snapcn/<name>, and the source is copied into your project.
+---
+
+To animate text in Remotion, turn the frame number into style: `useCurrentFrame()`
+gives you the frame, `interpolate()` or `spring()` turns it into opacity and
+transform, and you stagger words by offsetting each one's start frame. Never use
+CSS transitions — a render does not play in real time.
+
+<ComponentPreview name="text-reveal" />
+
+## The minimum: a word-by-word reveal
+
+```tsx
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+
+export const WordReveal = ({ text }: { text: string }) => {
+  const frame = useCurrentFrame();
+  const words = text.split(" ");
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <h1 style={{ fontSize: 80, display: "flex", gap: "0.25em" }}>
+        {words.map((word, i) => {
+          const start = i * 4; // 4 frames between words
+          const progress = interpolate(frame, [start, start + 12], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          });
+          return (
+            <span
+              key={i}
+              style={{
+                opacity: progress,
+                transform: `translateY(${(1 - progress) * 0.4}em)`,
+              }}
+            >
+              {word}
+            </span>
+          );
+        })}
+      </h1>
+    </AbsoluteFill>
+  );
+};
+```
+
+Three things make this work:
+
+- **Every value is a function of `frame`.** Remotion renders frames in parallel
+  and out of order, so nothing may depend on the previous frame or on time.
+- **Always clamp.** Without `extrapolateRight: "clamp"`, `interpolate()` keeps
+  going past `1` and the words drift off forever.
+- **Move in `em`, not pixels.** The offset then scales with the font size, and
+  the same component works at 40px and 120px.
+
+For a spring, swap the `interpolate()` for
+`spring({ frame: frame - start, fps, config: { damping: 200 } })`. A damping of
+200 settles without bouncing — the right default for type, which looks broken
+when it overshoots.
+
+## Why scaled text looks cheap, and the fixes
+
+Opacity and translate are safe. **Scale** is where text animation goes wrong,
+and each of these was measured on rendered frames, not eyeballed.
+
+### It looks "stuck": pivot the scale on the baseline
+
+Browsers position glyphs on whole pixels vertically. Scale a line from its
+centre and the baseline moves, so the text climbs the pixel grid in visible
+one-pixel jumps. Set `transformOrigin` to the **baseline** — measured, not
+guessed from `line-height` — and the baseline stops moving. In our tests that
+took vertical judder from 0.284px to 0.014px and direction reversals from 29 to 0.
+
+### It "shakes": use geometricPrecision
+
+At every new size the font hinter re-snaps letter stems to the grid, so the
+letterforms themselves change shape frame to frame. `text-rendering:
+geometricPrecision` turns that off. Shape drift fell from 3.41% to 0.22%. The
+type looks a touch softer; that is correct, not blur.
+
+### It "freezes": go easy on the ease-out
+
+A quint or expo ease-out spends its last third moving less than a pixel per
+frame. On a 30fps clock that reads as the animation stopping early and then
+jumping. A cubic or a critically damped spring settles in one or two frames
+instead of five.
+
+And skip `translateZ(0)` and `backface-visibility: hidden`: they rasterise the
+text into a bitmap, which then scales like one. `will-change: transform` helps
+the live Player but hurts the render — gate it on
+`getRemotionEnvironment().isRendering`.
+
+## Ready-made Remotion text animations
+
+If you would rather not tune this yourself, snapcn ships twelve text components
+with these fixes already in them. Each installs as source you own:
+
+```bash
+npx shadcn@latest add @snapcn/text-reveal
+```
+
+| Component | What it does |
+| --- | --- |
+| [Text Reveal](/docs/text/text-reveal) | Lead word zooms close, falls back, the sentence pushes in word by word |
+| [Word Flip](/docs/text/word-flip) | One word cycles on a 3D flip inside a typed headline |
+| [Text Build](/docs/text/text-build) | Words enter one at a time and the line reflows to stay centred |
+| [Word Wheel](/docs/text/word-wheel) | A column of words spins like a reel and stops on one |
+| [Type Morph](/docs/text/type-morph) | A headline types itself, then morphs letter by letter |
+| [Text Swap](/docs/text/text-swap) | The old line flies past the camera, the new one is behind it |
+| [Punch Lines](/docs/text/punch-lines) | Full-frame title cards that cut hard between beats |
+| [Word Gather](/docs/text/word-gather) | Words arrive out of order and gather into the sentence |
+| [Text Select](/docs/text/text-select) | A line writes itself and gets selected under a glint |
+| [Text Rewrite](/docs/text/text-rewrite) | A line is selected and its ending rewritten |
+| [Text Highlight](/docs/text/text-highlight) | A mark wipes a wordmark open, plus span-emphasis presets |
+| [Text Swell](/docs/text/text-swell) | The lead word floats toward you, the sentence shoves it aside |
+
+<ComponentPreview name="word-flip" />
+
+Browse them all in the [text animations category](/docs/text), or read
+[how to install Remotion components with the shadcn CLI](/shadcn-cli-remotion-components).

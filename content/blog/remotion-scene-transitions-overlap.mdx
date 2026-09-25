@@ -6,6 +6,13 @@ date: 2026-09-18
 tags:
   - remotion
   - transitions
+faq:
+  - question: Why do both scenes show during a Remotion fade transition?
+    answer: fade() only fades the entering scene in. The exiting scene stays at full opacity for the whole transition unless you pass shouldFadeOutExitingScene, so both are visible at once.
+  - question: Which Remotion transition works between two scenes with centred content?
+    answer: slide() or flip(). They move the scenes apart, so every pixel belongs to one scene. fade(), none(), wipe(), iris() and clockWipe() composite the scenes and let the old one show through.
+  - question: When is a fade transition in Remotion still the right choice?
+    answer: When the outgoing scene is already empty by the time the transition starts, such as a scene that has animated its content away or a plain background.
 ---
 
 You wire up `<TransitionSeries>`, drop a `fade()` between two scenes, render —

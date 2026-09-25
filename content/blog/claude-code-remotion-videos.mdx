@@ -1,0 +1,105 @@
+---
+title: Making videos with Claude Code and Remotion
+seoTitle: Claude Code + Remotion — how to make videos with an AI agent
+description: Claude Code can write a whole Remotion video from a brief. Give it Remotion's agent skills, a component library to compose instead of improvised motion, and a prompt with real copy — here is the setup and what agents still get wrong.
+date: 2026-09-24
+tags:
+  - remotion
+  - ai
+  - claude code
+faq:
+  - question: Can Claude Code make videos?
+    answer: Yes, through Remotion. A Remotion video is React code, so Claude Code can write the compositions, preview them in Remotion Studio and render an MP4 with npx remotion render.
+  - question: How do I give Claude Code Remotion best practices?
+    answer: Install Remotion's agent skills with npx skills add remotion-dev/skills. New projects created with create-video also offer to add them.
+  - question: Why do AI-generated Remotion videos look cheap?
+    answer: Agents improvise motion, which usually means linear moves, overshooting springs and crossfades that stack two scenes on screen at once. Composing tuned components instead of writing animation from scratch fixes most of it.
+  - question: Does snapcn have an MCP server?
+    answer: Yes. The snapcn MCP server, part of snapcn Pro, lets Claude Code, Cursor, Codex and other agents search the component registry, read a component's real props and plan a whole video from a one-line brief.
+---
+
+**Short answer:** Claude Code makes videos by writing Remotion — React
+components rendered to MP4. Install Remotion's agent skills so it knows the API,
+give it a component library to **compose** rather than animation to invent, and
+brief it with your real copy and a length. Then review the frames yourself.
+
+## 1. Set up the project with skills
+
+```bash
+npx create-video@latest
+```
+
+The Remotion scaffolder offers to add Remotion's agent skills — say yes. In an
+existing project:
+
+```bash
+npx skills add remotion-dev/skills
+```
+
+These teach the agent Remotion's own best practices: `useCurrentFrame()`,
+`interpolate()`, `<Sequence>`, rendering. They work with Claude Code, Codex,
+Cursor and other agents.
+
+Remotion's docs also serve every page as markdown: append `.md` to a docs URL, and
+Claude Code fetches that version when you paste a link.
+
+## 2. Give it components, not a blank canvas
+
+An agent that knows the API still has to *invent* the motion, and improvised
+motion is where AI video looks cheap. snapcn ships an agent skill of its own that
+teaches the catalogue — every component's props, lengths and when not to use it —
+plus motion principles and anti-patterns:
+
+```bash
+npx skills add snapcndev/snapcn
+```
+
+With snapcn Pro, the [MCP server](/docs/mcp) goes further: the agent searches the
+registry, reads a component's real props instead of guessing them, and plans a
+video from a one-line brief into beats, one component each, with the install
+command and a `TransitionSeries` skeleton.
+
+<ComponentPreview name="agent-steps" />
+
+## 3. Write the brief like a shot list
+
+Vague prompts get vague videos. Name the length, the format, the beats and the
+exact words on screen:
+
+```text
+Make a 20-second 1920x1080 launch video for Acme Billing in this Remotion project.
+
+Beats:
+1. Title: "Invoices, sent before lunch" (3s)
+2. A prompt being typed and sent: "Bill Acme for September's usage" (5s)
+3. The answer streaming in (6s)
+4. Screen recording public/recordings/checkout.mp4, push in on the Send button (6s)
+
+Use installed snapcn components for every beat; do not write animation by hand.
+Transitions between beats: slide from the right, not fade.
+Render it to out/launch.mp4 when Studio looks right.
+```
+
+The last lines do the most work: "do not write animation by hand" keeps the agent
+composing, and naming the transition avoids the most common defect.
+
+## 4. What agents still get wrong
+
+- **Crossfades that stack scenes.** Remotion's `fade()` keeps the outgoing scene
+  at full opacity, so two headlines sit on top of each other mid-transition. Ask
+  for `slide()` — the full reason is in
+  [why your Remotion scene transitions look broken](/remotion-scene-transitions-overlap).
+- **Improvised easing.** Linear moves, springs that bounce type, quint ease-outs
+  that look frozen on a 30fps clock. See
+  [how to animate text in Remotion](/remotion-text-animations).
+- **Guessed props.** An agent that has not read a component's props invents
+  plausible ones. The skill and the MCP server exist to stop that.
+- **Invisible text.** A render with no background is black, and light-theme text
+  disappears on it. Tell the agent the background colour.
+- **Never looking.** The agent cannot see motion. Scrub it in Studio yourself
+  before you ship.
+
+<ComponentPreview name="prompt-send" />
+
+Next: [how to make a product demo video in React](/product-demo-video-react) —
+the same video, step by step, if you would rather build it yourself.

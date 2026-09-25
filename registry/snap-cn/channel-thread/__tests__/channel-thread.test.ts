@@ -9,6 +9,7 @@ import {
   read,
   SCROLL,
   START_Y,
+  toMessages,
 } from "../index";
 
 const SCRIPT = [
@@ -77,5 +78,15 @@ describe("channel-thread", () => {
       if (!prev || !here) throw new Error("table hole");
       expect(here[1]).toBeGreaterThan(prev[1]);
     }
+  });
+
+  it("reads the string form, a bare line continuing the speaker above", () => {
+    expect(toMessages("/a.jpg > rhea 9:41 AM > Hi | There | sam > Yo")).toEqual(
+      [
+        { author: "rhea", time: "9:41 AM", avatar: "/a.jpg", text: "Hi" },
+        { author: "rhea", time: "9:41 AM", avatar: "/a.jpg", text: "There" },
+        { author: "sam", time: "", avatar: "", text: "Yo" },
+      ],
+    );
   });
 });

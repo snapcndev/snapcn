@@ -7,39 +7,41 @@ import {
 } from "@/lib/customizer-config";
 
 /**
- * The rail, and the three lists that fill it.
- *
- * They are parallel: one entry per card. The rail repeats the list rather than
- * running out, so five cards are enough to carry a flick of any length — and the
- * default five are the registry's own scenes, because the thing a rail of cards
- * is for is showing that there are more where those came from.
+ * The rail's cards, in the string form the component takes for this one-line
+ * control: `picture > title > small print > tag`, `|` between cards. The same
+ * nine as the component's `DEFAULT_CARDS` — the registry's own scenes, because
+ * the thing a rail of cards is for is showing there are more where those came
+ * from. Written out rather than imported: that module loads a font at import,
+ * and the manifest scripts read this file in plain Node.
  */
-const SHOTS =
-  "https://media.snapcn.dev/demos/posters/orbit-gallery.webp|https://media.snapcn.dev/demos/posters/moodboard-reveal.webp|https://media.snapcn.dev/demos/posters/hero-launch.webp|https://media.snapcn.dev/demos/posters/phone-frame.webp|https://media.snapcn.dev/demos/posters/count-grid.webp|https://media.snapcn.dev/demos/posters/terminal-simulator.webp|https://media.snapcn.dev/demos/posters/logo-flicker.webp|https://media.snapcn.dev/demos/posters/laptop-frame.webp|https://media.snapcn.dev/demos/posters/announce-title.webp";
+const CARDS = (
+  [
+    ["orbit-gallery", "Orbit Gallery", 300],
+    ["moodboard-reveal", "Moodboard Reveal", 150],
+    ["hero-launch", "Hero Launch", 170],
+    ["phone-frame", "Phone Frame", 240],
+    ["count-grid", "Count Grid", 47],
+    ["terminal-simulator", "Terminal Simulator", 200],
+    ["logo-flicker", "Logo Flicker", 100],
+    ["laptop-frame", "Laptop Frame", 240],
+    ["announce-title", "Announce Title", 170],
+  ] as const
+)
+  .map(
+    ([slug, title, frames]) =>
+      `https://media.snapcn.dev/demos/posters/${slug}.webp > ${title} > Scene · ${frames} frames > @snapcn/${slug}`,
+  )
+  .join(" | ");
 
 export const cardRailConfig: ComponentConfig = {
   componentName: "CardRail",
   importPath: "@/components/snap-cn/card-rail",
   controls: {
     heading: { type: "text", default: "Browse scenes", label: "Title" },
-    images: { type: "text", default: SHOTS, label: "Pictures (| separated)" },
-    titles: {
+    cards: {
       type: "text",
-      default:
-        "Orbit Gallery|Moodboard Reveal|Hero Launch|Phone Frame|Count Grid|Terminal Simulator|Logo Flicker|Laptop Frame|Announce Title",
-      label: "Card titles",
-    },
-    notes: {
-      type: "text",
-      default:
-        "Scene · 300 frames|Scene · 150 frames|Scene · 170 frames|Scene · 240 frames|Scene · 47 frames|Scene · 200 frames|Scene · 100 frames|Scene · 240 frames|Scene · 170 frames",
-      label: "Card small print",
-    },
-    tags: {
-      type: "text",
-      default:
-        "@snapcn/orbit-gallery|@snapcn/moodboard-reveal|@snapcn/hero-launch|@snapcn/phone-frame|@snapcn/count-grid|@snapcn/terminal-simulator|@snapcn/logo-flicker|@snapcn/laptop-frame|@snapcn/announce-title",
-      label: "Card tags",
+      default: CARDS,
+      label: "Cards (picture > title > small print > tag | …)",
     },
     offset: {
       type: "number",

@@ -1,0 +1,83 @@
+---
+title: "snapcn vs remocn: which Remotion component library?"
+seoTitle: snapcn vs remocn — Remotion component libraries compared (2026)
+description: snapcn and remocn both install Remotion components with the shadcn CLI. remocn is wider; snapcn is built around product demo shots. A fair side-by-side, with numbers.
+date: 2026-09-24
+tags:
+  - remotion
+  - comparison
+faq:
+  - question: What is the difference between snapcn and remocn?
+    answer: Both are shadcn registries of Remotion components that copy source into your project. remocn is broader, with around 300 components across typography, shaders, transitions, icons and effects, all free. snapcn is narrower and built around product demo shots such as AI prompts, screen recordings, devices, cursors and captions, with a free MIT tier and a paid Pro tier.
+  - question: Is remocn free?
+    answer: Yes. remocn is MIT licensed with no paid tier, as of September 2026.
+  - question: Is snapcn free?
+    answer: snapcn's free tier is 42 MIT-licensed components. snapcn Pro adds 50 more components plus an MCP server for coding agents.
+  - question: Can I use snapcn and remocn in the same project?
+    answer: Yes. Both install through the shadcn CLI under different namespaces (@snapcn and @remocn), copy plain React files into your project, and depend only on Remotion.
+---
+
+**Short answer:** pick **remocn** for breadth — around 300 free components, with
+shaders, transitions and effects. Pick **snapcn** for product demos — fewer
+components, each one a finished shot of software (a prompt, a terminal, a screen
+recording, a device), with the motion measured on rendered frames. They install
+the same way, so you can use both.
+
+Numbers below are as of September 2026. We make snapcn, so weigh our view
+accordingly; the facts are checkable on each site.
+
+## Side by side
+
+| | snapcn | remocn |
+| --- | --- | --- |
+| Install | `npx shadcn@latest add @snapcn/<name>` | `npx shadcn@latest add @remocn/<name>` |
+| Components | 42 free + 50 Pro | ~308, all free |
+| License | MIT (free tier), paid Pro | MIT |
+| Focus | Product demo shots | General motion building blocks |
+| Categories | AI input, screens & devices, text, captions, logos, social, scenes | Typography, shaders, transitions, animated icons, UI primitives, filters, effects, layout |
+| Agent support | Agent skill, `llms.txt`, MCP server (Pro) | Built to be driven by Claude Code, Cursor or ChatGPT |
+| Try without installing | Browser [video editor](/docs/video-editor) with MP4 export | Showcases and templates |
+| GitHub stars | ~200 | ~1,500 |
+
+## Where remocn is the better choice
+
+- **You need range.** Seven times the components, across categories snapcn does
+  not cover at all — shaders, filters, animated icons.
+- **You need transitions and backgrounds.** snapcn does not ship a transitions
+  category; remocn does.
+- **You want everything free.** remocn has no paid tier.
+
+## Where snapcn is the better choice
+
+- **You are making a product demo.** snapcn's catalogue is the shot list of a
+  software video: a [prompt being typed and sent](/docs/ai-input/prompt-send), an
+  [answer streaming in](/docs/ai-input/answer-stream), a
+  [screen recording with a camera](/docs/screens/screen-recording), a
+  [cursor that clicks](/docs/screens/cursor-track), a
+  [laptop that opens](/docs/screens/laptop-frame),
+  [captions](/docs/captions).
+- **Your type has to hold up.** Text components pivot scale on the baseline and
+  turn off hinting, and every component is measured on rendered frames for
+  judder — see [how to animate text in Remotion](/remotion-text-animations).
+- **It has to match your app.** Components take shadcn theme tokens
+  (`theme`, `mode`) rather than a palette of their own, so a scene sits next to
+  your `Input` and `Button` without restyling.
+- **You want an agent to build the video.** The [MCP server](/docs/mcp) lets
+  Claude Code or Cursor search the catalogue, read props and plan a video.
+
+<ComponentPreview name="answer-stream" />
+
+## Using both
+
+Nothing stops you. Both copy plain `.tsx` files into your project and depend on
+Remotion alone:
+
+```bash
+npx shadcn@latest add @snapcn/screen-recording
+npx shadcn@latest add @remocn/<name>
+```
+
+A common split: remocn for transitions and backgrounds, snapcn for the product
+shots between them.
+
+See also: [the best Remotion component libraries in 2026](/best-remotion-component-libraries).

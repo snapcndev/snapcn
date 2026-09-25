@@ -1,0 +1,155 @@
+---
+title: Glitch effect in Remotion
+seoTitle: Remotion glitch effect — RGB split and slice displacement in React
+description: Build a glitch effect in Remotion from scratch — an RGB split with blended colour layers, horizontal slice displacement with clip-path, deterministic jitter with random(), and bursts on the frames you choose.
+date: 2026-09-25
+tags:
+  - remotion
+  - effects
+  - text
+faq:
+  - question: How do you make a glitch effect in Remotion?
+    answer: Stack three copies of the text, tint two of them red and cyan, offset them horizontally by a jitter value, and blend them with mix-blend-mode screen. Add a copy clipped to a thin horizontal band with clip-path and shift it sideways. Only turn it on during short bursts.
+  - question: Why does my Remotion glitch look different in the render than in the preview?
+    answer: Almost always because it uses Math.random(). Remotion renders frames in parallel, so each worker gets different random numbers. Use random() from the remotion package with a seed that includes the frame number, and the jitter is identical every time.
+  - question: Should a glitch run for the whole video?
+    answer: No. A glitch reads as an event. Keep it to short bursts of a few frames at the moments you want to punctuate, and leave the text clean in between.
+  - question: Does snapcn have a glitch component?
+    answer: No. snapcn does not ship a glitch effect. The code in this post is a complete, self-contained starting point you can paste into a Remotion project.
+---
+
+A glitch effect in Remotion is three stacked copies of your text — plain, red and
+cyan — with the colour copies shoved sideways and blended with `mix-blend-mode:
+screen`, plus a thin horizontal slice displaced with `clip-path`. Drive the jitter
+with `random()` seeded by the frame, not `Math.random()`, and only glitch in short
+bursts.
+
+snapcn does not ship a glitch component, so this post is the whole thing, from
+scratch.
+
+## 1. Decide when it glitches
+
+A glitch is an event, not a texture. Pick the frames:
+
+```tsx
+const BURSTS: [number, number][] = [
+  [18, 24],
+  [51, 54],
+  [80, 88],
+];
+
+const inBurst = (frame: number) =>
+  BURSTS.some(([from, to]) => frame >= from && frame < to);
+```
+
+Short and irregular reads as a fault. Long or evenly spaced reads as a filter.
+
+## 2. Deterministic jitter
+
+Remotion renders frames in parallel across several browser tabs, so
+`Math.random()` gives every worker different numbers and the render will not
+match the preview. `random(seed)` from `remotion` returns the same number for the
+same seed. Put the frame in the seed and you get new values every frame that are
+identical on every render:
+
+```tsx
+import { random } from "remotion";
+
+// -1..1, new every frame, same on every render
+const jitter = (key: string, frame: number) => random(`${key}-${frame}`) * 2 - 1;
+```
+
+## 3. RGB split and slice displacement
+
+```tsx
+import { AbsoluteFill, random, useCurrentFrame } from "remotion";
+
+const center: React.CSSProperties = { alignItems: "center", justifyContent: "center" };
+const type: React.CSSProperties = {
+  fontSize: 120,
+  fontWeight: 800,
+  letterSpacing: "-0.03em",
+  whiteSpace: "pre",
+};
+
+export const Glitch = ({ label = "SIGNAL LOST" }: { label?: string }) => {
+  const frame = useCurrentFrame();
+  const on = inBurst(frame);
+
+  // Whole pixels: a glitch is supposed to be hard-edged.
+  const split = on ? Math.round(6 + jitter("split", frame) * 10) : 0;
+  const sliceTop = on ? Math.round(random(`top-${frame}`) * 80) : 0;
+  const sliceShift = on ? Math.round(jitter("shift", frame) * 40) : 0;
+
+  // One layer per channel, each full-frame and centred, so they line up exactly.
+  const layer = (color: string, dx: number) => (
+    <AbsoluteFill style={{ ...center, mixBlendMode: "screen", transform: `translateX(${dx}px)` }}>
+      <span style={{ ...type, color }}>{label}</span>
+    </AbsoluteFill>
+  );
+
+  return (
+    <AbsoluteFill style={{ background: "#09090b" }}>
+      {layer("#ff2d55", split)}
+      {layer("#00e5ff", -split)}
+      {layer("white", 0)}
+
+      {/* One band of the text, cut out and shoved sideways */}
+      {on ? (
+        <AbsoluteFill style={{ ...center, transform: `translateX(${sliceShift}px)` }}>
+          <span
+            style={{
+              ...type,
+              color: "white",
+              background: "#09090b",
+              clipPath: `inset(${sliceTop}% 0 ${Math.max(0, 88 - sliceTop)}% 0)`,
+            }}
+          >
+            {label}
+          </span>
+        </AbsoluteFill>
+      ) : null}
+    </AbsoluteFill>
+  );
+};
+```
+
+How it works:
+
+- **The split.** Red and cyan copies move in opposite directions. With
+  `mix-blend-mode: screen` on a dark background, red + cyan + white stack back to
+  white where they overlap, so only the fringes show colour — the chromatic
+  aberration look.
+- **The slice.** `clip-path: inset(top right bottom left)` keeps a band about 12%
+  of the text's height. The band gets an opaque background so it covers the text
+  beneath, then shifts sideways by its own jitter.
+- **Whole-pixel offsets.** `Math.round` keeps edges hard. Sub-pixel offsets
+  anti-alias into a blur, which reads as softness rather than a fault.
+
+On a light background, swap `screen` for `multiply` and use the complementary
+colours (cyan and magenta on white).
+
+## 4. Make it land
+
+A glitch lands harder when something changes across it. Swap the label on a
+burst frame — `frame < 51 ? "SIGNAL LOST" : "RECONNECTED"` — and the glitch
+covers the cut. Keep everything else still; if the text is also scaling or
+sliding during a burst, the eye cannot tell the effect from a rendering bug.
+
+## Where it goes wrong
+
+- **`Math.random()`** — preview and render disagree, and different renders
+  disagree with each other.
+- **A CSS `@keyframes` glitch** — runs on wall-clock time; the render does not.
+- **Glitching the whole clip** — it stops reading as an event after about a
+  second.
+- **Glitching body text** — keep it to a headline or a logo. Nobody can read a
+  paragraph through it.
+
+For moves that are meant to look smooth rather than broken, see
+[how to animate text in Remotion](/remotion-text-animations) and
+[kinetic typography in Remotion](/remotion-kinetic-typography).
+
+<ComponentPreview name="punch-lines" />
+
+Next: [animated backgrounds in Remotion](/remotion-animated-backgrounds).

@@ -1,0 +1,145 @@
+---
+title: What we learned shipping llms.txt for a component registry
+seoTitle: llms.txt for a shadcn component registry — what actually worked
+description: Coding agents install components from a registry by guessing names. Ours guessed wrong 208 times in thirty days. What we changed in llms.txt, the .md URLs and the registry 404 so agents stop inventing components.
+date: 2026-09-25
+tags:
+  - llms.txt
+  - ai agents
+  - shadcn
+faq:
+  - question: What is llms.txt?
+    answer: A plain-text file at the root of a site, described at llmstxt.org, that gives language models a compact, markdown index of the site instead of making them scrape HTML. A companion llms-full.txt usually carries the whole documentation as one file.
+  - question: What should a component registry put in llms.txt?
+    answer: The install pattern and the complete list of installable names, stated as exhaustive. An index of page titles is not enough, because an agent that only knows display names will guess the install slug and often guess wrong.
+  - question: Why serve docs pages as markdown with a .md suffix?
+    answer: Appending .md is the convention coding agents try first. Answering it with the HTML page wastes the agent's context on script tags; answering with plain markdown gives it the install command and props directly.
+  - question: How do you measure AI agent traffic to a registry?
+    answer: Server-side, because agents run no JavaScript. Log every fetch of llms.txt and the .md pages, and classify each registry request by user agent into agent, bot, CLI or browser, matching agents first since they often send browser-like user agents.
+---
+
+**Short answer:** an `llms.txt` that lists pages is not enough for a component
+registry. Agents need the **exhaustive list of installable names**, stated as
+exhaustive; every docs page as **markdown at `<url>.md`**; and a registry
+**404 that answers in JSON** with the real names. Before we did those three
+things, agents invented component names that did not exist, 208 times in thirty
+days.
+
+snapcn is a shadcn registry of Remotion components. People — and increasingly
+their agents — install them with `npx shadcn@latest add @snapcn/<name>`. This is
+what the agent side of that taught us.
+
+## Agents guess names, and guess wrong
+
+Our first `llms.txt` said the install pattern was `@snapcn/<component>` and then
+never named a single component. The gallery section listed *display* names
+behind links, so the slug had to be guessed.
+
+Agents guessed. In thirty days the registry served **208 requests for names that
+do not exist**, across 41 distinct spellings — `blur-out-up` (21),
+`dynamic-grid` (10), `soft-blur-in` (9), `number-wheel`, `line-by-line-slide`,
+`shader-warp`. None appear anywhere in our repository, roadmap or links. They
+were invented, and each one was someone who had already typed `npx shadcn add` —
+one failed install for every eight that worked.
+
+## Fix 1: say the list is complete
+
+The fix is a section in `llms.txt` generated from the same list the "install
+everything" button uses, so a new component appears there by existing:
+
+```ts
+const INSTALLABLE = `## Every installable component
+
+These ${INSTALL_ALL_NAMES.length} names are the complete set. \`@snapcn/<name>\`
+resolves for these and for nothing else — any other name returns 404, so do not
+infer, pluralise or invent one. If what you want is not on this list, snapcn does
+not have it yet; say so rather than guessing a plausible name.
+
+${INSTALL_ALL_NAMES.map((name) => `- \`npx shadcn@latest add @snapcn/${name}\``).join("\n")}
+`;
+```
+
+Two details matter. The list is **runnable commands**, not names, so there is
+nothing left to assemble. And it **tells the agent what to do on a miss**: say
+the component does not exist. Without that instruction, a model's default is to
+produce something plausible.
+
+The same header carries the one rename we ever made: the namespace was
+`@snap-cn` before 2026-08-21 and that spelling no longer resolves. Anything a
+model learned from older pages gets corrected at the top of the file.
+
+## Fix 2: answer `.md`
+
+Appending `.md` to a docs URL is the convention coding agents try first. We
+answered it with a 200 and forty-seven kilobytes of React shell. An agent that
+spends its context on `<script>` tags never reaches the install command at the
+bottom of the page.
+
+Now `/docs/<page>.md` is rewritten to a route that returns the page as plain
+markdown, with install widgets turned into runnable commands. It emits the same
+bytes as that page's block inside `llms-full.txt`, from one function, so a page
+fetched alone and the same page in the corpus can never disagree.
+
+## Fix 3: a 404 an agent can read
+
+A request for a component we do not have used to get the site's HTML 404:
+twenty-seven kilobytes sent to a terminal, saying nothing a CLI could act on.
+Now middleware answers it as JSON:
+
+```json
+{
+  "error": "`@snapcn/blur-out-up` does not exist.",
+  "suggestions": [],
+  "message": "snapcn has no component by that name. … do not guess another spelling.",
+  "components": ["…every real name…"],
+  "llms": "https://snapcn.dev/llms.txt"
+}
+```
+
+Suggestions appear only when there is a genuine near-match. Most invented names
+get none, which is the truthful reply — suggesting the nearest string would
+just move the hallucination one step along.
+
+## Three files, three jobs
+
+| File | Job |
+| --- | --- |
+| `/llms.txt` | Index: what snapcn is, the install pattern, every installable name, every page |
+| `/llms-components.txt` | Router: one table of components — what each is for, how many frames it runs, what it pulls in |
+| `/llms-full.txt` | Corpus: every docs page as markdown in one file |
+
+The router exists because choosing a component is the only decision an agent
+has to make before installing. One fetch should be enough to make it, rather
+than thirty page loads.
+
+Freshness is stated too: "Last updated" is the date of the newest component
+release, not the deploy date — a signal that moves only when something real
+changes.
+
+## Measure it on the server
+
+Agents run no JavaScript, so a browser analytics tool never sees them. Every
+fetch of the three text files and of any `.md` page is logged server-side as one
+event, and every registry request is classified by user agent — agents first,
+because a headless agent will happily send a full `Mozilla/5.0` string, then
+crawlers, then CLIs, then browsers.
+
+Classification turned out to matter more than we expected. Registry indexers
+that did not say "bot" were being counted as installs: over thirty days, 390
+fake installers and 2,737 fake installs, until a rule for the `(+https://…)`
+contact convention in user agents caught them.
+
+## What to copy
+
+1. List every installable name as a runnable command, and say the list is complete.
+2. Tell the agent what to do when the thing is not there.
+3. Serve `.md` for every docs URL, from the same source as `llms-full.txt`.
+4. Make the registry 404 machine-readable, with the real names in it.
+5. Log agent traffic on the server, and classify it before you count it.
+
+<ComponentPreview name="agent-steps" />
+
+We also ship an [agent skill](/docs/getting-started/agent-skill) and an
+[MCP server](/docs/mcp) for agents that want more than text files.
+
+Next: [making videos with Claude Code and Remotion](/claude-code-remotion-videos).

@@ -1,0 +1,166 @@
+---
+title: How to add an iPhone mockup to a Remotion video
+seoTitle: Remotion iPhone and MacBook mockup — put a screen recording in a device
+description: Put a screenshot or screen recording inside an iPhone or MacBook frame in Remotion — a from-scratch CSS device around OffthreadVideo, then drop-in components with a dynamic island, a 3D tilt and a camera move.
+date: 2026-09-24
+tags:
+  - remotion
+  - device mockup
+  - iphone
+faq:
+  - question: How do I put a video inside an iPhone mockup in Remotion?
+    answer: Wrap an OffthreadVideo in a rounded container that plays the role of the phone body, give the inner screen overflow hidden and a smaller corner radius, and set objectFit to cover on the video. Or use a phone frame component that takes the video as a prop.
+  - question: Should I use a PNG device mockup in Remotion?
+    answer: It works for a still shot, but a PNG cannot tilt in 3D, change colour for a dark scene or keep its corners sharp when the camera pushes in. A frame built in CSS does all three.
+  - question: Does a MacBook mockup work the same way?
+    answer: Yes. The screen is a container with the recording inside it; the lid, hinge and deck are more CSS around it. snapcn's Laptop Frame adds a lid that opens and a camera that dives into the screen.
+  - question: Which video component should go inside a Remotion device frame?
+    answer: OffthreadVideo. It extracts exact frames during the render, so the recording stays in sync with the composition.
+---
+
+**Short answer:** an iPhone mockup in Remotion is a rounded `<div>` (the body)
+around a smaller rounded `<div>` with `overflow: hidden` (the screen), with an
+`<OffthreadVideo>` or `<Img>` inside set to `objectFit: "cover"`. Animate the
+device, not the video. For a finished frame with a dynamic island, 3D tilt and a
+camera move, install [Phone Frame](/docs/screens/phone-frame) or
+[Laptop Frame](/docs/screens/laptop-frame).
+
+<ComponentPreview name="phone-frame" />
+
+## A phone frame from scratch
+
+```tsx
+import {
+  AbsoluteFill,
+  OffthreadVideo,
+  spring,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+const WIDTH = 320;
+const HEIGHT = 656;
+const BEZEL = 12;
+const RADIUS = 53;
+
+export const PhoneMockup = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const enter = spring({ frame, fps, config: { damping: 200 } });
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          width: WIDTH,
+          height: HEIGHT,
+          padding: BEZEL,
+          borderRadius: RADIUS,
+          background: "#18181b",
+          opacity: enter,
+          transform: `translateY(${(1 - enter) * 70}px)`,
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            overflow: "hidden",
+            // Concentric corners: the screen is the body minus the bezel.
+            borderRadius: RADIUS - BEZEL,
+          }}
+        >
+          <OffthreadVideo
+            src={staticFile("recording.mp4")}
+            muted
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+```
+
+Three details make the difference between "a device" and "a box":
+
+- **Concentric corners.** The screen's radius is the body's radius minus the
+  bezel. Use the same radius for both and the corners pinch.
+- **Real proportions.** 320 × 656 is roughly an iPhone's aspect. A mockup that is
+  slightly too wide reads as an Android tablet.
+- **`<OffthreadVideo>`, not `<video>`.** It pulls exact frames during the render,
+  so the recording cannot drift out of sync with the composition.
+
+Missing: the dynamic island, a 3D tilt, a shadow that suits light and dark
+scenes, a float after it lands. That is where the from-scratch version usually
+stops.
+
+## The drop-in iPhone frame
+
+```bash
+npx shadcn@latest add @snapcn/phone-frame
+```
+
+```tsx
+import { staticFile } from "remotion";
+import { PhoneFrame } from "@/components/snap-cn/phone-frame";
+
+export const AppLaunch = () => (
+  <PhoneFrame
+    variant="showcase"
+    entrance="float"
+    scale={0.9}
+    screenSrc={staticFile("recording.mp4")}
+  />
+);
+```
+
+`screenSrc` takes a video (`.mp4/.webm/.mov/.m4v`, played muted through
+`<OffthreadVideo>`) or an image; pass `children` instead to put live React UI on
+the screen. The options that matter:
+
+| Prop | Values | What it does |
+| --- | --- | --- |
+| `variant` | `flat`, `tilt`, `showcase` | Head-on, a static 3D tilt, or a crane move that sweeps up the screen and settles frontal |
+| `entrance` | `rise`, `rotate-in`, `float` | How the device arrives |
+| `mode` | `light`, `dark` | Shell colour follows the theme on dark scenes |
+| `showDynamicIsland` | `true` / `false` | The cutout over the screen |
+
+The frame renders on a transparent background, so the scene supplies the
+backdrop — see [animated backgrounds in Remotion](/remotion-animated-backgrounds).
+
+## The MacBook version
+
+```bash
+npx shadcn@latest add @snapcn/laptop-frame
+```
+
+```tsx
+import { staticFile } from "remotion";
+import { LaptopFrame } from "@/components/snap-cn/laptop-frame";
+
+export const ProductScene = () => (
+  <LaptopFrame
+    entrance="open"
+    finale="zoom-to-screen"
+    screenSrc={staticFile("recording.mp4")}
+  />
+);
+```
+
+`entrance="open"` swings the lid up from the deck; `finale="zoom-to-screen"` then
+dollies the camera into the screen until the recording fills the frame — the
+laptop becomes the transition into your full-screen demo.
+
+<ComponentPreview name="laptop-frame" />
+
+## Crop the recording first
+
+A device frame shows everything on the screen, including the browser tab strip
+you forgot about. Put a [Screen Recording](/docs/screens/screen-recording) inside
+the frame as `children` to crop the chrome and push the camera in on what
+matters. More devices are in the
+[device mockups collection](/docs/collections/device-mockups).
+
+Next: [how to make a product demo video in React](/product-demo-video-react).

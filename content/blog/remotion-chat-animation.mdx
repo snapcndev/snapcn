@@ -1,0 +1,191 @@
+---
+title: How to animate a team chat in Remotion
+seoTitle: Remotion chat animation — Slack-style messages, typing dots and scroll
+description: Animate a Slack- or Discord-style chat in Remotion — messages that land on set frames, typing dots that hold a line, and a transcript that scrolls once per arrival — then a drop-in component that does it.
+date: 2026-09-25
+tags:
+  - remotion
+  - chat
+  - social
+faq:
+  - question: How do you animate chat messages in Remotion?
+    answer: Give every message the frame it lands on, render only the messages whose frame has passed, and fade or slide each one in over a few frames from that point. Everything is computed from useCurrentFrame(), so scrubbing and rendering agree.
+  - question: How do you make typing dots in Remotion?
+    answer: Show three dots for a window before a message lands, and set each dot's opacity from the frame number with a phase offset per dot, for example with a sine of the frame. Hide them on the frame the message arrives.
+  - question: How do you scroll a chat transcript in Remotion?
+    answer: Compute how far the content overflows the viewport after each arrival, and ease the transcript's translateY from the previous offset to the new one over a few frames starting at that arrival. Between arrivals it holds perfectly still.
+  - question: Is there a ready-made chat animation component for Remotion?
+    answer: Yes. snapcn's Channel Thread renders a work-chat transcript with avatars, names, timestamps, typing dots and a per-arrival scroll, installed with npx shadcn@latest add @snapcn/channel-thread.
+---
+
+**Short answer:** a chat animation in Remotion is a list of messages, each with
+the frame it lands on. Render the ones whose frame has passed, show typing dots
+for a moment before each one, and ease the transcript up by exactly the overflow
+when a new line arrives — then hold it still until the next. Or install
+[Channel Thread](/docs/social/channel-thread), which does all of it.
+
+<ComponentPreview name="channel-thread" />
+
+## 1. Messages that land on frames
+
+Each message carries `at`, the frame its words appear. The visible transcript is
+simply every message whose `at` has passed:
+
+```tsx
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+
+type Message = { author: string; text: string; at: number };
+
+const ROW = 40; // one line of transcript, px
+
+const messages: Message[] = [
+  { author: "rhea", text: "Launch video by Thursday?", at: 10 },
+  { author: "sam", text: "Already done.", at: 55 },
+  { author: "sam", text: "Built it in React.", at: 80 },
+];
+
+const Line = ({ message }: { message: Message }) => {
+  const frame = useCurrentFrame();
+  const t = interpolate(frame, [message.at, message.at + 6], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  return (
+    <div style={{ height: ROW, opacity: t, transform: `translateY(${(1 - t) * 8}px)` }}>
+      <b>{message.author}</b> {message.text}
+    </div>
+  );
+};
+```
+
+Keep the entrance short — six frames, a few pixels. A chat line that swoops in
+reads as a slideshow, not a conversation.
+
+## 2. Typing dots
+
+For a stretch before a message lands, show three dots whose opacity cycles with
+the frame. Each dot is a third of a cycle behind the one before it:
+
+```tsx
+const TypingDots = ({ until }: { until: number }) => {
+  const frame = useCurrentFrame();
+  if (frame < until - 24 || frame >= until) return null;
+  return (
+    <div style={{ display: "flex", gap: 4, height: ROW, alignItems: "center" }}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "currentColor",
+            opacity: 0.3 + 0.7 * (0.5 + 0.5 * Math.sin((frame - i * 4) / 3)),
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+```
+
+## 3. Scroll once per arrival, then hold
+
+The mistake is scrolling continuously. A real chat is motionless between
+messages and moves only when a new line needs room. So compute, for each
+arrival, how far the content overflows the viewport, and ease to it:
+
+```tsx
+import { Easing } from "remotion";
+
+const VIEW = 200; // viewport height in px
+
+const overflowAfter = (count: number) => Math.max(0, count * ROW - VIEW);
+
+const useScroll = () => {
+  const frame = useCurrentFrame();
+  let offset = 0;
+  messages.forEach((m, i) => {
+    offset = interpolate(frame, [m.at, m.at + 8], [offset, overflowAfter(i + 1)], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.out(Easing.cubic),
+    });
+  });
+  return offset;
+};
+```
+
+Each arrival eases from wherever the previous one left the transcript, so it is
+still a pure function of the frame. Until the thread is tall enough to overflow,
+`overflowAfter` is zero and nothing moves at all.
+
+Put it together inside a clipped viewport:
+
+```tsx
+export const Chat = () => {
+  const frame = useCurrentFrame();
+  const scroll = useScroll();
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <div style={{ height: VIEW, width: 560, overflow: "hidden" }}>
+        <div style={{ transform: `translateY(${-scroll}px)` }}>
+          {messages.map((m) =>
+            frame >= m.at ? <Line key={m.at} message={m} /> : null,
+          )}
+          {messages.map((m) => <TypingDots key={`dots-${m.at}`} until={m.at} />)}
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+```
+
+This is a sketch: a real transcript groups consecutive messages under one name
+and places the dots on the row they will become.
+
+## The drop-in: Channel Thread
+
+[Channel Thread](/docs/social/channel-thread) is a work-chat transcript — avatar,
+bold name, quiet timestamp, messages as plain lines — with the details the
+sketch above skips:
+
+- **Grouping.** A second message from the same person joins their group without
+  repeating the name.
+- **Two clocks per message.** `at` is the frame the words land; `opens` is the
+  frame the row appears, with dots until the words arrive.
+- **Scroll by overflow.** The transcript moves only by how far a line falls past
+  its anchor, and a longer move takes proportionally less time.
+- **Avatars that load before the frame is captured**, so no render comes out with
+  an empty square.
+
+```bash
+npx shadcn@latest add @snapcn/channel-thread
+```
+
+```tsx
+import { ChannelThread } from "@/components/snap-cn/channel-thread";
+
+const rhea = { author: "rhea", time: "9:41 AM", avatar: "/avatars/07.jpg" };
+const sam = { author: "sam", time: "9:42 AM", avatar: "/avatars/13.jpg" };
+
+export const Chat = () => (
+  <ChannelThread
+    messages={[
+      { ...rhea, text: "Launch video by Thursday?" },
+      { ...rhea, text: "We have nothing shot." },
+      { ...sam, text: "Already done." },
+      { ...sam, text: "Built it out of snapcn." },
+    ]}
+  />
+);
+```
+
+Messages are single lines — keep each to about thirty characters at 16:9. The
+scene ships dark; pass `mode="light"` for a light one.
+
+For the other side of the conversation — a prompt being typed to an AI — see
+[Prompt Send](/docs/ai-input/prompt-send) and
+[Answer Stream](/docs/ai-input/answer-stream).
+
+Next: [animate a follower count in Remotion](/remotion-counter-animation).

@@ -520,15 +520,7 @@ const ELEMENTS: Record<string, Studio> = {
   "card-rail": {
     box: [1280, 720],
     clip: true,
-    controls: [
-      "heading",
-      "titles",
-      "notes",
-      "tags",
-      "images",
-      "mode",
-      "fontFamily",
-    ],
+    controls: ["heading", "mode", "fontFamily"],
     // A start frame; the Sequence owns `from`.
     drop: ["speed", "from"],
     items: {
@@ -538,64 +530,47 @@ const ELEMENTS: Record<string, Studio> = {
       // three flicks show six. More cards get more flicks, closer together, so
       // every card still comes past inside the Element's length.
       build: `(o) => {
-        const join = (k: "title" | "note" | "tag" | "image") => o.map((x) => clean(x[k], "|")).join("|");
         const flicks = Math.max(3, o.length - 3);
-        return { titles: join("title"), notes: join("note"), tags: join("tag"), images: join("image"), flicks, every: Math.min(30, Math.floor(90 / flicks)) };
+        return {
+          cards: o.map(({ image, title, note, tag }) => ({ image, title, note, tag })),
+          flicks,
+          every: Math.min(30, Math.floor(90 / flicks)),
+        };
       }`,
-      starter: (d) => {
-        const list = (k: string) => String(d[k] ?? "").split("|");
-        const [titles, notes, tags, images] = [
-          "titles",
-          "notes",
-          "tags",
-          "images",
-        ].map(list);
-        return Array.from({ length: 6 }, (_, i) => ({
-          title: titles[i] ?? "",
-          note: notes[i] ?? "",
-          tag: tags[i] ?? "",
-          image: images[i] ?? "",
-        }));
-      },
+      starter: (d) =>
+        (d.cards as Record<string, string>[]).map((c) => ({
+          title: c.title ?? "",
+          note: c.note ?? "",
+          tag: c.tag ?? "",
+          image: c.image ?? "",
+        })),
       fields: {
-        title: {
-          label: "Title",
-          type: "text",
-          from: "titles",
-          sep: "|",
-          node: "title",
-        },
+        title: { label: "Title", type: "text", from: "cards", node: "title" },
         note: {
           label: "Small print",
           type: "text",
-          from: "notes",
-          sep: "|",
+          from: "cards",
           node: "note",
         },
-        tag: {
-          label: "Tag",
-          type: "text",
-          from: "tags",
-          sep: "|",
-          node: "tag",
-        },
-        image: {
-          label: "Image",
-          type: "image",
-          from: "images",
-          sep: "|",
-          node: "src",
-        },
+        tag: { label: "Tag", type: "text", from: "cards", node: "tag" },
+        image: { label: "Image", type: "image", from: "cards", node: "src" },
       },
     },
     props: {
       heading: "Browse templates",
-      images: [...PHOTOS, PHOTOS[0]].join("|"),
-      titles:
-        "Onboarding|Dashboard|Checkout|Settings|Reports|Inbox|Calendar|Billing|Profile",
-      notes:
-        "Template · 12 screens|Template · 8 screens|Template · 5 screens|Template · 9 screens|Template · 6 screens|Template · 4 screens|Template · 7 screens|Template · 3 screens|Template · 5 screens",
-      tags: "@acme/onboarding|@acme/dashboard|@acme/checkout|@acme/settings|@acme/reports|@acme/inbox|@acme/calendar|@acme/billing|@acme/profile",
+      cards: [
+        ["Onboarding", 12],
+        ["Dashboard", 8],
+        ["Checkout", 5],
+        ["Settings", 9],
+        ["Reports", 6],
+        ["Inbox", 4],
+      ].map(([title, screens], i) => ({
+        image: PHOTOS[i],
+        title,
+        note: `Template · ${screens} screens`,
+        tag: `@acme/${String(title).toLowerCase()}`,
+      })),
       theme: CLEAR,
     },
   },
@@ -607,7 +582,7 @@ const ELEMENTS: Record<string, Studio> = {
     clip: true,
     // The shared speed knob, which this component never read.
     drop: ["speed"],
-    controls: ["script", "people", "mode", "fontFamily"],
+    controls: ["mode", "fontFamily"],
     items: {
       noun: "Message",
       nameFrom: "text",
@@ -619,62 +594,39 @@ const ELEMENTS: Record<string, Studio> = {
         text: {
           label: "Message",
           type: "text",
-          from: "script",
+          from: "messages",
           node: "children",
         },
-        author: { label: "Author", type: "text", from: "people" },
-        time: { label: "Time", type: "text" },
-        avatar: { label: "Avatar", type: "image", from: "avatars" },
+        author: { label: "Author", type: "text", from: "messages" },
+        time: { label: "Time", type: "text", from: "messages" },
+        avatar: { label: "Avatar", type: "image", from: "messages" },
       },
-      // Consecutive messages from one author are one group: `;` between groups,
-      // `|` between a group's lines; `people` and `avatars` carry one per group.
-      build: `(o) => {
-        const groups: { author: string; time: string; avatar: string; lines: string[] }[] = [];
-        for (const x of o) {
-          const last = groups[groups.length - 1];
-          // A message joins the group above only if it has the same header, so a
-          // time or avatar set on any message is one that shows.
-          if (last && last.author === (x.author ?? "") && last.time === (x.time ?? "") && last.avatar === (x.avatar ?? "")) last.lines.push(clean(x.text, "|;"));
-          else groups.push({ author: x.author ?? "", time: x.time ?? "", avatar: x.avatar ?? "", lines: [clean(x.text, "|;")] });
-        }
-        return {
-          script: groups.map((g) => g.lines.join("|")).join(";"),
-          // A name runs to the first space; a two-word name keeps its space as a
-          // no-break one.
-          people: groups.map((g) => \`\${clean(g.author, ";").split(" ").join("\\u00A0")} \${clean(g.time, ";")}\`.trim()).join(";"),
-          avatars: groups.map((g) => g.avatar).join("|"),
-          // One landing and one opening frame per message: the four measured
-          // ones, then a message every 24 frames, typing for 12 before it.
-          beats: o.map((_, i) => [0, 12, 60, 84][i] ?? 84 + 24 * (i - 3)).join(","),
-          opens: o.map((_, i) => [0, 12, 37, 72][i] ?? 72 + 24 * (i - 3)).join(","),
-        };
-      }`,
-      starter: (d) => {
-        const heads = String(d.people ?? "")
-          .split(";")
-          .map((p) => p.trim());
-        const pics = String(d.avatars ?? "")
-          .split("|")
-          .map((a) => a.trim());
-        return String(d.script ?? "")
-          .split(";")
-          .flatMap((g, i) => {
-            const head = heads[i] ?? "";
-            const cut = head.indexOf(" ");
-            const author = cut < 0 ? head : head.slice(0, cut);
-            const time = cut < 0 ? "" : head.slice(cut + 1);
-            return g
-              .split("|")
-              .map((m) => m.trim())
-              .filter(Boolean)
-              .map((text) => ({ text, author, time, avatar: pics[i] ?? "" }));
-          });
-      },
+      // Consecutive messages with one author, time and avatar group themselves;
+      // the scene times each arrival.
+      build: `(o) => ({
+        messages: o.map(({ text, author, time, avatar }) => ({ text: text ?? "", author, time, avatar })),
+      })`,
+      starter: (d) =>
+        (d.messages as Record<string, string>[]).map((m) => ({
+          text: m.text,
+          author: m.author,
+          time: m.time,
+          avatar: m.avatar,
+        })),
     },
     props: {
       mode: "light",
-      script:
-        "Launch video by Thursday?|We have nothing shot.;Already done.|Built it this morning.",
+      messages: [
+        ["rhea", "9:41 AM", "07", "Launch video by Thursday?"],
+        ["rhea", "9:41 AM", "07", "We have nothing shot."],
+        ["sam", "9:42 AM", "13", "Already done."],
+        ["sam", "9:42 AM", "13", "Built it this morning."],
+      ].map(([author, time, face, text]) => ({
+        author,
+        time,
+        avatar: `${SITE}/avatars/${face}.jpg`,
+        text,
+      })),
       theme: CLEAR,
     },
   },
@@ -704,6 +656,23 @@ const ELEMENTS: Record<string, Studio> = {
     // A light/dark select wired to `theme`, which takes token overrides.
     drop: ["theme"],
     props: { theme: CLEAR, followers: FOLLOWERS },
+    items: {
+      noun: "Follower",
+      nameFrom: "person",
+      fields: {
+        // `name` is the layer's own, in Studio.
+        person: { label: "Name", type: "text", from: "followers" },
+        avatar: { label: "Photo", type: "image", from: "followers" },
+      },
+      build: `(o) => ({
+        followers: o.map(({ person, avatar }) => ({ name: person ?? "", avatar: avatar || undefined })),
+      })`,
+      // The row holds 24 at once: 24 people, and nobody shows twice.
+      starter: (d) =>
+        (d.followers as { name: string; avatar: string }[])
+          .slice(0, 24)
+          .map(({ name, avatar }) => ({ person: name, avatar })),
+    },
   },
   "hero-launch": {
     box: [1280, 720],

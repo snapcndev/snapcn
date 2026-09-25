@@ -6,8 +6,11 @@ export const source = loader({
   source: docs.toFumadocsSource(),
 });
 
+// Posts live at the root (`/<slug>`), the index at `/blogs`. A post's slug
+// must not match a static top-level route (`pro`, `docs`, `account`…): the
+// static route wins and the post becomes unreachable.
 export const blogSource = loader({
-  baseUrl: "/blog",
+  baseUrl: "/",
   source: blogCollection.toFumadocsSource(),
 });
 

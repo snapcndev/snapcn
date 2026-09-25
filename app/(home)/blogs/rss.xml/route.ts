@@ -4,7 +4,7 @@ import { blogPosts } from "@/source";
 export const dynamic = "force-static";
 
 const SITE_URL = "https://snapcn.dev";
-const FEED_URL = `${SITE_URL}/blog/rss.xml`;
+const FEED_URL = `${SITE_URL}/blogs/rss.xml`;
 
 /**
  * The blog as a feed.
@@ -36,7 +36,7 @@ export function GET() {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>snapcn — blog</title>
-    <link>${SITE_URL}/blog</link>
+    <link>${SITE_URL}/blogs</link>
     <atom:link href="${FEED_URL}" rel="self" type="application/rss+xml" />
     <description>Making product demo videos in React with Remotion.</description>
     <language>en</language>${

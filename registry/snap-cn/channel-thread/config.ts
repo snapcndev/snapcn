@@ -7,44 +7,23 @@ import {
 } from "@/lib/customizer-config";
 
 /**
- * The default conversation, and the three strings that describe it.
- *
- * They are parallel on purpose: one entry per group in `people`, one avatar per
- * group, and one number per message in `beats` and `opens`. `opens` is the frame
- * the row appears — a group's row shows typing dots until its words land on
- * `beats`, and a later message's row simply waits. Splitting them is what lets a
- * pause be a pause instead of a gap someone has to guess at.
+ * The default conversation, in the string form the component takes for this
+ * one-line control: `avatar > name time > text`, `|` between messages, and a
+ * message that is only text continues the one above. The repo ships 24 square
+ * photos in `public/avatars` (`follower-rush` draws from the same folder):
+ * faces are the difference between a chat and a wireframe.
  */
-const SCRIPT =
-  "Launch video by Thursday?|We have nothing shot.;Already done.|Built it out of snapcn.";
+const MESSAGES =
+  "/avatars/07.jpg > rhea 9:41 AM > Launch video by Thursday? | We have nothing shot. | /avatars/13.jpg > sam 9:42 AM > Already done. | Built it out of snapcn.";
 
 export const channelThreadConfig: ComponentConfig = {
   componentName: "ChannelThread",
   importPath: "@/components/snap-cn/channel-thread",
   controls: {
-    script: {
+    messages: {
       type: "text",
-      default: SCRIPT,
-      label: "Script (; group, | line)",
-    },
-    people: {
-      type: "text",
-      default: "rhea 9:41 AM;sam 9:42 AM",
-      label: "Who, and when",
-    },
-    beats: {
-      type: "text",
-      default: "0,12,60,84",
-      label: "Message lands (frame)",
-    },
-    opens: { type: "text", default: "0,12,37,72", label: "Row opens (frame)" },
-    avatars: {
-      type: "text",
-      // The repo ships 24 square photos in `public/avatars`; `follower-rush`
-      // draws from the same folder. Faces are the difference between a chat
-      // that reads as a chat and one that reads as a wireframe.
-      default: "/avatars/07.jpg|/avatars/13.jpg",
-      label: "Avatar images (| separated)",
+      default: MESSAGES,
+      label: "Messages (avatar > name time > text | …)",
     },
     mode: {
       type: "select",

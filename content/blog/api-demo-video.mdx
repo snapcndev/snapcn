@@ -1,0 +1,149 @@
+---
+title: How to make a demo video for an API or developer tool
+seoTitle: API demo video — how to show a developer tool in 30 seconds
+description: An API has no screen to record. Show the request and the result instead — a terminal, the call, the output, one number — built in React with Remotion so it stays sharp and editable.
+date: 2026-09-25
+tags:
+  - remotion
+  - product demo
+  - developer tools
+faq:
+  - question: How do you make a demo video for an API?
+    answer: Show the request and the result. Open on what the developer gets, then type the install or the call in a terminal, show the output arriving, and end on one number or the install command. Build it as React components with Remotion so the code on screen is real text, not a blurry recording.
+  - question: How long should an API demo video be?
+    answer: Around 20 to 45 seconds. One call, one result. If you need to show three endpoints, make three short videos.
+  - question: Should I screen-record my terminal for a demo video?
+    answer: It works, but a recorded terminal is small, full of prompt noise, and hard to re-shoot when the output changes. A terminal built as a component types exactly the lines you give it, at any size, and changes by editing a string.
+---
+
+**Short answer:** an API has no UI to record, so show the **request and the
+result**. Four beats: the outcome in one line, the install or the call typed in a
+terminal, the output arriving, and one number or command to end on. Build it in
+React with Remotion so every character on screen is real, sharp text you can edit.
+
+This post is about the *developer-tool* version. For a product with a UI, see
+[how to make a product demo video in React](/product-demo-video-react).
+
+## Why API demos are hard
+
+A dashboard demo shows itself: click, something changes. An API demo is a
+`curl` and a JSON blob, and a recording of that is:
+
+- **Too small.** A terminal at 13px on a 1080p capture is unreadable on a phone.
+- **Noisy.** Your prompt, your hostname, three warnings, a scroll.
+- **Frozen.** When the output format changes, you re-record.
+
+Rebuilt as components, the terminal types exactly the lines you give it, at a
+size you choose, and a new output is a new string.
+
+## The four beats
+
+| Beat | Length | On screen |
+| --- | --- | --- |
+| Outcome | 2–3s | What the developer gets, in one line |
+| Call | 5–8s | The install or the request, typed |
+| Result | 5–10s | The output arriving — trimmed to what matters |
+| Close | 2–3s | One number, or the install command again |
+
+Trim the output hard. Nobody reads a 40-line JSON response in a video — show the
+three lines that prove it worked.
+
+## The call and the result: a terminal
+
+[Terminal Simulator](/docs/screens/terminal-simulator) is one camera flying over
+one canvas: a headline, an install panel with package-manager tabs, then a focus
+terminal that types its output in bursts. Any line ending in `...` holds the
+frame, which is exactly the beat where a request is in flight:
+
+```tsx
+import { TerminalSimulator } from "@/components/snap-cn/terminal-simulator";
+
+export const CallScene = () => (
+  <TerminalSimulator
+    intro="*Invoices* from one *call.*"
+    command={{
+      managers: ["npm", "pnpm", "yarn", "bun"],
+      text: "npm install @acme/billing",
+    }}
+    lines={[
+      { text: "acme.invoices.create({ customer: 'cus_42' })", type: "command", delay: 0 },
+      { text: "Sending...", type: "log", delay: 6 },
+      { text: "→ inv_9f3 created · $1,240.00", type: "success", delay: 8 },
+    ]}
+  />
+);
+```
+
+Pass `intro={null}` or `command={null}` to skip a station — the camera closes the
+gap.
+
+<ComponentPreview name="terminal-simulator" />
+
+## For an agent or AI API: show the work
+
+If what you sell is an agent, the interesting part is not the request — it is
+what happens between the request and the answer.
+[Agent Steps](/docs/ai-input/agent-steps) writes that log one line at a time and
+ends on the result:
+
+```tsx
+import { AgentSteps } from "@/components/snap-cn/agent-steps";
+
+export const WorkScene = () => (
+  <AgentSteps
+    query="Find every unpaid invoice older than 30 days"
+    steps={[
+      { running: "Querying invoices…", done: "Queried 1,204 invoices", icon: "globe" },
+      { running: "Checking due dates…", done: "Checked due dates" },
+      { running: "Drafting reminders…", done: "Drafted reminders" },
+    ]}
+    result="18 reminders drafted"
+  />
+);
+```
+
+Write the last step in the present tense and put the number in `result` — the
+last step never finishes; it turns into the result chip.
+
+Then [Answer Stream](/docs/ai-input/answer-stream) for the reply itself, if your
+API answers in prose.
+
+## Outcome and close: type, not logos
+
+Open and close with a line of text, not your logo.
+[Text Reveal](/docs/text/text-reveal) or [Punch Lines](/docs/text/punch-lines)
+carry a single sentence with enough motion to hold two seconds. More options in
+[how to animate text in Remotion](/remotion-text-animations).
+
+## Put it together
+
+```tsx
+import { AbsoluteFill, Series } from "remotion";
+import { TextReveal } from "@/components/snap-cn/text-reveal";
+
+export const ApiDemo = () => (
+  <AbsoluteFill style={{ background: "#0a0a0a" }}>
+    <Series>
+      <Series.Sequence durationInFrames={90}>
+        <TextReveal text="Invoices from one call" mode="dark" />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={200}>
+        <CallScene />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={160}>
+        <WorkScene />
+      </Series.Sequence>
+    </Series>
+  </AbsoluteFill>
+);
+```
+
+```bash
+npx shadcn@latest add @snapcn/terminal-simulator @snapcn/agent-steps @snapcn/text-reveal
+npx remotion render ApiDemo out/api-demo.mp4
+```
+
+Posting it in a README too? Render the same composition as a GIF — see
+[how to make a GitHub README demo GIF](/github-readme-demo-gif).
+
+Next: [terminal and code-typing animation in Remotion](/remotion-terminal-animation).

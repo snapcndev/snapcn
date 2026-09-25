@@ -70,6 +70,14 @@ const nextConfig: NextConfig = {
       // The URL people guess from 21st.dev/mcp. The page lives in the docs
       // chrome, so this is the short link, not a second copy to index.
       { source: "/mcp", destination: "/docs/mcp", permanent: true },
+      // The blog moved 2026-09-24: the index to `/blogs`, each post to the root.
+      { source: "/blog", destination: "/blogs", permanent: true },
+      {
+        source: "/blog/rss.xml",
+        destination: "/blogs/rss.xml",
+        permanent: true,
+      },
+      { source: "/blog/:slug", destination: "/:slug", permanent: true },
       // Pages removed 2026-09-17. They were indexed and linked from outside, so
       // they forward rather than 404: the showcase to the work itself, the
       // marketplace (a "coming soon" for paid scenes) to where paid scenes are

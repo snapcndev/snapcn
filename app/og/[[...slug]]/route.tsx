@@ -115,9 +115,7 @@ export async function GET(
   // A post lives in the blog collection, which `source` cannot see at all. Its
   // card is the one most likely to be shared, since a post is written to be.
   const post =
-    !page && slug?.[0] === "blog" && slug.length === 2
-      ? blogSource.getPage([slug[1]])
-      : undefined;
+    !page && slug?.length === 1 ? blogSource.getPage(slug) : undefined;
 
   const title =
     data?.title ??

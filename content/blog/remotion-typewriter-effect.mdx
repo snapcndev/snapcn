@@ -1,0 +1,121 @@
+---
+title: Typewriter effect in Remotion
+seoTitle: Remotion typewriter effect — typing text with a caret, frame by frame
+description: Build a typewriter effect in Remotion — text revealed from the frame number with slice(), a caret that holds solid while typing and blinks when idle, and an eased typing rate that reads as a person rather than a machine.
+date: 2026-09-25
+tags:
+  - remotion
+  - text
+  - typing
+faq:
+  - question: How do you make a typewriter effect in Remotion?
+    answer: Map the frame number to a character count with interpolate(), clamp it, round it down, and render text.slice(0, count). Put a caret element after the text and drive its opacity from the frame as well.
+  - question: Why does my Remotion typing animation look robotic?
+    answer: A constant rate is the giveaway. People accelerate into a sentence and slow down at the end, so ease the character count, for example with Easing.inOut(Easing.sin), instead of adding a fixed number of characters per frame.
+  - question: Should the caret blink while text is typing?
+    answer: No. On real systems the caret stays solid while keys are pressed and only blinks once typing stops. Blinking mid-word makes the text look like it is flickering.
+  - question: Can I use a CSS animation for the caret blink?
+    answer: No. A Remotion render does not run on wall-clock time, so a CSS blink will not line up with the frames. Compute the blink from the frame number.
+---
+
+A typewriter effect in Remotion is `text.slice(0, count)`, where `count` comes
+from the frame number through `interpolate()`. Ease the count instead of typing
+at a constant rate, keep the caret solid while it types, and blink it only once
+the line is done.
+
+<ComponentPreview name="type-morph" />
+
+## The minimum
+
+```tsx
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+
+export const Typewriter = ({ text }: { text: string }) => {
+  const frame = useCurrentFrame();
+  const start = 10;
+  const end = start + text.length * 2; // ~15 characters a second at 30fps
+
+  const count = Math.floor(
+    interpolate(frame, [start, end], [0, text.length], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    }),
+  );
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <p style={{ fontSize: 64, fontFamily: "monospace", whiteSpace: "pre" }}>
+        {text.slice(0, count)}
+        <span style={{ opacity: 1 }}>▍</span>
+      </p>
+    </AbsoluteFill>
+  );
+};
+```
+
+Two details that matter:
+
+- **`Math.floor`, then `slice`.** A character is either there or it is not. Do
+  not fade letters in; a half-transparent glyph reads as a rendering fault.
+- **`whiteSpace: "pre"`.** Without it, a trailing space collapses and the caret
+  jumps back a character every time a word ends.
+
+## Make the rate human
+
+Nobody types at a constant rate. Measured on a real recording, typing
+accelerates through the first word and settles over the last few characters — an
+ease-in-out sine fits it closely. Pass that as the `easing`:
+
+```tsx
+import { Easing, interpolate } from "remotion";
+
+const count = Math.floor(
+  interpolate(frame, [start, end], [0, text.length], {
+    easing: Easing.inOut(Easing.sin),
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  }),
+);
+```
+
+A bonus of the eased count: any length of copy finishes in the same window, so a
+longer line does not push the rest of your timeline back.
+
+## The caret: solid while typing, blinking when idle
+
+```tsx
+const blinkOn = Math.floor((frame - end) / 15) % 2 === 0; // half a second at 30fps
+const caretOpacity = frame < end || blinkOn ? 1 : 0;
+```
+
+A caret that blinks mid-word makes the whole line look like it is flickering.
+Operating systems hold it solid while keys are pressed; do the same. And compute
+the blink from the frame — a CSS `@keyframes` blink runs on wall-clock time, and a
+render does not.
+
+## If the camera follows the text
+
+Pin a camera to the character count and it lurches once per keystroke. Pin it to
+the continuous curve underneath — the same `interpolate()` without the
+`Math.floor` — and it glides, while the caret hops onto its mark each frame.
+
+## Ready-made typing components
+
+snapcn has three components built on this, each installed as source:
+
+| Component | What it does |
+| --- | --- |
+| [Type Morph](/docs/text/type-morph) | A headline types under a caret, drops its lead in one frame, morphs letter by letter, ends on a colour flood |
+| [Prompt Send](/docs/ai-input/prompt-send) | A prompt box types a brief on an eased curve while the camera rides the caret, then a pointer sends it |
+| [Prompt Zoom](/docs/ai-input/prompt-zoom) | A prompt types itself and, mid-sentence, cuts in a single frame into the caret and keeps going |
+
+```bash
+npx shadcn@latest add @snapcn/type-morph
+```
+
+<ComponentPreview name="prompt-zoom" />
+
+For a terminal rather than a headline, see
+[terminal and code-typing animation in Remotion](/remotion-terminal-animation).
+
+Next: [kinetic typography in Remotion](/remotion-kinetic-typography).

@@ -1,0 +1,165 @@
+---
+title: Animated backgrounds in Remotion
+seoTitle: Remotion animated backgrounds — gradients, grids and particles that loop
+description: Build animated backgrounds in Remotion — a drifting gradient, a moving grid and floating particles — that loop seamlessly and render deterministically, then put your scene on top.
+date: 2026-09-24
+tags:
+  - remotion
+  - backgrounds
+faq:
+  - question: How do you make an animated background in Remotion?
+    answer: Render a full-frame AbsoluteFill whose style is computed from useCurrentFrame(), for example a radial gradient whose position moves along a circle, and place your scene in a second AbsoluteFill on top of it.
+  - question: How do you make a Remotion background loop seamlessly?
+    answer: Drive the motion with an angle that goes from 0 to 2π over the composition, frame / durationInFrames * 2 * Math.PI, and use sin and cos of it. The last frame then flows straight back into the first.
+  - question: Can I use Math.random() in a Remotion background?
+    answer: No. Remotion renders frames in parallel across workers, so Math.random() gives each frame different values and the background flickers. Use random(seed) from the remotion package, which returns the same value for the same seed every time.
+  - question: Why does my CSS animated background not show up in the render?
+    answer: CSS keyframes and transitions run on wall-clock time, and a Remotion render does not play in real time. Compute every animated value from the frame number instead.
+---
+
+**Short answer:** an animated background in Remotion is a full-frame
+`<AbsoluteFill>` whose style is computed from `useCurrentFrame()`. Drive it with
+an angle from 0 to 2π across the composition so it loops, use `random(seed)`
+instead of `Math.random()`, and layer your scene in a second `<AbsoluteFill>`
+above it.
+
+## 1. A drifting gradient that loops
+
+Two radial gradients orbiting in opposite directions. Because the angle makes
+exactly one full turn over the composition, the last frame matches the first:
+
+```tsx
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
+
+export const GradientBackground = () => {
+  const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
+  const angle = (frame / durationInFrames) * Math.PI * 2;
+
+  const x = 50 + Math.cos(angle) * 25;
+  const y = 50 + Math.sin(angle) * 25;
+
+  return (
+    <AbsoluteFill
+      style={{
+        background: [
+          `radial-gradient(circle at ${x}% ${y}%, #7c3aed 0%, transparent 55%)`,
+          `radial-gradient(circle at ${100 - x}% ${100 - y}%, #0ea5e9 0%, transparent 55%)`,
+          "#09090b",
+        ].join(", "),
+      }}
+    />
+  );
+};
+```
+
+Keep the movement slow — a quarter of the frame per loop. A background that moves
+as fast as the foreground competes with it.
+
+## 2. A moving grid
+
+A grid drawn with two `linear-gradient`s, scrolled by `backgroundPosition`. To
+loop, the grid must travel a whole number of cells over the composition:
+
+```tsx
+export const GridBackground = () => {
+  const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
+  const cell = 64;
+  const offset = (frame / durationInFrames) * cell * 2; // two cells per loop
+
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: "#ffffff",
+        backgroundImage: [
+          "linear-gradient(#e4e4e7 1px, transparent 1px)",
+          "linear-gradient(90deg, #e4e4e7 1px, transparent 1px)",
+        ].join(", "),
+        backgroundSize: `${cell}px ${cell}px`,
+        backgroundPosition: `0 ${offset}px`,
+      }}
+    />
+  );
+};
+```
+
+## 3. Floating particles, deterministic
+
+Remotion renders frames in parallel across several browser tabs. `Math.random()`
+gives each one different numbers and the particles jump every frame. `random()`
+from `remotion` returns the same value for the same seed, every time:
+
+```tsx
+import { AbsoluteFill, random, useCurrentFrame, useVideoConfig } from "remotion";
+
+export const Particles = ({ count = 40 }: { count?: number }) => {
+  const frame = useCurrentFrame();
+  const { durationInFrames, height } = useVideoConfig();
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: "#09090b" }}>
+      {Array.from({ length: count }, (_, i) => {
+        const x = random(`x-${i}`) * 100;
+        const size = 2 + random(`s-${i}`) * 4;
+        const start = random(`y-${i}`) * height;
+        // One full trip up the frame per loop, wrapped.
+        const y = (start - (frame / durationInFrames) * height + height) % height;
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: `${x}%`,
+              top: y,
+              width: size,
+              height: size,
+              borderRadius: "50%",
+              background: "white",
+              opacity: 0.15 + random(`o-${i}`) * 0.35,
+            }}
+          />
+        );
+      })}
+    </AbsoluteFill>
+  );
+};
+```
+
+## 4. Put the scene on top
+
+Layer order is JSX order. The background goes first:
+
+```tsx
+<AbsoluteFill>
+  <GradientBackground />
+  <AbsoluteFill>
+    <TextReveal text="Ship the video, too" color="white" />
+  </AbsoluteFill>
+</AbsoluteFill>
+```
+
+Components that render a transparent background — every snapcn component does,
+on purpose — sit on any backdrop without a box around them.
+
+<ComponentPreview name="text-reveal" />
+
+## Four things that break backgrounds
+
+- **CSS animations.** `@keyframes` run on wall-clock time; a render does not.
+  They look fine in the Player and are frozen or wrong in the MP4.
+- **`var(--colour)` in an animated value.** Resolve colours to concrete values
+  before you interpolate them, or the render can disagree with the preview.
+- **Big `filter: blur()`.** A 100px blur on a full 1080p frame is slow to render.
+  A soft radial gradient gives the same look for almost nothing.
+- **Banding.** Dark gradients band in H.264. Keep some colour in the dark end
+  rather than fading to pure black, or add a faint noise layer.
+
+## Ready-made backgrounds
+
+snapcn is a library of product demo shots and does not ship a backgrounds
+category. For drop-in backgrounds, see
+[Remotion Elements](https://www.remotion.dev/elements) (it has one) or the
+libraries in [the best Remotion component libraries](/best-remotion-component-libraries).
+Then put a [text animation](/remotion-text-animations) or a
+[device frame](/docs/screens/laptop-frame) on top.

@@ -23,7 +23,7 @@ export const dynamic = "force-static";
  */
 export function generateStaticParams() {
   return collectDocsPages()
-    .filter((page) => page.url !== "/docs")
+    .filter((page) => page.url.startsWith("/docs/"))
     .map((page) => ({ slug: page.url.replace("/docs/", "").split("/") }));
 }
 

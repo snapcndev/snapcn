@@ -1,0 +1,154 @@
+---
+title: How to make a changelog video in React
+seoTitle: Changelog video maker in React — release notes videos from a JSON file
+description: Turn every release into a changelog video with Remotion — one React composition, the release notes passed in as props, rendered from the CLI or CI with a single command.
+date: 2026-09-24
+tags:
+  - remotion
+  - changelog
+  - automation
+faq:
+  - question: How do you make a changelog video automatically?
+    answer: Build one Remotion composition that takes the release as props, a version and a list of changes, then render it per release with npx remotion render and --props pointing at a JSON file. The same template produces a new video every release.
+  - question: How long should a changelog video be?
+    answer: 15 to 30 seconds. A title card, one short card per change, and a closing line with where to get it. Pick the three changes people will care about; link the full notes.
+  - question: Can the video length change with the number of changes?
+    answer: Yes. Remotion's calculateMetadata lets a composition compute its durationInFrames from its props, so five changes render longer than three without editing anything.
+  - question: Can I render a changelog video in CI?
+    answer: Yes. npx remotion render runs headless, so a GitHub Action or any CI job can render the video on every tag and attach the MP4 to the release.
+---
+
+To make a changelog video in React, build **one** Remotion composition that
+takes the release as props — a version and a list of changes — and render it
+per release with `npx remotion render --props=release.json`. Let
+`calculateMetadata` size the video to the number of changes, and every release
+gets its video from a JSON file.
+
+<ComponentPreview name="punch-lines" />
+
+## 1. Describe the release as data
+
+```json title="release.json"
+{
+  "version": "v2.4",
+  "tagline": "Faster renders, dark mode, and a new CLI.",
+  "changes": ["Renders 2× faster", "Dark mode everywhere", "npx acme deploy"]
+}
+```
+
+This file is the only thing that changes between releases. Generate it from
+your changelog, your tags or your PR titles — it is just JSON.
+
+## 2. One composition, driven by props
+
+A title card for the version, then one card per change.
+[Announce Title](/docs/scenes/announce-title) opens;
+[Punch Lines](/docs/text/punch-lines) cuts hard between the changes, one card
+each (`|` starts a new card):
+
+```tsx
+// src/Changelog.tsx
+import { Series } from "remotion";
+import { AnnounceTitle } from "@/components/snap-cn/announce-title";
+import {
+  PunchLines,
+  punchLinesDuration,
+} from "@/components/snap-cn/punch-lines";
+
+export type Release = {
+  version: string;
+  tagline: string;
+  changes: string[];
+};
+
+export const TITLE_FRAMES = 170;
+export const HOLD = "48"; // frames per change card
+
+export const changesScript = (changes: string[]) => changes.join(" | ");
+
+export const Changelog = ({ version, tagline, changes }: Release) => (
+  <Series>
+    <Series.Sequence durationInFrames={TITLE_FRAMES}>
+      <AnnounceTitle eyebrow="What's new" title={version} tagline={tagline} />
+    </Series.Sequence>
+    <Series.Sequence
+      durationInFrames={punchLinesDuration(changesScript(changes), HOLD)}
+    >
+      <PunchLines script={changesScript(changes)} holds={HOLD} accentBeat={0} />
+    </Series.Sequence>
+  </Series>
+);
+```
+
+`punchLinesDuration()` is exported by the component for exactly this: change
+the script and the sequence length follows.
+
+## 3. Let the video size itself
+
+Five changes need a longer video than three. `calculateMetadata` computes the
+duration from the props before anything renders:
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import {
+  Changelog,
+  changesScript,
+  HOLD,
+  TITLE_FRAMES,
+  type Release,
+} from "./Changelog";
+import { punchLinesDuration } from "@/components/snap-cn/punch-lines";
+
+export const RemotionRoot = () => (
+  <Composition
+    id="Changelog"
+    component={Changelog}
+    fps={30}
+    width={1920}
+    height={1080}
+    defaultProps={{
+      version: "v2.4",
+      tagline: "Faster renders, dark mode, and a new CLI.",
+      changes: ["Renders 2× faster", "Dark mode everywhere", "npx acme deploy"],
+    } satisfies Release}
+    calculateMetadata={({ props }) => ({
+      durationInFrames:
+        TITLE_FRAMES + punchLinesDuration(changesScript(props.changes), HOLD),
+    })}
+  />
+);
+```
+
+## 4. Render it per release
+
+`--props` takes a JSON string or a path to a JSON file:
+
+```bash
+npx remotion render Changelog out/v2.4.mp4 --props=./release.json
+```
+
+Put that in CI on every tag and the MP4 is waiting when you write the
+announcement. Render a square cut for social by changing `width` and `height`;
+the components size themselves to the frame.
+
+## What makes a changelog video worth watching
+
+- **Three changes, not twelve.** A video is the trailer, not the notes. Link the
+  full changelog.
+- **Name the outcome, not the ticket.** "Renders 2× faster" beats "Refactor
+  render queue".
+- **Show one change working.** If a change has UI, cut to it — a
+  [screen recording with a camera](/docs/screens/screen-recording) or a
+  [terminal typing the new command](/docs/screens/terminal-simulator).
+- **End on how to get it.** A version number and an install command.
+
+<ComponentPreview name="announce-title" />
+
+Both components install as source you own:
+
+```bash
+npx shadcn@latest add @snapcn/announce-title @snapcn/punch-lines
+```
+
+Next: [how to make a product demo video in React](/product-demo-video-react).

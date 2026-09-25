@@ -1,0 +1,149 @@
+---
+title: Terminal and code-typing animation in Remotion
+seoTitle: Remotion terminal animation — typing commands and output, in React
+description: Animate a terminal typing a command and printing output in Remotion — typing from the frame number with slice(), a blinking caret, output that arrives in bursts — then a finished terminal component.
+date: 2026-09-24
+tags:
+  - remotion
+  - terminal
+  - typing
+faq:
+  - question: How do you make a typing animation in Remotion?
+    answer: Turn the frame number into a character count, for example Math.floor(frame * charsPerFrame), and render text.slice(0, count). Clamp the count to the length of the text, and draw the caret as an element whose opacity comes from the frame.
+  - question: How do you make a blinking cursor in Remotion?
+    answer: Compute it from the frame, such as Math.floor(frame / 15) % 2 at 30fps for a half-second blink. Do not use a CSS animation, because a Remotion render does not run on wall-clock time.
+  - question: Why record a terminal in code instead of filming it?
+    answer: A terminal in code has no typos, no real cursor, the same font on every machine, and output you can change per video by passing different props. It also stays sharp when the camera zooms in.
+  - question: Is there a ready-made terminal animation for Remotion?
+    answer: Yes. snapcn's Terminal Simulator types a command and prints the output lines you pass it, with a camera that flies from a headline to the command to a zoomed terminal. Install it with npx shadcn@latest add @snapcn/terminal-simulator.
+---
+
+**Short answer:** a terminal animation in Remotion turns the frame number into a
+character count and renders `text.slice(0, count)`. The caret blinks from the
+frame too (`Math.floor(frame / 15) % 2`), never from CSS. Output reads more like
+a real shell when it arrives in chunks rather than one character at a time. Or
+install [Terminal Simulator](/docs/screens/terminal-simulator), which does all of
+this plus the camera work.
+
+<ComponentPreview name="terminal-simulator" />
+
+## Typing from scratch
+
+```tsx
+import { AbsoluteFill, useCurrentFrame } from "remotion";
+
+const COMMAND = "npx shadcn@latest add @snapcn/text-reveal";
+const CHARS_PER_FRAME = 0.8;
+
+export const TypedCommand = () => {
+  const frame = useCurrentFrame();
+  const count = Math.min(COMMAND.length, Math.floor(frame * CHARS_PER_FRAME));
+  const done = count === COMMAND.length;
+  // Solid while typing, blinks once finished — a real terminal caret.
+  const caretOn = !done || Math.floor(frame / 15) % 2 === 0;
+
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: "#09090b",
+        color: "#fafafa",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontSize: 40,
+        padding: 80,
+      }}
+    >
+      <div>
+        <span style={{ color: "#71717a" }}>$ </span>
+        {COMMAND.slice(0, count)}
+        <span
+          style={{
+            display: "inline-block",
+            width: "0.6em",
+            height: "1.1em",
+            verticalAlign: "text-bottom",
+            background: "#fafafa",
+            opacity: caretOn ? 1 : 0,
+          }}
+        />
+      </div>
+    </AbsoluteFill>
+  );
+};
+```
+
+What makes it work:
+
+- **The count is a function of the frame.** Remotion renders frames out of order,
+  so there is no "type the next character" — only "how many characters at this
+  frame".
+- **Clamp it.** `Math.min` stops the slice at the end of the string.
+- **Use a monospace stack.** Every character has the same width, so the line does
+  not shimmer as it grows.
+- **The caret is solid while typing.** Real terminals only blink an idle caret; a
+  caret blinking mid-word looks off.
+
+## Output that arrives like output
+
+A command's output does not type — it lands in bursts. Reveal it in chunks and
+give each line its own start frame:
+
+```tsx
+const LINES = [
+  { text: "✔ Checking registry.", at: 60 },
+  { text: "✔ Installing dependencies.", at: 72 },
+  { text: "✔ Created 1 file: src/components/snap-cn/text-reveal.tsx", at: 90 },
+];
+const CHUNK = 6;
+
+// CHUNK characters per frame once the line starts.
+const shown = (text: string, at: number, frame: number) =>
+  text.slice(0, Math.max(0, frame - at) * CHUNK);
+
+// in the component:
+{LINES.map((line) =>
+  frame >= line.at ? (
+    <div key={line.text} style={{ color: "#22c55e" }}>
+      {shown(line.text, line.at, frame)}
+    </div>
+  ) : null,
+)}
+```
+
+`slice` past the end of a string just returns the whole string, so no clamp is
+needed here. A short hold after a line that ends in `...` sells the idea that
+something is working.
+
+## The finished terminal
+
+```bash
+npx shadcn@latest add @snapcn/terminal-simulator
+```
+
+```tsx
+import { TerminalSimulator } from "@/components/snap-cn/terminal-simulator";
+
+export const InstallScene = () => (
+  <TerminalSimulator
+    intro="*Install* it in *one line.*"
+    command={{ managers: ["npm", "pnpm", "yarn", "bun"], text: "npm install acme-cli" }}
+    lines={[
+      { text: "acme init", type: "command", delay: 0 },
+      { text: "Resolving packages...", type: "log", delay: 6 },
+      { text: "✔ Ready in 1.2s", type: "success", delay: 8 },
+    ]}
+  />
+);
+```
+
+One camera flies over one canvas: it holds on the `intro` headline (words in
+`*asterisks*` get the accent gradient), accelerates to a command panel with
+package-manager tabs, then punches in on a terminal that types your `lines`.
+Each line has a `type` — `command`, `log`, `success` or `error` — and a `delay`
+in frames. A line ending in `...` holds the frame for 18 frames on its own. Pass
+`intro={null}` or `command={null}` to skip a station.
+
+Because the transcript is props, the same scene renders a different install per
+video. More in the
+[terminal animations collection](/docs/collections/terminal-animations).
+
+Next: [animated cursor and click effects in Remotion](/remotion-cursor-animation).

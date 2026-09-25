@@ -52,13 +52,13 @@ eight pixels are the difference between a carousel and a surface somebody pushed
 
 ## Cards, and cards made elsewhere
 
-`images`, `titles`, `notes` and `tags` are parallel lists — one entry per card —
-and the rail repeats them rather than running out — though with three flicks you
+`cards` is one entry per card — `{ image, title, note, tag }` — and the rail
+repeats them rather than running out — though with three flicks you
 want at least six real ones, or the repeat shows. The rail has a beginning, though: nothing is drawn before the first
 card, because a loop that wraps round puts a card in the empty half of the frame
 the scene opens on.
 
-Leave the text fields blank and the picture becomes the whole card. That is not a
+Leave the words out and the picture becomes the whole card. That is not a
 special case for its own sake — it is what lets a card designed somewhere else be
 handed in as one image.
 
@@ -90,7 +90,17 @@ The exact file `shadcn add` copies into your project.
 import { Composition } from "remotion";
 import { CardRail } from "@/components/snap-cn/card-rail";
 
-const Rail = () => <CardRail heading="Browse scenes" />;
+const Rail = () => (
+  <CardRail
+    heading="Browse templates"
+    cards={[
+      { image: "/shots/inbox.png", title: "Inbox", note: "4 screens", tag: "@acme/inbox" },
+      { image: "/shots/billing.png", title: "Billing", note: "3 screens", tag: "@acme/billing" },
+      // A picture alone is the whole card.
+      { image: "/shots/made-in-figma.png" },
+    ]}
+  />
+);
 
 export const RemotionRoot = () => (
   <Composition
@@ -109,14 +119,11 @@ export const RemotionRoot = () => (
 <PropsTable
   rows={[
     {
-      name: "images",
-      type: "string",
+      name: "cards",
+      type: "RailCard[] | string",
       description:
-        "The pictures, split by `|` — not by comma, because a data: URL has one of its own. The rail repeats them if it runs out",
+        "One `{ image?, title?, note?, tag? }` per card; the rail repeats them if it runs out. Also takes one string: `picture > title > small print > tag`, `|` between cards",
     },
-    { name: "titles", type: "string", description: "One title per card, split by `|`" },
-    { name: "notes", type: "string", description: "One line of small print per card" },
-    { name: "tags", type: "string", description: "One tag per card" },
     {
       name: "heading",
       type: "string",

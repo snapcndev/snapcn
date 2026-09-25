@@ -1,0 +1,157 @@
+---
+title: Animated cursor and click effects in Remotion
+seoTitle: Remotion cursor animation — a mouse pointer that moves and clicks
+description: Animate a mouse cursor that moves between waypoints and clicks in Remotion — interpolating x and y from the frame, an eased path, a click ring — then a drop-in cursor that walks over any UI or screen recording.
+date: 2026-09-24
+tags:
+  - remotion
+  - cursor
+  - click animation
+faq:
+  - question: How do you animate a mouse cursor in Remotion?
+    answer: Define waypoints with a frame, an x and a y, and use interpolate() on the current frame over the waypoint frames to get the cursor position, with an easing curve and clamped extrapolation. Render an SVG pointer at that position on top of the scene.
+  - question: How do you show a click in a Remotion video?
+    answer: On the frame the cursor arrives, start a ring at the cursor's tip that grows and fades over about half a second, both computed from the number of frames since the click. A small scale dip on the pointer itself helps too.
+  - question: Why is the cursor missing from my screen recording?
+    answer: Many capture tools leave the pointer out of the file. Add a synthetic cursor on top of the recording in Remotion instead, which also lets you choose exactly where it goes and when it clicks.
+  - question: Should the cursor be an emoji or a font glyph?
+    answer: No. A glyph renders in whatever font the renderer resolves, so it changes between machines. Draw the pointer as an SVG with its hotspot at the tip.
+---
+
+**Short answer:** a cursor animation in Remotion is an SVG pointer positioned by
+`interpolate()` over a list of waypoints — frame, x, y — with an ease and clamped
+ends. A click is a ring that grows and fades from the frame the pointer arrives.
+Put the cursor on the top layer, over the UI or screen recording. Or install
+[Cursor Track](/docs/screens/cursor-track), which wraps any children and takes
+waypoints with `click: true`.
+
+<ComponentPreview name="cursor-track" />
+
+## A cursor from scratch
+
+Positions as fractions of the frame, so the path survives a change of resolution:
+
+```tsx
+import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+
+// Frame the cursor arrives, and where. Fractions of the frame.
+const PATH = [
+  { at: 0, x: 0.2, y: 0.8 },
+  { at: 30, x: 0.45, y: 0.4 },
+  { at: 70, x: 0.7, y: 0.6 },
+];
+const CLICKS = [30, 70]; // click on arrival
+
+export const Cursor = () => {
+  const frame = useCurrentFrame();
+  const { width, height } = useVideoConfig();
+
+  const frames = PATH.map((p) => p.at);
+  const ease = { easing: Easing.inOut(Easing.cubic), extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+  const x = interpolate(frame, frames, PATH.map((p) => p.x), ease) * width;
+  const y = interpolate(frame, frames, PATH.map((p) => p.y), ease) * height;
+
+  // The most recent click, if it is still animating.
+  const last = CLICKS.filter((c) => c <= frame).at(-1);
+  const t = last === undefined ? 1 : interpolate(frame - last, [0, 14], [0, 1], { extrapolateRight: "clamp" });
+
+  return (
+    <AbsoluteFill>
+      <div
+        style={{
+          position: "absolute",
+          left: x,
+          top: y,
+          width: 48,
+          height: 48,
+          marginLeft: -24,
+          marginTop: -24,
+          borderRadius: "50%",
+          border: "3px solid #3b82f6",
+          transform: `scale(${0.4 + t * 1.2})`,
+          opacity: 1 - t,
+        }}
+      />
+      <svg
+        width={28}
+        height={28}
+        viewBox="0 0 24 24"
+        style={{ position: "absolute", left: x, top: y }}
+      >
+        <path
+          d="M3 2 L3 19 L8 14.5 L11.5 22 L14.5 20.7 L11 13.3 L17.5 13.3 Z"
+          fill="#09090b"
+          stroke="#ffffff"
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+        />
+      </svg>
+    </AbsoluteFill>
+  );
+};
+```
+
+The details that make it read as a real pointer:
+
+- **The hotspot is the tip.** The SVG's top-left is the point of the arrow, so
+  `left: x, top: y` puts the tip exactly on the target, and the ring is centred
+  there too.
+- **Ease in and out.** A linear cursor looks robotic; a real hand accelerates and
+  settles. `Easing.inOut(Easing.cubic)` is enough.
+- **An outline, not a shadow.** A white stroke around a dark arrow stays readable
+  over any footage.
+- **Clamp both ends.** Before the first waypoint and after the last, the cursor
+  should rest, not fly off.
+
+With several waypoints, the easing applies to each segment, so the cursor slows
+into every point and sets off again straight away. To make it hold, add a second
+entry at the same position with a later frame.
+
+## The drop-in cursor
+
+```bash
+npx shadcn@latest add @snapcn/cursor-track
+```
+
+```tsx
+import { CursorTrack } from "@/components/snap-cn/cursor-track";
+import { ScreenRecording } from "@/components/snap-cn/screen-recording";
+
+export const CheckoutDemo = () => (
+  <CursorTrack
+    path={[
+      { at: 0, x: -0.06, y: 0.86, duration: 6 },
+      { at: 8, x: 0.34, y: 0.44, duration: 22, click: true },
+      { at: 52, x: 0.68, y: 0.62, duration: 20, click: true },
+    ]}
+  >
+    <ScreenRecording src="/recordings/checkout.mp4" camera={[]} />
+  </CursorTrack>
+);
+```
+
+The waypoint model is slightly different from the one above, and easier to time:
+`at` is the frame the cursor **starts travelling** to the point, `duration` is
+how long the move takes, and the cursor rests there until the next `at` — the
+hold is the gap. `click: true` pulses the ring on arrival. An `x` outside 0–1 on
+the first waypoint walks the cursor in from off-frame.
+
+| Prop | What it does |
+| --- | --- |
+| `variant` | `arrow` for a desktop pointer, `dot` for a touch puck on mobile sims |
+| `size` | Pointer size; defaults to 3.9% of the frame height, the size of a real one |
+| `ringColor` | The click ring; defaults to the theme's primary |
+| `clickFrames` | How long the ring lasts (14 frames by default) |
+
+Put the recording **inside** the cursor, not the other way round — the pointer
+has to be the top layer. Waypoints are frame coordinates, so if the recording
+has its own camera push-in, keyframe the cursor to match or click on a shot that
+is holding still.
+
+<ComponentPreview name="roster-grant" />
+
+[Roster Grant](/docs/scenes/roster-grant) is a finished scene with the click
+already choreographed in. More in the
+[cursor animations collection](/docs/collections/cursor-animations).
+
+Next: [terminal and code-typing animation in Remotion](/remotion-terminal-animation).

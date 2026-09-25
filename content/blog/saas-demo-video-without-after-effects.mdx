@@ -1,0 +1,137 @@
+---
+title: How to make a SaaS demo video without After Effects
+seoTitle: Make a SaaS demo video without After Effects or a motion designer
+description: No motion designer, no After Effects. Write the script, split it into beats, pick a prebuilt scene per beat, set its props and render — in React, or in the browser with no install.
+date: 2026-09-25
+tags:
+  - remotion
+  - product demo
+  - saas
+faq:
+  - question: Can I make a SaaS demo video without After Effects?
+    answer: Yes. With Remotion the video is React code, and with prebuilt scene components you only set props such as text, images and colours. You never draw a keyframe, and you render the MP4 from the command line.
+  - question: Do I need a motion designer for a product demo video?
+    answer: Not if the motion is already designed. Prebuilt components carry tuned timing and easing, so your job is the script and the props. Hand-written animation is where videos made without a designer usually look amateur.
+  - question: Can I make a demo video without installing anything?
+    answer: Yes. snapcn's browser video editor lets you add scenes to a timeline, edit their text, images and colours, add a soundtrack and export an MP4, with no Remotion project.
+  - question: What is the fastest way to write a demo video script?
+    answer: One sentence per beat. Hook, problem, the product doing one job, proof, call to action. If a beat needs two sentences, it is two beats.
+---
+
+**Short answer:** skip the timeline entirely. Write the script, split it into five
+beats, pick a prebuilt scene for each beat, fill in its props — text, screenshot,
+colours — and render. The motion is already designed, so nobody on the team has
+to be a motion designer. No install at all? Use the
+[browser video editor](/docs/video-editor).
+
+This post is about the workflow for a team with no designer. For the full code
+walkthrough see [how to make a product demo video in React](/product-demo-video-react);
+for the tool comparison, [Remotion vs After Effects](/remotion-vs-after-effects).
+
+## Why demo videos made without a designer look amateur
+
+Not because of the tool. Because someone hand-animated them: linear moves,
+springs that overshoot, text that judders while it scales, every scene a
+different speed. Timing and easing are a craft, and it shows when they are
+missing.
+
+So the rule for a team without a designer: **do not write motion.** Write words
+and choose scenes whose motion someone already tuned.
+
+## 1. Write the script, one sentence per beat
+
+```text
+Hook      Invoices, sent before lunch.
+Problem   Billing takes our team two days a month.
+Product   Type who to bill. Watch it draft, check and send.
+Proof     500 teams switched this quarter.
+CTA       acme.dev — start free.
+```
+
+If a beat needs two sentences, it is two beats. A launch or landing-page demo
+usually wants five to eight.
+
+## 2. Pick a scene per beat
+
+| Beat | What it needs | Scene |
+| --- | --- | --- |
+| Hook | One line, big | [Text Reveal](/docs/text/text-reveal), [Punch Lines](/docs/text/punch-lines) |
+| Problem | The old way, fast | [Text Swap](/docs/text/text-swap) |
+| Product | Your UI, doing the job | [Prompt Send](/docs/ai-input/prompt-send), [Screen Recording](/docs/screens/screen-recording), [Laptop Frame](/docs/screens/laptop-frame) |
+| Proof | A number or faces | [Count Grid](/docs/scenes/count-grid), [Follower Rush](/docs/social/follower-rush), [Logo Drift](/docs/logos/logo-drift) |
+| CTA | Name and URL | [Announce Title](/docs/scenes/announce-title), [Logo Assemble](/docs/logos/logo-assemble) |
+
+<ComponentPreview name="punch-lines" />
+
+## 3. Fill in props, not keyframes
+
+Each scene is a React component. Your script goes in as props:
+
+```tsx
+import { AbsoluteFill, Series } from "remotion";
+import { TextReveal } from "@/components/snap-cn/text-reveal";
+import { ScreenRecording } from "@/components/snap-cn/screen-recording";
+import { CountGrid } from "@/components/snap-cn/count-grid";
+
+export const Demo = () => (
+  <AbsoluteFill style={{ background: "white" }}>
+    <Series>
+      <Series.Sequence durationInFrames={90}>
+        <TextReveal text="Invoices, sent before lunch" />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={139}>
+        <ScreenRecording
+          src="/recordings/billing.mp4"
+          crop={{ top: 0.11 }}
+          camera={[
+            { at: 34, duration: 25, zoom: 1.6, x: 0.36, y: 0.42 },
+            { at: 96, duration: 25, zoom: 1 },
+          ]}
+        />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={47}>
+        <CountGrid from="5" to="500" noun="teams" />
+      </Series.Sequence>
+    </Series>
+  </AbsoluteFill>
+);
+```
+
+Install them the shadcn way — the source lands in your project, so a developer
+can still change anything later:
+
+```bash
+npx shadcn@latest add @snapcn/text-reveal @snapcn/screen-recording @snapcn/count-grid
+```
+
+Components take shadcn theme tokens (`theme`, `mode`), so the video picks up the
+same colours as your app instead of a template's.
+
+## 4. Render
+
+```bash
+npx remotion studio          # preview and scrub
+npx remotion render Demo out/demo.mp4
+```
+
+Change a word, render again. That is the other half of the advantage: the second
+version — new pricing, a renamed feature, a square cut for social — is an edit
+to a prop, not a new project.
+
+## No install: the browser editor
+
+If nobody wants to set up a Remotion project, the
+[video editor](/docs/video-editor) runs the same scenes in the browser. Add
+scenes to a timeline, edit their text, images and colours, reorder them and set
+each one's length, add a soundtrack, and export an MP4. Exports carry a small
+snapcn mark unless you are signed in and turn it off.
+
+## Or let an agent assemble it
+
+Hand the script to Claude Code or Cursor with the snapcn
+[agent skill](/docs/getting-started/agent-skill) installed
+(`npx skills add snapcndev/snapcn`). It knows every scene's props and length, so
+it composes the video from them rather than improvising motion. More in
+[making videos with Claude Code and Remotion](/claude-code-remotion-videos).
+
+Next: [how to make a Product Hunt launch video in code](/product-hunt-launch-video).

@@ -103,11 +103,12 @@ export interface Items {
     | readonly Record<string, string>[]
     | ((defaults: Record<string, unknown>) => Record<string, string>[]);
   /**
-   * What Studio outlines. "node" (the default) is the element the scene wraps
-   * in \`Item\`, transforms and all. "content" is everything that element
-   * draws, measured every frame — for a scene that moves an object's parts
-   * separately (lines that slide in one by one), where no one element holds
-   * them all.
+   * What Studio outlines, chosen every frame. "node" (the default) is the
+   * element the scene wraps in \`Item\`, transforms and all, while all of it
+   * shows; a box over the part that shows when the Element clips it or it
+   * paints past its own box; nothing while none of it shows. "content" is
+   * always that box — for a scene that moves an object's parts separately
+   * (lines that slide in one by one), where no one element holds them all.
    */
   outline?: "node" | "content";
   /**
@@ -729,7 +730,7 @@ export function studioItemsWrapper({
     .filter(([, f]) => f.node)
     .map(
       ([k, f]) =>
-        `        ...(${k} === undefined ? null : { ${lit(f.node)}: ${k} }),`,
+        `            ...(m.${k} === undefined ? null : { ${lit(f.node)}: m.${k} }),`,
     )
     .join("\n");
   const pulled = fieldEntries.map(([k]) => k).join(", ");
@@ -785,7 +786,6 @@ export function studioItemsWrapper({
       )
       .join("\n")}\n  })`;
 
-  // ── Content outlines ────────────────────────────────────────────────────
   const content = items.outline === "content";
   const reactImports = [
     "Children",
@@ -831,6 +831,7 @@ import {
 } from "react";
 import {
   AbsoluteFill,
+  getRemotionEnvironment,
   Interactive,
   type InteractiveBaseProps,
   type InteractiveTransformProps,
@@ -846,25 +847,30 @@ import { type ItemHost, ItemHostProvider } from "@/lib/snap-cn-ui";
    Remotion Studio: one ${items.noun.toLowerCase()} at a time
    ───────────────────────────────────────────────────────────────────────── */
 
-${
-  content
-    ? `/**
- * Everything the element paints, in page pixels: its text runs, its media, and every
- * box with a fill or a border, each cut to the boxes that clip it.
+/**
+ * Everything \`el\` paints that can be seen, in page pixels: its text runs, its
+ * media, and every box with a fill or a border, each cut to every box that
+ * clips it up to and including \`root\` (the Element's own box). Null when none
+ * of it shows — transparent, or clipped out of the Element.
  */
-function ${name}Painted(el: Element): [number, number, number, number] | null {
+function ${name}Painted(el: Element, root: Element): [number, number, number, number] | null {
   let u: [number, number, number, number] | null = null;
   const add = (r: DOMRect, from: Element) => {
-    let b: [number, number, number, number] = [r.left, r.top, r.right, r.bottom];
-    for (let a: Element | null = from; a; a = a === el ? null : a.parentElement) {
+    // Never past the Element's own box, clipped or not: a text run's line box
+    // stands above its ink, and no scene's ink leaves its box (measured).
+    const c0 = root.getBoundingClientRect();
+    let b: [number, number, number, number] = [Math.max(r.left, c0.left), Math.max(r.top, c0.top), Math.min(r.right, c0.right), Math.min(r.bottom, c0.bottom)];
+    let alpha = 1;
+    for (let a: Element | null = from; a; a = a === root ? null : a.parentElement) {
       const cs = getComputedStyle(a);
-      if (cs.opacity === "0" || cs.visibility === "hidden") return;
-      if (a !== from && cs.overflow !== "visible") {
+      if (cs.visibility === "hidden") return;
+      alpha *= Number(cs.opacity);
+      if (a !== from && a !== root && cs.overflow !== "visible") {
         const c = a.getBoundingClientRect();
         b = [Math.max(b[0], c.left), Math.max(b[1], c.top), Math.min(b[2], c.right), Math.min(b[3], c.bottom)];
       }
     }
-    if (b[2] <= b[0] || b[3] <= b[1]) return;
+    if (alpha < 0.02 || b[2] <= b[0] || b[3] <= b[1]) return;
     u = u ? [Math.min(u[0], b[0]), Math.min(u[1], b[1]), Math.max(u[2], b[2]), Math.max(u[3], b[3])] : b;
   };
   const walk = (e: Element) => {
@@ -885,8 +891,17 @@ function ${name}Painted(el: Element): [number, number, number, number] | null {
   return u;
 }
 
-`
-    : ""
+/** Whether every box that clips \`el\`, up to \`root\`, leaves all of it showing. */
+function ${name}Whole(el: Element, root: Element): boolean {
+  const r = el.getBoundingClientRect();
+  for (let a = el.parentElement; a; a = a === root ? null : a.parentElement) {
+    if (getComputedStyle(a).overflow === "visible") continue;
+    const c = a.getBoundingClientRect();
+    if (r.left < c.left - 1 || r.top < c.top - 1 || r.right > c.right + 1 || r.bottom > c.bottom + 1) return false;
+  }
+  return true;
+}
+
 }type ${obj}Values = {
 ${values}
 };
@@ -895,13 +910,22 @@ type ${obj}Props = InteractiveBaseProps &
   Omit<InteractiveTransformProps, "style"> &
   ${obj}Values & {
     readonly style?: CSSProperties | null;
-    /** The node the scene draws this ${items.noun.toLowerCase()} as; set by the stage, never by hand. */
-    readonly node?: ReactElement;
-    /** Where its outline is drawn when it follows its content; set by the stage too. */
+    /** The node the scene draws this ${items.noun.toLowerCase()} as, while it draws it; set by the stage, never by hand. */
+    readonly claim?: { current: Element | null };
+    /** The box its outline falls back to when the node is not all there; set by the stage too. */
     readonly slot?: { current: HTMLDivElement | null };
-    /** Hands its values back to the stage while Studio edits them; set by the stage too. */
-    readonly report?: (values: ${obj}Values) => void;
+    /** Hands Studio's live props back to the stage, which draws the node; set by the stage too. */
+    readonly report?: (state: ${obj}State) => void;
   };
+
+/** What Studio is doing to one ${items.noun.toLowerCase()} right now, which the stage applies to its node. */
+type ${obj}State = {
+  values: ${obj}Values;
+  style?: CSSProperties;
+  hidden?: boolean;
+  from?: number;
+  durationInFrames?: number;
+};
 
 const ${obj}Schema = {
   ...Interactive.baseSchema,
@@ -910,11 +934,11 @@ ${objSchema}
 } as const satisfies InteractivitySchema;
 
 /**
- * One ${items.noun.toLowerCase()}. The scene decides where it is on every frame and draws it;
- * this puts that drawing inside the ${items.noun.toLowerCase()}'s own Sequence with the outline
- * on it, so Studio can select it on the canvas and the outline moves with it.
- * Its values reach the scene through the stage; the ones that show on the
- * node are pushed onto it as well, so an edit shows before the file saves.
+ * One ${items.noun.toLowerCase()}: its layer in Studio. The scene decides where it is on every
+ * frame and draws it; this is the Sequence Studio lists, selects and outlines,
+ * mounted for the Element's whole length so the layer never leaves the
+ * timeline while the ${items.noun.toLowerCase()} is off the frame. It draws nothing itself: its
+ * values, transform, visibility and timing reach the node through the stage.
  */
 const ${obj}Inner = forwardRef<
   Element,
@@ -931,33 +955,58 @@ const ${obj}Inner = forwardRef<
       freeze,
       hidden,
       showInTimeline,
-      node,${content ? "\n      slot," : ""}
+      claim,
+      slot,
       report,
       ${pulled},
     },
     ref,
   ) => {
-    const outlineRef = useRef<Element>(null);
-    // Studio's live values arrive here, not at the call site the stage reads,
-    // so they go back up to it: the scene shows an edit while it is typed.
+    // What Studio outlines, chosen every frame: the node itself — its exact
+    // quad, transforms and all — while all of it shows; a box over the part
+    // that does when the Element clips it${content ? ", or when its parts move separately" : " or it paints past its own box"}; nothing while none of it
+    // shows, so an object that has left is not still selectable where it was.
+    const target = useRef<Element | null>(null);
+    // Re-rendered every frame, so the outline is chosen for every frame: the
+    // scene moves the node without re-rendering this layer.
+    useCurrentFrame();
+    // Studio reads the ref every time it measures.
+    const outline = useRef({
+      get current() {
+        return target.current ?? claim?.current ?? null;
+      },
+    }).current;
+    // Studio's live props arrive here — a value being typed, a transform being
+    // dragged, the layer hidden or retimed — and the stage draws the node.
     useLayoutEffect(() => {
-      report?.({ ${pulled} });
+      report?.({ values: { ${pulled} }, style: style ?? undefined, hidden, from, durationInFrames });
     });
-    useImperativeHandle(ref, () => (${content ? "slot?.current ?? " : ""}outlineRef.current) as Element, []);${
-      content
-        ? `
-    // The outline is a box of its own on the stage, moved every frame to
-    // cover what the node draws: its parts move separately, so no one
-    // element of the scene's holds them all.
-    const nodeRef = useRef<Element>(null);
+    useImperativeHandle(ref, () => claim?.current as Element);
     useLayoutEffect(() => {
+      // Outlines are a Studio thing; a render or the Player measures nothing.
+      if (!getRemotionEnvironment().isStudio) return;
       const box = slot?.current;
       const root = box?.parentElement;
       if (!box || !root) return;
-      const b = nodeRef.current ? ${name}Painted(nodeRef.current) : null;
-      if (!b) {
+      const el = claim?.current;
+      const b = el ? ${name}Painted(el, root) : null;
+      if (!el || !b) {
         box.style.display = "none";
+        target.current = box;
         return;
+      }${
+        content
+          ? ""
+          : `
+      const n = el.getBoundingClientRect();
+      if (
+        ${name}Whole(el, root) &&
+        b[0] >= n.left - 1 && b[1] >= n.top - 1 && b[2] <= n.right + 1 && b[3] <= n.bottom + 1
+      ) {
+        box.style.display = "none";
+        target.current = el;
+        return;
+      }`
       }
       const r = root.getBoundingClientRect();
       const k = root.offsetWidth / (r.width || 1);
@@ -966,11 +1015,8 @@ const ${obj}Inner = forwardRef<
       box.style.top = \`\${(b[1] - r.top) * k}px\`;
       box.style.width = \`\${(b[2] - b[0]) * k}px\`;
       box.style.height = \`\${(b[3] - b[1]) * k}px\`;
-    });`
-        : ""
-    }
-    if (!node) return null;
-    const own = node as ReactElement<{ ref?: Ref<Element>; style?: CSSProperties }>;
+      target.current = box;
+    });
     return (
       <Sequence
         layout="none"
@@ -982,14 +1028,8 @@ const ${obj}Inner = forwardRef<
         showInTimeline={showInTimeline}
         name={name ?? ${lit(items.noun)}}
         controls={controls}
-        outlineRef={${content ? "slot ?? outlineRef" : "outlineRef"}}
-      >
-        {cloneElement(own, {
-          ref: ${content ? "nodeRef" : "outlineRef"},
-          style: { ...own.props.style, ...style },
-${pushed}
-        })}
-      </Sequence>
+        outlineRef={outline}
+      />
     );
   },
 );
@@ -1052,6 +1092,11 @@ function ${name}Fade({ children }: { children: ReactNode }) {
   return <AbsoluteFill style={{ opacity: enter * leave }}>{children}</AbsoluteFill>;
 }
 
+/** The host, told the frame inside the Element — the one its layers' timing is in. */
+function ${name}Hosted({ host, children }: { host: (frame: number) => ItemHost; children: ReactNode }) {
+  return <ItemHostProvider value={host(useCurrentFrame())}>{children}</ItemHostProvider>;
+}
+
 /**
  * The scene, with its ${items.noun.toLowerCase()}s as children. It reads their values to lay
  * the scene out, and hands each one back the node the scene draws it as.
@@ -1076,58 +1121,62 @@ const ${stage}Inner = forwardRef<
     ref,
   ) => {
     const outlineRef = useRef<HTMLDivElement>(null);
-    useImperativeHandle(ref, () => outlineRef.current as HTMLDivElement, []);${
-      content
-        ? `
-    // One empty box per ${items.noun.toLowerCase()} on the stage: its outline, which it moves
-    // to cover what it draws.
+    useImperativeHandle(ref, () => outlineRef.current as HTMLDivElement, []);
+    // One empty box per ${items.noun.toLowerCase()} on the stage: the outline it falls back to,
+    // which it moves over the part of itself that shows.
     const slots = useRef<{ current: HTMLDivElement | null }[]>([]);
     const slotFor = (i: number) => {
       slots.current[i] ??= { current: null };
       return slots.current[i];
-    };`
-        : ""
-    }
-    const objects = (Children.toArray(children).filter(isValidElement) as ReactElement<${obj}Values>[])${
-      items.keep
-        ? `.filter((o) => (${items.keep.replace(/^\(x\)/, `(x: ${obj}Values)`)})(o.props))`
-        : ""
+    };
+    // Every ${items.noun.toLowerCase()} the file lists, by position: each keeps its layer.
+    const all = Children.toArray(children).filter(isValidElement) as ReactElement<${obj}Props>[];
+    const claims = useRef<{ current: Element | null }[]>([]);
+    const claimFor = (j: number) => {
+      claims.current[j] ??= { current: null };
+      return claims.current[j];
     };
     ${spread}
-    // Values Studio is editing that the file does not have yet, by position.
-    const [live, setLive] = useState<Record<number, ${obj}Values>>({});
-    const keys = ${lit(fieldEntries.map(([k]) => k))} as const;
-    const report = (index: number, values: ${obj}Values) => {
-      const saved = objects[index]?.props;
-      const edited = keys.some((k) => values[k] !== saved?.[k]);
-      setLive((prev) => {
-        const had = prev[index];
-        if (!edited) {
-          if (!had) return prev;
-          const next = { ...prev };
-          delete next[index];
-          return next;
-        }
-        return had && keys.every((k) => had[k] === values[k]) ? prev : { ...prev, [index]: values };
+    // What Studio is doing to each ${items.noun.toLowerCase()} that the file may not have yet.
+    const [live, setLive] = useState<Record<number, ${obj}State>>({});
+    const report = (j: number, state: ${obj}State) =>
+      setLive((prev) => (JSON.stringify(prev[j]) === JSON.stringify(state) ? prev : { ...prev, [j]: state }));
+    const merged = all.map((o, j) => {
+      const st = live[j];
+      return st ? { ...o.props, ...st.values, style: st.style, hidden: st.hidden, from: st.from, durationInFrames: st.durationInFrames } : o.props;
+    });
+    // The ones the scene draws, in its order: the positions its \`Item\`s index.
+    const kept = all.map((_, j) => j)${
+      items.keep
+        ? `.filter((j) => (${items.keep.replace(/^\(x\)/, `(x: ${obj}Values)`)})(merged[j] as ${obj}Values))`
+        : ""
+    };
+    const built = ${name}FromItems(kept.map((j) => merged[j] as ${obj}Values));
+    const host = (frame: number): ItemHost => (index, node) => {
+      const j = kept[index];
+      const m = j === undefined ? undefined : merged[j];
+      if (j === undefined || !m) return node;
+      // The layer's own visibility and timing, which its Sequence would apply
+      // if it held the node.
+      const start = m.from ?? 0;
+      if (m.hidden || frame < start || frame >= start + (m.durationInFrames ?? Number.POSITIVE_INFINITY)) return null;
+      const own = node as ReactElement<{ ref?: Ref<Element>; style?: CSSProperties }>;
+      return cloneElement(own, {
+        ref: claimFor(j),
+        style: { ...own.props.style, ...m.style },
+${pushed}
       });
     };
-    const built = ${name}FromItems(objects.map((o, i) => ({ ...o.props, ...live[i] })));
-    const host: ItemHost = (index, node) => {
-      const own = objects[index];
-      return own
-        ? cloneElement(own as ReactElement<{ node?: ReactElement; slot?: unknown; report?: unknown }>, {
-            node,${content ? "\n            slot: slotFor(index)," : ""}
-            report: (values: ${obj}Values) => report(index, values),
-          })
-        : node;
-    };
     // The scene measures its copy once, on mount, so a saved edit remounts it.
-    // An edit still being typed does not: its objects' Sequences would
-    // remount with it, Studio would lose the selection, and the Inspector
-    // field being typed in would lose its focus mid-word.
+    // An edit still being typed does not: the scene would restart on every
+    // keystroke. The layers are outside it and never remount with it.
     const key = JSON.stringify({
       ...rest,
-      ...${name}FromItems(objects.map((o) => o.props)),
+      ...${name}FromItems(
+        all
+          .filter((o) => ${items.keep ? `(${items.keep.replace(/^\(x\)/, `(x: ${obj}Values)`)})(o.props)` : "true"})
+          .map((o) => o.props),
+      ),
     });
     return (
       <Sequence
@@ -1147,36 +1196,43 @@ const ${stage}Inner = forwardRef<
         <div
           ref={outlineRef}
           style={{ position: "relative", width: ${w}, height: ${h},${studio.clip ? ' overflow: "hidden",' : ""} ${INHERITED} }}
-        >${
-          content
-            ? `
+        >
           {/* First, so each box's ref is set before the objects that move it
               run their layout effects on a fresh mount. */}
-          {objects.map((_, i) => (
+          {all.map((_, j) => (
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: one box per position
-              key={i}
-              ref={slotFor(i)}
+              key={j}
+              ref={slotFor(j)}
               style={{ position: "absolute", display: "none", pointerEvents: "none", opacity: 0 }}
             />
-          ))}`
-            : ""
-        }
+          ))}
           ${
             studio.stage
               ? `<div style={{ position: "absolute", left: ${-ax}, top: ${-ay}, width: ${sw}, height: ${sh} }}>
             <${name}Fade>
-              <ItemHostProvider value={host}>
+              <${name}Hosted host={host}>
                 <${scene} key={key} {...rest} {...built}${split} />
-              </ItemHostProvider>
+              </${name}Hosted>
             </${name}Fade>
           </div>`
               : `<${name}Fade>
-            <ItemHostProvider value={host}>
+            <${name}Hosted host={host}>
               <${scene} key={key} {...rest} {...built}${split} />
-            </ItemHostProvider>
+            </${name}Hosted>
           </${name}Fade>`
           }
+          {/* The layers, after the scene: its nodes are attached by the time
+              they measure them. */}
+          {all.map((o, j) =>
+            cloneElement(o, {
+              // biome-ignore lint/suspicious/noArrayIndexKey: one layer per position
+              key: j,
+              claim: claimFor(j),
+              slot: slotFor(j),
+              report: (state: ${obj}State) => report(j, state),
+            }),
+          )}
         </div>
       </Sequence>
     );
