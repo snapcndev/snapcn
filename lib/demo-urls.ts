@@ -221,6 +221,11 @@ export const RENDERED_DEMOS: readonly string[] = [
   "channel-thread",
   "logo-collapse",
   "card-rail",
+  //   orb-swarm       sixteen orbs shaded per pixel into a canvas every frame,
+  //                   a chain moving 70px a beat, and type drawn 4x and
+  //                   reduced — measured to 0.33/255 against its reference,
+  //                   which only the rendered file can show.
+  "orb-swarm",
 ];
 
 /**

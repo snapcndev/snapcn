@@ -20,6 +20,9 @@ importers:
       '@paper-design/shaders-react':
         specifier: 0.0.76
         version: 0.0.76(@types/react@19.2.17)(react@19.2.4)
+      '@posthog/cli':
+        specifier: ^0.18.7
+        version: 0.18.7
       '@remotion/bundler':
         specifier: 4.0.473
         version: 4.0.473(@swc/helpers@0.5.15)(postcss@8.5.16)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1497,6 +1500,11 @@ packages:
 
   '@posthog/browser-common@0.4.0':
     resolution: {integrity: sha512-W9DCGVks15docUMPvJ2nd8NS16Gn74bsGWuaeg31beEKFSjdW8wvnQ1ETY6WSql5pYxZb3GdJmEUZVVstKSrBQ==}
+
+  '@posthog/cli@0.18.7':
+    resolution: {integrity: sha512-zNIRjq5XVeEMi8mhp2ZNHqx9tvK7QQmcj9SVxW/gz5fi6qi4WwimwwUcXeEwOP4wpRrHgw/h5pj+gYweHHtfww==}
+    engines: {node: '>=14.14', npm: '>=6'}
+    hasBin: true
 
   '@posthog/core@1.46.9':
     resolution: {integrity: sha512-EXO6y5ih+jBkTCpUCuYgQmajuDZuvy6vMvflkub6pLQyi0GPlCPWVSvZZkOeQw9e2MxoD5GteeGCt9R8+UJ/yQ==}
@@ -6779,6 +6787,10 @@ snapshots:
     dependencies:
       '@posthog/core': 1.46.9
       '@posthog/types': 1.402.2
+
+  '@posthog/cli@0.18.7':
+    dependencies:
+      detect-libc: 2.1.2
 
   '@posthog/core@1.46.9':
     dependencies:

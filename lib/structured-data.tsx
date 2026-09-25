@@ -171,6 +171,7 @@ const COMPONENT_QUERY: Record<string, string> = {
   "logo-flicker": "Remotion logo flicker intro",
   "block-wordmark": "Remotion wordmark animation",
   "card-rail": "Remotion card carousel animation",
+  "orb-swarm": "Remotion kinetic typography with orbs",
   "count-grid": "Remotion stat card grid animation",
   "roster-grant": "Remotion access granted animation",
   "wordmark-cut": "Remotion wordmark end card",

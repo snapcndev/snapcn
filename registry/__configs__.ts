@@ -17,6 +17,7 @@ import { logoCollapseConfig } from "@/registry/snap-cn/logo-collapse/config";
 import { logoDriftConfig } from "@/registry/snap-cn/logo-drift/config";
 import { logoFlickerConfig } from "@/registry/snap-cn/logo-flicker/config";
 import { moodboardRevealConfig } from "@/registry/snap-cn/moodboard-reveal/config";
+import { orbSwarmConfig } from "@/registry/snap-cn/orb-swarm/config";
 import { orbitGalleryConfig } from "@/registry/snap-cn/orbit-gallery/config";
 import { phoneFrameConfig } from "@/registry/snap-cn/phone-frame/config";
 import { promptSendConfig } from "@/registry/snap-cn/prompt-send/config";
@@ -87,6 +88,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "card-rail": cardRailConfig,
   "logo-collapse": logoCollapseConfig,
   "word-gather": wordGatherConfig,
+  "orb-swarm": orbSwarmConfig,
   "word-wheel": wordWheelConfig,
   "text-highlight": textHighlightConfig,
   "text-reveal": textRevealConfig,

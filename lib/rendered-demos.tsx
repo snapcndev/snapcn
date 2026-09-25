@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Pause, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
   type DemoState,
   type DemoView,
@@ -45,6 +46,7 @@ export function RenderedDemo({
   poster,
   className,
   priority = false,
+  controls = false,
 }: {
   src: string;
   /** Still frame shown until the reader asks for motion. */
@@ -52,6 +54,12 @@ export function RenderedDemo({
   className?: string;
   /** The demo the reader opened — plays ahead of the grid. See `planDemos`. */
   priority?: boolean;
+  /**
+   * A play/pause button and a loading spinner. For the one demo somebody opened
+   * (the gallery's detail overlay), where it is a video being watched; never on
+   * a grid card, where it is a picture of the component.
+   */
+  controls?: boolean;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
 
@@ -95,7 +103,7 @@ export function RenderedDemo({
     return () => unregister(el);
   }, [src, priority]);
 
-  return (
+  const video = (
     <video
       ref={ref}
       poster={poster}
@@ -125,9 +133,96 @@ export function RenderedDemo({
       className={cn("demo-video size-full object-contain", className)}
     />
   );
+  return controls ? <Controlled video={video} target={ref} /> : video;
+}
+
+/**
+ * The opened demo's own controls.
+ *
+ * Pausing is the reader's decision and the governor keeps it: a paused demo is
+ * marked, and a re-plan (a scroll, a tab coming back) does not start it again
+ * behind their back. Loading is shown rather than implied — a video that is
+ * still fetching looks exactly like one that is stuck, and that is the report.
+ */
+function Controlled({
+  video,
+  target,
+}: {
+  video: React.ReactNode;
+  target: React.RefObject<HTMLVideoElement | null>;
+}) {
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const el = target.current;
+    if (!el) return;
+    const sync = () => {
+      setPlaying(!el.paused);
+      // Waiting for bytes: asked to play, nothing to show yet.
+      setLoading(!el.paused && el.readyState < 3);
+    };
+    const events = [
+      "play",
+      "pause",
+      "playing",
+      "waiting",
+      "canplay",
+      "loadeddata",
+      "stalled",
+      "emptied",
+    ];
+    for (const e of events) el.addEventListener(e, sync);
+    sync();
+    return () => {
+      for (const e of events) el.removeEventListener(e, sync);
+    };
+  }, [target]);
+
+  const toggle = () => {
+    const el = target.current;
+    if (!el) return;
+    if (el.paused) {
+      userPaused.delete(el);
+      if (!el.getAttribute("src")) return;
+      el.preload = "auto";
+      void el.play().catch(() => {});
+    } else {
+      userPaused.add(el);
+      el.pause();
+    }
+  };
+
+  return (
+    <div className="group relative size-full">
+      {video}
+      {loading ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 grid place-items-center"
+        >
+          <span className="size-7 animate-spin rounded-full border-2 border-white/40 border-t-white drop-shadow" />
+        </div>
+      ) : null}
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={playing ? "Pause" : "Play"}
+        className="absolute bottom-3 left-3 grid size-9 place-items-center rounded-full bg-black/55 text-white opacity-100 backdrop-blur transition-opacity hover:bg-black/70 focus-visible:outline-2 focus-visible:outline-white sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
+      >
+        {playing ? (
+          <Pause className="size-4" fill="currentColor" />
+        ) : (
+          <Play className="size-4 translate-x-px" fill="currentColor" />
+        )}
+      </button>
+    </div>
+  );
 }
 
 /* ── The shared observer ──────────────────────────────────────────────────── */
+
+/** Demos the reader paused with the control; the governor will not restart them. */
+const userPaused = new WeakSet<HTMLVideoElement>();
 
 interface Entry {
   el: HTMLVideoElement;
@@ -221,6 +316,9 @@ function unregister(el: HTMLVideoElement) {
   onScreen?.unobserve(el);
   nearby?.unobserve(el);
   el.pause();
+  // Closing the overlay removes the demo that was holding the grid back (see
+  // `planDemos`); nothing else moves, so no observer would re-plan for it.
+  schedule();
 }
 
 /** Coalesce a scroll's worth of observer callbacks into one decision. */
@@ -266,6 +364,20 @@ function applyState(entry: Entry, state: DemoState) {
   const { el, src } = entry;
   switch (state) {
     case "play":
+      if (userPaused.has(el)) {
+        attach(el, src);
+        el.preload = "auto";
+        break;
+      }
+      // The demo the reader opened is not a card being swept past, and it has
+      // no competition for the connection (see `planDemos`): fetch and start
+      // now, without the settle and without waiting on the page's `load`.
+      if (entry.view.priority) {
+        attach(el, src);
+        el.preload = "auto";
+        void el.play().catch(() => {});
+        break;
+      }
       // Wait, THEN fetch, then start. A flick to the bottom of the grid sweeps
       // every card through "on screen" for a few frames each; the settle is
       // what makes that free, and it only is if `preload` stays `none` until it

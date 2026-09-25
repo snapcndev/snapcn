@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
   // build's IDs ("Server Action … was not found"). With a per-deploy ID, Next
   // hard-reloads on mismatch instead. Coolify sets SOURCE_COMMIT at build time.
   deploymentId: process.env.SOURCE_COMMIT,
+  // Browser source maps exist only to be uploaded to PostHog and deleted by
+  // scripts/upload-sourcemaps.mts, so only when that upload can run.
+  productionBrowserSourceMaps: Boolean(process.env.POSTHOG_PERSONAL_API_KEY),
   // The OG card reads its faces and the mark off disk at request time. Neither
   // is imported, so nothing traces them into the deployed function — without
   // this the route builds fine and 500s on every crawler.

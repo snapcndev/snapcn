@@ -19,6 +19,7 @@ import { LogoCollapse } from "@/registry/snap-cn/logo-collapse";
 import { LogoDrift } from "@/registry/snap-cn/logo-drift";
 import { LogoFlicker } from "@/registry/snap-cn/logo-flicker";
 import { MoodboardReveal } from "@/registry/snap-cn/moodboard-reveal";
+import { OrbSwarm } from "@/registry/snap-cn/orb-swarm";
 import { OrbitGallery } from "@/registry/snap-cn/orbit-gallery";
 import { PhoneFrame } from "@/registry/snap-cn/phone-frame";
 import { PromptSend } from "@/registry/snap-cn/prompt-send";
@@ -138,6 +139,7 @@ const registry: Record<string, RegistryEntry> = {
     config: CONFIGS["logo-collapse"],
   },
   "word-gather": { Component: WordGather, config: CONFIGS["word-gather"] },
+  "orb-swarm": { Component: OrbSwarm, config: CONFIGS["orb-swarm"] },
   "word-wheel": { Component: WordWheel, config: CONFIGS["word-wheel"] },
   "text-highlight": {
     Component: TextHighlight,

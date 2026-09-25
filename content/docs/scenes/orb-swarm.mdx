@@ -1,0 +1,165 @@
+---
+title: Orb Swarm
+description: A sentence told one beat at a time while glass orbs burst out of it, split into eight and sixteen, wind into a vortex, pay out as a chain and loop around the last words before shrinking away bead by bead
+---
+
+<ComponentPreview name="orb-swarm" />
+
+Four glass orbs burst out of the first line. They split into eight, then sixteen,
+and drift out while the sentence builds word by word underneath them. Then the
+sixteen wind into a clockwise vortex, collapse into a knot, pay out as a chain,
+and the chain reaches round the closing card and closes on itself — before
+shrinking away from its tail, one bead a beat.
+
+## Everything is on the reference's clock
+
+The scene was measured off a 24fps recording, beat by beat, so every table in the
+file is indexed in **beats** (1/24 s) and read at fractional beats with the same
+curve. A 30fps composition samples between them and gets the motion the
+recording could not show, rather than a pulldown judder it did.
+
+Each phase is the smallest description that reproduces the recording:
+
+- **Burst and splits.** Every orb moves on a straight line from where it is born.
+  The eight share one ease; so do the sixteen. The first four each have their
+  own, and they are stored as such rather than averaged into a curve none of
+  them follows.
+- **The vortex.** The sixteen turn about one point, faster every beat, and shrink
+  toward it — and the orbs themselves shrink with it, a fifth as fast, so they
+  read as falling away as well as in.
+- **The chain.** From the collapse onward there is no rule the recording follows
+  closely enough to be worth a formula, so it is the measurement itself: sixteen
+  beads a beat, position and size. While the chain is still a stack its tail
+  lies on top; once it opens out, the head does.
+
+## The orbs are drawn, not styled
+
+Each orb carries a band texture that scrolls down its face once every fourteen
+beats, and the bands bow toward the rim like latitude lines on a sphere. A CSS
+gradient cannot bend, so the orbs are shaded per pixel into a canvas with the
+same function the reference was fitted with — the band table, the bow, and a
+two-pixel soft edge with a faint dark ring inside it that is what reads as glass
+rather than paint.
+
+The type is drawn into the same canvas, four times finer than the frame and then
+reduced. That is not decoration: a browser snaps every glyph's baseline to a
+whole pixel, on the page and in a canvas alike, and the reference's baselines
+sit between them.
+
+## The script
+
+`script` is six cards separated by `|`. The first, second and last arrive whole;
+the three in the middle reveal word by word on the reference's beats, and the
+newest word wears a few indigos and a violet, letter by letter, until the next
+one lands and it turns to ink. The first card leaves on a wave — its letters
+thrown alternately up and down as the line swells — and the second arrives on
+one, rising into place from below.
+
+```tsx
+<OrbSwarm script="one command | what if | every launch | you shipped | got a video | in seconds" />
+```
+
+Cards can hold as many words as you like; a card with more words than the
+reference's spreads its colours across them.
+
+## Notes
+
+`softness` is how soft the type is, in card pixels of blur. The reference is a
+screen capture and its type is this soft; `0` is crisp. The orbs keep their own
+soft edge either way — it is part of how they are shaded.
+
+`background` and `ink` are the page and the settled type. `orbColor` turns the
+whole glass — its bands, its rim, and the tints the newest words wear — to one
+hue in OKLCH, keeping every lightness as measured, so any colour still reads as
+the same glass. It defaults to snapcn's blue; `#9f77f8` is the reference's own
+violet.
+
+The card is the reference's own 714 × 392 pixels, scaled to cover whatever
+composition it is placed in, so a 16:9 frame crops a sliver off the top and
+bottom rather than letterboxing.
+
+## Installation
+
+<InstallBlock name="orb-swarm" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="orb-swarm" />
+
+## Usage
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { OrbSwarm } from "@/components/snap-cn/orb-swarm";
+
+const Scene = () => (
+  <OrbSwarm script="one command | what if | every launch | you shipped | got a video | in seconds" />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="OrbSwarm"
+    component={Scene}
+    durationInFrames={160}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "script",
+      type: "string",
+      default:
+        '"one command | what if | every launch | you shipped | got a video | in seconds"',
+      description:
+        "Six cards separated by |. Cards three to five reveal word by word; the others arrive whole",
+    },
+    {
+      name: "background",
+      type: "string",
+      default: '"#fcf9ff"',
+      description: "The page",
+    },
+    {
+      name: "ink",
+      type: "string",
+      default: '"#000000"',
+      description: "The type once a word has settled",
+    },
+    {
+      name: "orbColor",
+      type: "string",
+      default: '"#3577e0"',
+      description:
+        "The orbs' colour. Bands, rim and word tints turn to its hue; lightness stays as measured",
+    },
+    {
+      name: "softness",
+      type: "number",
+      default: "0.7",
+      description:
+        "Blur on the type, in card pixels. The reference's capture softness; 0 is crisp",
+    },
+    {
+      name: "fontFamily",
+      type: "string",
+      default: '"Default"',
+      description: "Inter Tight unless you name one of the loaded faces",
+    },
+    {
+      name: "speed",
+      type: "number",
+      default: "1",
+      description: "Playback rate. 2 plays the whole scene in half the frames",
+    },
+  ]}
+/>

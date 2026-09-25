@@ -276,7 +276,12 @@ function OverlayBody({
     // so the page used to jump when it did. Every demo is rendered 16:9, and
     // `object-contain` letterboxes anything that is not.
     <div className="aspect-video w-full overflow-hidden rounded-xl bg-gallery-card">
-      <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} priority />
+      <RenderedDemo
+        src={demoSrc}
+        poster={demoPoster ?? undefined}
+        priority
+        controls
+      />
     </div>
   ) : item.pro ? (
     <div className="aspect-video w-full rounded-xl bg-gallery-card" />

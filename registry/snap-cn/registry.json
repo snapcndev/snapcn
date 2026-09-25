@@ -633,6 +633,27 @@
       ]
     },
   {
+      "name": "orb-swarm",
+      "type": "registry:component",
+      "docs": "Docs and props: https://snapcn.dev/docs/scenes/orb-swarm?ref=cli — script is six cards separated by |; the first, second and last arrive whole and the three in the middle reveal word by word. softness is the blur on the type in card pixels (0 is crisp). background and ink are the page and the settled type; orbColor recolours the orbs (and the word tints) by hue, keeping their shading.",
+      "title": "Orb Swarm",
+      "description": "Kinetic typography scene with glass orbs: a sentence told one beat at a time while four orbs burst out of it, split into eight and sixteen, wind into a clockwise vortex, collapse into a knot, pay out as a chain, loop around the closing words and shrink away bead by bead. Every phase was measured frame by frame off a 24fps reference and is replayed on the same clock; the orbs are shaded per pixel into a canvas (a scrolling band texture bowed like latitude lines, a soft glass edge) and the type is drawn into the same canvas four times finer than the frame so its baselines land between pixels.",
+      "dependencies": [
+          "remotion",
+          "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+          "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+          {
+              "path": "orb-swarm/index.tsx",
+              "type": "registry:component",
+              "target": "components/snap-cn/orb-swarm.tsx"
+          }
+      ]
+  },
+  {
       "name": "word-gather",
       "type": "registry:component",
       "docs": "Docs and props: https://snapcn.dev/docs/text/word-gather?ref=cli — text is the sentence and its first word is the one that holds the frame alone; maxWidth is where the line breaks, in card pixels; accent is the colour a word wears while it is still travelling. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette.",
