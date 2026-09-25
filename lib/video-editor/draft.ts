@@ -163,9 +163,13 @@ function reviveClips(
     if (clips.length >= MAX_CLIPS) break;
     if (!isObject(entry)) continue;
 
-    const { id, slug, props, background } = entry;
-    if (typeof id !== "string" || !id || seen.has(id)) continue;
+    const { slug, props, background } = entry;
+    if (typeof entry.id !== "string" || !entry.id) continue;
     if (typeof slug !== "string" || !isKnownSlug(slug)) continue;
+    // A duplicate id breaks React keys and selection, but the clip is real:
+    // builds with a per-load counter saved new clips under ids a restored clip
+    // already held. Re-keyed rather than dropped, so nobody loses one.
+    const id = seen.has(entry.id) ? crypto.randomUUID() : entry.id;
 
     // Clamped, not rejected: a bad length is recoverable, and dropping a clip
     // the user can see on their timeline is not.
