@@ -42,9 +42,20 @@ describe("planDemos", () => {
     views.set(99, { ratio: 1, near: true, priority: true });
     const plan = planDemos(views);
     expect(plan.get(99)).toBe("play");
-    expect([...plan.values()].filter((s) => s === "play")).toHaveLength(
-      MAX_PLAYING,
-    );
+  });
+
+  it("stops the covered grid from competing with the opened demo", () => {
+    // The cards under the modal read as on screen. Fetching and decoding them
+    // split a slow connection twelve ways and left the opened demo waiting.
+    const views = grid(Array(MAX_PLAYING + 4).fill(1));
+    views.set(99, { ratio: 1, near: true, priority: true });
+    const plan = planDemos(views);
+    expect([...plan.entries()].filter(([, s]) => s === "play")).toEqual([
+      [99, "play"],
+    ]);
+    expect([...plan.values()]).not.toContain("hold");
+    // Kept addressed, so closing the overlay does not start from nothing.
+    expect(plan.get(0)).toBe("ready");
   });
 
   it("holds rather than releases a card it had to stop — it is still on screen", () => {

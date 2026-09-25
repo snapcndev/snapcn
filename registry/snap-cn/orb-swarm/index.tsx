@@ -361,8 +361,40 @@ function swarm(beat: number): Bead[] {
   return out;
 }
 
+/**
+ * The constellation is turned this far about the vortex centre, in degrees
+ * (negative is counter-clockwise), while the orbs are free — so the layout is
+ * this scene's own, not the reference's; only the motion is measured. It eases
+ * back to zero as they collapse into the knot, turning the same way the vortex
+ * already spins, and the chain and the ring are exactly as measured.
+ *
+ * Twelve degrees is the most either way that keeps every orb on screen and no
+ * closer to the type than the reference's own layout comes, within 2px.
+ */
+export const LAYOUT_TURN = -12;
+const TURN_UNTIL = 82;
+const TURN_EASE = 6;
+
 /** Every orb on screen at `beat`, bottom first. */
-export function orbsAt(beat: number): Bead[] {
+export function orbsAt(beat: number, turn: number = LAYOUT_TURN): Bead[] {
+  const beads = measuredAt(beat);
+  const f = Math.min(1, Math.max(0, (TURN_UNTIL - beat) / TURN_EASE));
+  const a = (turn * f * Math.PI) / 180;
+  if (a === 0) return beads;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  return beads.map((b) => {
+    const dx = b.x - VORTEX_CENTRE[0];
+    const dy = b.y - VORTEX_CENTRE[1];
+    return {
+      x: VORTEX_CENTRE[0] + cos * dx - sin * dy,
+      y: VORTEX_CENTRE[1] + sin * dx + cos * dy,
+      scale: b.scale,
+    };
+  });
+}
+
+function measuredAt(beat: number): Bead[] {
   if (beat < BURST_AT) return [];
   if (beat < SPLIT_AT) {
     return BURST.map(({ s, d, p }) => {

@@ -73,6 +73,21 @@ export function planDemos<K>(
   views: Map<K, DemoView>,
   cap: number = MAX_PLAYING,
 ): Map<K, DemoState> {
+  // The opened demo sits in a modal over the grid. The cards under it read as
+  // on screen and are not: left in the plan they fetched and decoded behind
+  // the modal and split the connection with the one video being watched —
+  // which, on a slow link, is how the opened demo sat on its poster "loading"
+  // while twelve hidden ones downloaded. Covered cards keep their src (so
+  // closing the overlay is instant) and fetch nothing.
+  const opened = [...views.values()].some((v) => v.priority && v.ratio > 0);
+  if (opened) {
+    const plan = new Map<K, DemoState>();
+    for (const [key, view] of views) {
+      if (view.priority && view.ratio > 0) plan.set(key, "play");
+      else plan.set(key, view.near || view.ratio > 0 ? "ready" : "release");
+    }
+    return plan;
+  }
   const ranked = [...views.entries()]
     .filter(([, v]) => v.ratio > 0)
     .sort(
