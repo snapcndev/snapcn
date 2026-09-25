@@ -1,0 +1,135 @@
+---
+title: How to make a GitHub README demo GIF with Remotion
+seoTitle: GitHub README demo GIF — render one with Remotion (under 10MB)
+description: Render a crisp, looping demo GIF for your GitHub README with Remotion — the exact CLI flags, how to stay under GitHub's 10MB limit, and when an MP4 is the better choice.
+date: 2026-09-24
+tags:
+  - remotion
+  - github
+  - gif
+faq:
+  - question: How do you make a GIF with Remotion?
+    answer: Render with the gif codec, npx remotion render <composition> out.gif --codec=gif. Add --every-nth-frame=2 to halve the frame rate and --scale to shrink the output, which together keep the file small.
+  - question: What is the maximum GIF size on GitHub?
+    answer: GitHub accepts images and GIFs up to 10MB when you attach them in an issue, pull request or comment. Aim well under that so the README loads fast.
+  - question: How do you make a Remotion GIF loop?
+    answer: GIFs from Remotion loop forever by default. Pass --number-of-gif-loops=0 to play once, or a number to loop that many extra times.
+  - question: GIF or MP4 in a GitHub README?
+    answer: A GIF autoplays everywhere a README is shown, including npm. An MP4 is far smaller and sharper at the same length; GitHub plays .mp4, .mov and .webm uploads with a player, but they do not autoplay like a GIF.
+---
+
+To make a README demo GIF with Remotion, render your composition with
+`--codec=gif`, halve the frame rate with `--every-nth-frame=2`, and shrink it
+with `--scale`. Keep it short and loopable, and under GitHub's 10MB limit for
+images and GIFs.
+
+```bash
+npx remotion render Demo out/demo.gif --codec=gif --every-nth-frame=2 --scale=0.5
+```
+
+<ComponentPreview name="terminal-simulator" />
+
+## 1. Build a short, loopable composition
+
+A README GIF is watched in a loop, at small size, with no sound. So:
+
+- **5–10 seconds.** One command, one result.
+- **Big type.** It will be shown at the README's width, often half your
+  composition's.
+- **End where it starts.** A loop that snaps from the last frame to the first
+  looks broken; fade both ends to the same background.
+
+For a CLI tool, a [terminal that types its own command](/docs/screens/terminal-simulator)
+is the whole video:
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { TerminalSimulator } from "@/components/snap-cn/terminal-simulator";
+
+const Demo = () => (
+  <TerminalSimulator
+    intro="*deploy* in one *command.*"
+    command={{ managers: ["npm", "pnpm", "yarn", "bun"], text: "npx acme deploy" }}
+    lines={[
+      { text: "Building…", type: "log", delay: 0 },
+      { text: "✓ Deployed to acme.dev", type: "success", delay: 12 },
+    ]}
+  />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="Demo"
+    component={Demo}
+    durationInFrames={200}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+For a UI, crop a recording and push in on the part that matters with
+[Screen Recording](/docs/screens/screen-recording), and add a pointer back with
+[Cursor Track](/docs/screens/cursor-track).
+
+## 2. Render it as a GIF
+
+```bash
+npx remotion render Demo out/demo.gif --codec=gif --every-nth-frame=2 --scale=0.5
+```
+
+What each flag does:
+
+| Flag | Effect |
+| --- | --- |
+| `--codec=gif` | Output a GIF instead of an MP4 |
+| `--every-nth-frame=2` | Render every second frame: 30fps becomes 15fps. `3` gives 10fps. Only valid for GIFs |
+| `--scale=0.5` | Halve the output dimensions: 1280×720 becomes 640×360 |
+| `--number-of-gif-loops=0` | Play once. Omit it to loop forever — what a README wants |
+| `--frames=0-149` | Render only a range, to trim without touching the composition |
+
+15fps is plenty for a README. Frame rate and dimensions are where the bytes
+are: half the frames at a quarter of the pixels is a far smaller file.
+
+## 3. Get it under 10MB
+
+GitHub accepts images and GIFs up to **10MB** when you drag them into an issue,
+pull request or comment. For a README, aim far lower — a few megabytes — so the
+page does not stall. If the file is too big, in order:
+
+1. **Shorten it.** Every second costs the same; cut the ones that are not the payoff.
+2. **Drop the frame rate.** `--every-nth-frame=3`.
+3. **Shrink it.** `--scale=0.4`.
+4. **Simplify the frame.** GIF has 256 colours per frame. Gradients, blur and
+   photos cost the most; flat backgrounds and text compress best.
+
+## 4. Put it in the README
+
+Drag the GIF into the README editor on GitHub, or commit it and reference it:
+
+```md
+![acme deploy in one command](./docs/demo.gif)
+```
+
+Write the alt text as the sentence the GIF proves. It is what screen readers,
+search engines and anyone on a slow connection see.
+
+## When to use an MP4 instead
+
+A GIF is huge for what it shows. An MP4 of the same clip is a fraction of the
+size and keeps full colour. GitHub plays `.mp4`, `.mov` and `.webm` uploads
+inline with a player — but they do not autoplay like a GIF, and a GIF also works
+where a README is mirrored, such as npm. Common split: a GIF in the README, the
+full-quality MP4 in the release notes.
+
+<ComponentPreview name="screen-recording" />
+
+Install the components:
+
+```bash
+npx shadcn@latest add @snapcn/terminal-simulator @snapcn/screen-recording
+```
+
+Next: [how to make a changelog video in React](/changelog-video-react).

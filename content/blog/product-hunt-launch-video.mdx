@@ -1,0 +1,140 @@
+---
+title: How to make a Product Hunt launch video in code
+seoTitle: Product Hunt launch video maker — build it in React with Remotion
+description: Build your Product Hunt launch video in React with Remotion — a 30–60 second structure that works, a 16:9 master plus a square cut for X and LinkedIn, and which component carries each beat.
+date: 2026-09-24
+tags:
+  - remotion
+  - launch
+  - product hunt
+faq:
+  - question: How long should a Product Hunt launch video be?
+    answer: 30 to 60 seconds. Open on what the product does, show one job done end to end, and close on the name and URL. Anything longer loses people before the payoff.
+  - question: What aspect ratio should a launch video be?
+    answer: Render a 16:9 master at 1920x1080 for the launch page and YouTube, and a 1080x1080 square cut for X and LinkedIn feeds. In Remotion that is the same composition rendered twice with a different width and height.
+  - question: Can I make a launch video without a video editor?
+    answer: Yes. With Remotion the video is React components, so you build it in your editor, preview it in Remotion Studio and render an MP4 from the command line. snapcn also has a browser video editor that exports MP4 with no Remotion project.
+  - question: Should a launch video have sound?
+    answer: Assume most people watch muted in a feed. Put every claim on screen as text and treat music as a bonus, not a carrier of meaning.
+---
+
+To make a Product Hunt launch video in code, build it in **Remotion**: a 30–60
+second `<Series>` of five beats — hook, problem, product, proof, call to action —
+rendered once at 1920×1080 for the launch page and once at 1080×1080 for X and
+LinkedIn. Every claim goes on screen as text, because most people watch muted.
+
+<ComponentPreview name="hero-launch" />
+
+## The structure
+
+A launch video has one job: make someone click through in the first few seconds
+and understand the product by the end. At 30fps:
+
+| Beat | Length | Carried by |
+| --- | --- | --- |
+| Hook | 3–5s | [Announce Title](/docs/scenes/announce-title) or [Product Hero](/docs/scenes/hero-launch) |
+| Problem | 3–5s | [Punch Lines](/docs/text/punch-lines) — two hard-cut statements |
+| Product | 15–30s | [Screen Recording](/docs/screens/screen-recording), [Laptop Frame](/docs/screens/laptop-frame), [Phone Frame](/docs/screens/phone-frame) |
+| Proof | 3–5s | [Count Grid](/docs/scenes/count-grid), [Follower Rush](/docs/social/follower-rush) |
+| Call to action | 3s | [Logo Assemble](/docs/logos/logo-assemble) and the URL |
+
+Open on the product, not the logo. The logo is the last shot, when someone
+already wants to know the name.
+
+## Build it
+
+```tsx
+// src/Launch.tsx
+import { Series, staticFile } from "remotion";
+import { AnnounceTitle } from "@/components/snap-cn/announce-title";
+import { PunchLines } from "@/components/snap-cn/punch-lines";
+import { LaptopFrame } from "@/components/snap-cn/laptop-frame";
+import { CountGrid } from "@/components/snap-cn/count-grid";
+import { LogoAssemble } from "@/components/snap-cn/logo-assemble";
+
+export const Launch = () => (
+  <Series>
+    <Series.Sequence durationInFrames={170}>
+      <AnnounceTitle
+        eyebrow="Introducing"
+        title="Acme"
+        tagline="Invoices that send themselves."
+      />
+    </Series.Sequence>
+    <Series.Sequence durationInFrames={96}>
+      <PunchLines script="Chasing invoices? | Every month?" holds="48" />
+    </Series.Sequence>
+    <Series.Sequence durationInFrames={240}>
+      <LaptopFrame
+        entrance="open"
+        finale="zoom-to-screen"
+        screenSrc={staticFile("demo.mp4")}
+      />
+    </Series.Sequence>
+    <Series.Sequence durationInFrames={47}>
+      <CountGrid from="1" to="1k" noun="teams" />
+    </Series.Sequence>
+    <Series.Sequence durationInFrames={108}>
+      <LogoAssemble
+        logoSrc={staticFile("logo.png")}
+        brandName="Acme"
+        middleText={"Live on\nProduct Hunt"}
+      />
+    </Series.Sequence>
+  </Series>
+);
+```
+
+That is 661 frames — 22 seconds at 30fps. Stretch the product beat, not the
+others: it is the only one that shows what you built.
+
+## Two cuts from one composition
+
+Register the same component twice with different dimensions:
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { Launch } from "./Launch";
+
+export const RemotionRoot = () => (
+  <>
+    <Composition id="Launch" component={Launch}
+      durationInFrames={661} fps={30} width={1920} height={1080} />
+    <Composition id="LaunchSquare" component={Launch}
+      durationInFrames={661} fps={30} width={1080} height={1080} />
+  </>
+);
+```
+
+```bash
+npx remotion render Launch out/launch.mp4
+npx remotion render LaunchSquare out/launch-square.mp4
+```
+
+Components size their type and cameras to the frame, so the square cut
+reframes instead of cropping. Watch both before you post — a 16:9 screen
+recording inside a square frame may want a tighter camera push.
+
+## Five things that make launch videos worse
+
+- **A logo intro.** Nobody knows your logo yet. Show the product.
+- **Feature lists.** One job, end to end, beats eight features in eight seconds.
+- **Relying on voice-over.** Feeds autoplay muted. Every claim on screen.
+- **A raw screen recording.** Crop the browser chrome and move the camera — see
+  [how to make a product demo video in React](/product-demo-video-react).
+- **Scaled text that judders.** Use components tuned against it, or read
+  [how to animate text in Remotion](/remotion-text-animations).
+
+<ComponentPreview name="logo-assemble" />
+
+Install what you used:
+
+```bash
+npx shadcn@latest add @snapcn/announce-title @snapcn/punch-lines @snapcn/laptop-frame @snapcn/count-grid @snapcn/logo-assemble
+```
+
+No Remotion project yet? Build the same video in the browser
+[video editor](/docs/video-editor) and export an MP4.
+
+Next: [how to make a changelog video in React](/changelog-video-react).

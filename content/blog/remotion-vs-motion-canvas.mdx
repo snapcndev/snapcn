@@ -1,0 +1,132 @@
+---
+title: Remotion vs Motion Canvas
+seoTitle: Remotion vs Motion Canvas (and Revideo) — which to use in 2026
+description: Remotion renders React components frame by frame; Motion Canvas animates a canvas with TypeScript generators. How they differ in authoring, rendering and licensing, and which one fits a product video.
+date: 2026-09-25
+tags:
+  - remotion
+  - comparison
+faq:
+  - question: What is the difference between Remotion and Motion Canvas?
+    answer: Remotion is React. A video is a component, and every frame is the component rendered at that frame number, using the DOM and CSS. Motion Canvas draws to a canvas and describes animation as TypeScript generator functions that yield tweens step by step, previewed in a Vite-powered editor.
+  - question: Is Motion Canvas free?
+    answer: Yes. Motion Canvas is MIT licensed. Remotion uses its own license, free for individuals and small companies, with a paid company license for larger teams.
+  - question: Can Motion Canvas render a video from the command line?
+    answer: Its rendering docs describe rendering from the browser editor, which saves each frame as an image to an output folder that you then turn into a video with a tool like ffmpeg. Remotion renders straight to an MP4 from the CLI, a Node script, or AWS Lambda.
+  - question: What is Revideo?
+    answer: Revideo is an MIT-licensed engine for creating videos in code. You describe scenes in TypeScript and render them to a video file, including headlessly with its renderVideo function.
+  - question: Which is better for a product demo video?
+    answer: Remotion, in most cases. A product demo is mostly UI, text and screenshots, which are native to React and CSS, and Remotion renders server-side for automated or repeated videos. Motion Canvas shines for explanatory diagrams and math-style animation.
+---
+
+**Short answer:** use **Remotion** if your video is made of UI, text and
+screenshots, or needs to render automatically — it is React and CSS, rendered
+frame by frame to an MP4. Use **Motion Canvas** for explainer-style animation of
+shapes and diagrams, written as TypeScript generators in a live editor. Both are
+code-first; they differ in what they draw with and how they render.
+
+Facts below were checked on each project's site and GitHub in September 2026.
+
+## Side by side
+
+| | Remotion | Motion Canvas |
+| --- | --- | --- |
+| Authoring | React components, `useCurrentFrame()` | TypeScript generator functions |
+| Draws with | DOM and CSS (anything a browser renders) | A canvas, with JSX-like scene nodes |
+| Preview | Remotion Studio | Vite-powered web editor with live preview |
+| Output | MP4 and other formats, straight from the CLI | Image sequence from the editor, then ffmpeg or an editor |
+| Server / automated rendering | CLI, Node API, AWS Lambda | Not in its rendering docs |
+| License | Remotion license (free for individuals and small companies) | MIT |
+| GitHub stars | ~60k | ~19k |
+
+## The same move in both
+
+A circle that doubles in size over one second. In Motion Canvas you describe the
+steps, and `yield*` waits for each tween:
+
+```tsx
+import { Circle, makeScene2D } from "@motion-canvas/2d";
+import { createRef } from "@motion-canvas/core";
+
+export default makeScene2D(function* (view) {
+  const circle = createRef<Circle>();
+  view.add(<Circle ref={circle} size={320} fill="#e13238" />);
+  yield* circle().scale(2, 1);
+});
+```
+
+In Remotion you describe **what frame N looks like**:
+
+```tsx
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+
+export const Grow = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const scale = interpolate(frame, [0, fps], [1, 2], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          width: 320,
+          height: 320,
+          borderRadius: "50%",
+          background: "#e13238",
+          transform: `scale(${scale})`,
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+```
+
+Motion Canvas reads like a script: do this, then this. Remotion reads like a
+function: given a frame, return the picture. The script style is lovely for a
+sequence of steps; the function style is what lets Remotion render any frame on
+any machine in any order — which is how it renders in parallel and on Lambda.
+
+## When Remotion wins
+
+- **The video is UI.** Buttons, inputs, code, screenshots and real web fonts are
+  just HTML. On a canvas you redraw them.
+- **You reuse your app's components and styles.** Same React, same CSS, same
+  Tailwind.
+- **Rendering is automated.** Personalised videos, a changelog video per release,
+  renders from a server — see [how to make a changelog video in React](/changelog-video-react).
+- **You want components off the shelf.** Remotion has a larger ecosystem of
+  component libraries — compared in
+  [the best Remotion component libraries](/best-remotion-component-libraries).
+
+<ComponentPreview name="prompt-send" />
+
+## When Motion Canvas wins
+
+- **Explainers and diagrams.** Shapes, paths, arrows and step-by-step builds are
+  what it was made for — its own tagline is "Visualize Complex Ideas
+  Programmatically".
+- **Sequencing by steps.** Generators make "do A, wait, do B" natural, where in
+  Remotion you calculate start frames.
+- **You want MIT.** Motion Canvas is MIT; Remotion requires a company license
+  above a small team size.
+
+## Where Revideo fits
+
+[Revideo](https://github.com/midrender/revideo) is an MIT-licensed engine for
+creating videos in code: scenes in TypeScript, rendered to a video file, with a
+headless `renderVideo()` API. If you like the Motion Canvas authoring style but
+need automated rendering, it is worth a look.
+
+## For a product video
+
+Pick Remotion, then skip writing the motion yourself: snapcn ships the shots a
+software demo is made of — prompts, terminals, devices, captions — as React
+components you install and own:
+
+```bash
+npx shadcn@latest add @snapcn/prompt-send
+```
+
+Next: [how to make a product demo video in React](/product-demo-video-react).

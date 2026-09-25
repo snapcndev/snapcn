@@ -1,0 +1,92 @@
+---
+title: The best Remotion component libraries in 2026
+seoTitle: Best Remotion component libraries and templates (2026)
+description: Every Remotion component library worth knowing in 2026 — Remotion Elements, remocn, RemotionUI, snapcn and React Video Editor — what each is for, how it installs and what it costs.
+date: 2026-09-24
+tags:
+  - remotion
+  - comparison
+faq:
+  - question: What is the best Remotion component library?
+    answer: It depends on the video. Remotion Elements is the official set and drops straight into Remotion Studio. remocn and RemotionUI are the widest free libraries. snapcn is built for product demo videos. React Video Editor is for embedding a video editor in your own app.
+  - question: Are there free Remotion templates?
+    answer: Yes. npx create-video@latest offers Remotion's official starter templates, and remocn, RemotionUI and snapcn's free tier are all free to use.
+  - question: How do Remotion component libraries install?
+    answer: Most copy source into your project rather than adding a runtime dependency. snapcn and remocn use the shadcn CLI, RemotionUI has its own CLI, and Remotion Elements install into the open Studio project.
+---
+
+**Short answer:** start with **Remotion Elements** (official, drops into Studio),
+reach for **remocn** or **RemotionUI** when you need breadth, use **snapcn** when
+the video is a product demo, and buy **React Video Editor** only if you are
+building an editor into your own app. All but the last copy source into your
+project, so you can mix them.
+
+Everything below was checked on each site in September 2026.
+
+## At a glance
+
+| Library | Size | Price | Installs with | Best for |
+| --- | --- | --- | --- | --- |
+| [Remotion Elements](https://www.remotion.dev/elements) | ~40 | See Remotion's license | Remotion Studio | Official building blocks: captions, charts, backgrounds, maps |
+| [remocn](https://remocn.dev) | ~308 | Free, MIT | shadcn CLI | Breadth: typography, shaders, transitions, icons |
+| [RemotionUI](https://remotionui.com) | ~210 | Free | `npx remotion-ui add` | Scenes, transitions, data, device frames |
+| [snapcn](/docs/components) | 42 free + 50 Pro | MIT free tier, paid Pro | shadcn CLI | Product demo shots |
+| [React Video Editor](https://www.reactvideoeditor.com) | Full editor | From $149 one-time | Source template or SDK | Putting a video editor inside your app |
+
+## Remotion Elements
+
+The official catalogue from the Remotion team, at remotion.dev/elements. Around
+forty elements across audio, backgrounds, captions, layouts, charts, maps,
+overlays, storytelling, text effects and YouTube. The distinguishing feature is
+the Studio integration: install an element and it appears on the canvas you have
+open. Start here — it is the set most likely to track Remotion's own API.
+
+## remocn
+
+The widest free library: roughly 300 components, MIT, no paid tier. Categories
+include typography, shaders, transitions, animated icons, UI primitives, filters,
+effects and layout. It is the natural pick when you need a transition or a
+shader background. We compared it with snapcn in detail in
+[snapcn vs remocn](/snapcn-vs-remocn).
+
+## RemotionUI
+
+Around 210 components with its own CLI (`npx remotion-ui@latest init` to start,
+`npx remotion-ui add <name>` per component), copying source into your repo.
+Covers compositions, scenes, transitions, data and media, maps and devices, and
+shapes.
+
+## snapcn
+
+Our library, so read this one with that in mind. snapcn is narrower on purpose:
+its components are the shots a software video is made of — a
+[prompt typed and sent](/docs/ai-input/prompt-send), an
+[answer streaming in](/docs/ai-input/answer-stream), a
+[terminal](/docs/screens/terminal-simulator), a
+[screen recording with a camera](/docs/screens/screen-recording), a
+[phone](/docs/screens/phone-frame) or [laptop](/docs/screens/laptop-frame),
+[captions](/docs/captions) and [logo stings](/docs/logos). Components take shadcn
+theme tokens, text is tuned against render judder, and there is an
+[MCP server](/docs/mcp) for coding agents.
+
+<ComponentPreview name="terminal-simulator" />
+
+## React Video Editor
+
+Not a component library: a complete video editor built on Remotion, sold as
+source code (one-time, from $149) or as a managed SDK. Timeline, captions,
+effects, uploads. Buy it if your product needs an editor; skip it if you are
+making one video.
+
+## How to choose
+
+1. **Is the video about your software?** Start with snapcn's demo shots and fill
+   gaps from the others.
+2. **Do you need transitions, shaders or backgrounds?** remocn or RemotionUI.
+3. **Do you edit in Remotion Studio?** Remotion Elements first.
+4. **Are your users making videos?** React Video Editor.
+
+They do not conflict. Components that copy source into your project are just
+React files — install from two libraries and use them in one `<Series>`.
+
+Next: [how to make a product demo video in React](/product-demo-video-react).

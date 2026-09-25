@@ -1,0 +1,140 @@
+---
+title: The Ken Burns effect in Remotion
+seoTitle: Remotion Ken Burns effect — slow zoom and pan on images, without edge reveal
+description: Make a Ken Burns slow zoom and pan on a photo or screenshot in Remotion — the one rule that stops the image edge showing, why to pan with transform-origin, and why to judge it from a render, not the Player.
+date: 2026-09-25
+tags:
+  - remotion
+  - images
+  - camera
+faq:
+  - question: How do you do a Ken Burns effect in Remotion?
+    answer: Render the image with Img inside a full-frame container with overflow hidden, then interpolate its scale and its transform-origin from the current frame. The scale gives the zoom and moving the origin gives the pan.
+  - question: How do you stop the image edge showing during a Ken Burns pan?
+    answer: Keep the scale at 1 or above for the whole shot and pan by moving the transform-origin inside the image. A box scaled up about any point inside it always still covers its original area, so no edge can come into view.
+  - question: Why does my slow zoom look jerky in the Remotion Player?
+    answer: A live Player on a high-refresh display can mispace a slow scale over many frames. The rendered video is computed frame by frame and does not have that problem, so judge a slow zoom from a render.
+  - question: Should a Ken Burns move use an ease-out?
+    answer: Use a linear move or a gentle ease. Aggressive ease-outs such as quint or expo spend their last part moving under a pixel per frame, which reads as the image freezing before the cut.
+---
+
+**Short answer:** put the image in a full-frame box with `overflow: hidden`,
+then interpolate two things from the frame: `scale` (the zoom) and
+`transformOrigin` (the pan). Keep the scale at **1 or above** the whole time and
+the image edge can never show. Keep the move linear or gently eased, and judge it
+from a render.
+
+## A Ken Burns move from scratch
+
+```tsx
+import {
+  AbsoluteFill,
+  Img,
+  interpolate,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+export const KenBurns = ({ src }: { src: string }) => {
+  const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
+  const t = [0, durationInFrames - 1];
+  const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+
+  // Zoom 1.0 → 1.15 while the focus drifts from upper-left to centre-right.
+  const scale = interpolate(frame, t, [1, 1.15], clamp);
+  const originX = interpolate(frame, t, [30, 65], clamp);
+  const originY = interpolate(frame, t, [35, 50], clamp);
+
+  return (
+    <AbsoluteFill style={{ overflow: "hidden" }}>
+      <Img
+        src={staticFile(src)}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          transform: `scale(${scale})`,
+          transformOrigin: `${originX}% ${originY}%`,
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+```
+
+`<Img>` rather than `<img>`: Remotion waits for it to load before it captures
+the frame, so the first frames of a render are never blank.
+
+## Why pan with transform-origin, not translate
+
+The obvious way to pan is `translate()`. The trouble is that how far you can
+translate depends on the zoom: at `scale(1.1)` there is 5% of spare image on each
+side, at `scale(1.02)` only 1%. Push further and the edge of the photo slides
+into frame.
+
+Scaling about a point **inside** the image has no such limit. A box scaled by
+anything ≥ 1 about any point within it still covers every pixel it covered
+before — so you can move the origin anywhere from `0%` to `100%` and never
+reveal an edge. The zoom and the pan stop interacting, and the only rule left is:
+
+- **Never let the scale drop below 1.** Zooming *out* on a Ken Burns needs the
+  shot to start above 1 — `1.15 → 1.0`, not `1.0 → 0.9`.
+
+## Keep the move honest
+
+- **Linear, or close to it.** A Ken Burns is a drift, not an arrival. A quint
+  or expo ease-out spends the end of the shot moving less than a pixel a frame,
+  which on a 30fps clock reads as the picture freezing before the cut.
+- **Small numbers.** 10–20% of zoom over four or five seconds is plenty.
+  Faster than that stops being a Ken Burns and becomes a push-in.
+- **Judge it from a render.** A slow scale over many frames is exactly what a
+  live `<Player>` on a high-refresh display mispaces. The render is computed
+  frame by frame and does not. That is why several snapcn docs previews of
+  slow-scale scenes play a rendered MP4 instead of the live Player.
+- **`will-change: transform` only in the Player.** It helps live playback and
+  hurts the render; gate it on `getRemotionEnvironment().isRendering`.
+
+## On a screenshot: a camera, not just a zoom
+
+The same idea on a UI screenshot is a camera move: push in on the button you
+are talking about, hold, pull back. snapcn's
+[Screen Recording](/docs/screens/screen-recording) takes a still image as well
+as a video, with a keyframed camera:
+
+```tsx
+import { ScreenRecording } from "@/components/snap-cn/screen-recording";
+
+<ScreenRecording
+  src="/shots/dashboard.png"
+  camera={[
+    { at: 20, duration: 30, zoom: 1.5, x: 0.7, y: 0.3 },
+    { at: 110, duration: 30, zoom: 1 },
+  ]}
+/>;
+```
+
+Each move eases from wherever the camera is to the pose you name, then holds
+until the next move's `at`.
+
+<ComponentPreview name="screen-recording" />
+
+## Many photos: a moving gallery
+
+When the shot is a body of work rather than one picture, a camera drifting over
+a single image is not enough. Two snapcn scenes do the rest:
+
+- [Moodboard Reveal](/docs/scenes/moodboard-reveal) — a headline, a scattered
+  photo gallery, and a camera push through it from dark to light that lands on a
+  hero image. Pass `images` and `heroImage`.
+- [Orbit Gallery](/docs/scenes/orbit-gallery) — photos stream along a spiral
+  vortex into the centre, with a title held in the clear middle.
+
+```bash
+npx shadcn@latest add @snapcn/moodboard-reveal
+```
+
+<ComponentPreview name="moodboard-reveal" />
+
+Next: [animated backgrounds in Remotion](/remotion-animated-backgrounds).

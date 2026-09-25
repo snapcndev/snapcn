@@ -1,0 +1,161 @@
+---
+title: App Store and Google Play preview videos, made in code
+seoTitle: App Store preview video specs (886×1920, 15–30s) — build it with Remotion
+description: Build App Store app previews and Google Play preview videos in React with Remotion — Apple's exact specs, what Apple allows on screen, what Google Play requires, and one composition that renders both.
+date: 2026-09-25
+tags:
+  - remotion
+  - mobile
+  - app store
+faq:
+  - question: What are the App Store app preview specs?
+    answer: Per Apple's App Store Connect specifications, an app preview is 15 to 30 seconds long, at most 30 frames per second and at most 500MB, as .mov, .m4v or .mp4 (H.264) or .mov (ProRes 422 HQ). iPhone 6.9 and 6.5 inch previews are 886 by 1920 portrait or 1920 by 886 landscape; iPad 11 and 13 inch previews are 1200 by 1600 or 1600 by 1200. You can upload up to 3 per localization.
+  - question: Can an App Store preview show the app inside a phone frame?
+    answer: Apple's App Review Guideline 2.3.4 says previews may only use video screen captures of the app itself, with narration and video or textual overlays allowed. Keep the capture full-frame and put explanation in text overlays rather than showing a device.
+  - question: What does Google Play need for a preview video?
+    answer: A YouTube video URL, not a playlist or channel, with ads turned off and no age restriction. Landscape and portrait are both supported, and only the first 30 seconds autoplay.
+  - question: Can Remotion render at 886 by 1920?
+    answer: Yes. Set width to 886 and height to 1920 on the Composition and render as H.264 MP4. Both numbers are even, which H.264 needs.
+---
+
+**Short answer:** for the **App Store**, render a **15–30 second** screen capture
+of the app at **886×1920** (iPhone) or **1200×1600** (iPad), **30fps** max, with
+text overlays — Apple does not allow device frames or footage that is not the app.
+For **Google Play**, upload to **YouTube** (ads off) and link it; any orientation
+works, and only the first 30 seconds autoplay. One Remotion composition can render
+both.
+
+Every number below is quoted from Apple's and Google's own pages as of September
+2026. Check them again before you upload — both change.
+
+## Apple's specs
+
+From App Store Connect's app preview specifications:
+
+| | |
+| --- | --- |
+| Length | 15–30 seconds |
+| Frame rate | Up to 30fps |
+| File size | Up to 500MB |
+| Formats | H.264 (.mov, .m4v, .mp4), 10–12 Mbps target; or ProRes 422 HQ (.mov) |
+| Audio | Stereo; 256kbps AAC at 44.1 or 48kHz for H.264 |
+| Per localization | Up to 3 previews |
+| iPhone 6.9" and 6.5" | 886×1920 portrait, 1920×886 landscape |
+| iPad 11" and 13" | 1200×1600 portrait, 1600×1200 landscape |
+
+## What Apple allows on screen
+
+This is the rule that decides the design. App Review Guideline 2.3.4:
+
+> previews may only use video screen captures of the app itself. […] You can add
+> narration and video or textual overlays to help explain anything that isn't
+> clear from the video alone.
+
+So: **no phone mockup, no lifestyle footage, no logo animation that is not in the
+app.** A full-frame capture of the app, with text on top. What you *can* control
+is the camera and the words.
+
+## Google Play's requirements
+
+From Play Console Help: use a **YouTube video URL** (not a playlist or channel),
+**turn ads off**, and don't age-restrict it. Landscape and portrait are both
+supported. Only the **first 30 seconds autoplay**, and Google advises that at
+least 80% of the video should show the actual user experience.
+
+Because it is a YouTube video rather than an App Store upload, Google Play is
+where a device-frame hero shot can go — see below.
+
+## The App Store composition
+
+A capture from the simulator or a device, cropped to fit, with a camera that
+pushes in on each feature. [Screen Recording](/docs/screens/screen-recording)
+does the crop and the camera; the camera only moves *your app's pixels*, so it
+stays inside 2.3.4:
+
+```tsx
+import { AbsoluteFill, Composition, Sequence } from "remotion";
+import { ScreenRecording } from "@/components/snap-cn/screen-recording";
+
+const Caption = ({ text }: { text: string }) => (
+  <AbsoluteFill style={{ justifyContent: "flex-start", paddingTop: 140 }}>
+    <h2 style={{ fontSize: 64, fontWeight: 700, textAlign: "center", color: "white" }}>
+      {text}
+    </h2>
+  </AbsoluteFill>
+);
+
+const AppPreview = () => (
+  <AbsoluteFill style={{ background: "black" }}>
+    <ScreenRecording
+      src="/recordings/app-capture.mp4"
+      camera={[
+        { at: 90, duration: 25, zoom: 1.4, x: 0.5, y: 0.35 },
+        { at: 300, duration: 25, zoom: 1 },
+      ]}
+    />
+    <Sequence durationInFrames={150}>
+      <Caption text="Split any bill in seconds" />
+    </Sequence>
+    <Sequence from={150} durationInFrames={150}>
+      <Caption text="Everyone pays their share" />
+    </Sequence>
+  </AbsoluteFill>
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="AppPreview"
+    component={AppPreview}
+    durationInFrames={600} // 20s at 30fps — inside Apple's 15–30s
+    fps={30}
+    width={886}
+    height={1920}
+  />
+);
+```
+
+```bash
+npx remotion render AppPreview out/app-preview-iphone.mp4
+```
+
+For iPad, register a second `<Composition>` at `1200×1600` with the iPad capture.
+Same components, different `width`, `height` and `src`.
+
+If your capture already matches 886×1920 there is nothing to crop. If it is a
+different aspect, give Screen Recording `sourceAspect` (width ÷ height of the
+file) so the crop and fit are exact.
+
+## The Google Play video: here a device frame fits
+
+On YouTube you are not bound by 2.3.4, so the opening shot can be the app inside a
+phone. [Phone Frame](/docs/screens/phone-frame) takes the same capture as
+`screenSrc` and brings the device in with a crane move:
+
+```tsx
+import { staticFile } from "remotion";
+import { PhoneFrame } from "@/components/snap-cn/phone-frame";
+
+export const PlayHero = () => (
+  <PhoneFrame
+    variant="showcase"
+    entrance="float"
+    scale={0.9}
+    screenSrc={staticFile("recordings/app-capture.mp4")}
+  />
+);
+```
+
+Open on that for a few seconds, then cut to the full-frame capture — Google's
+guidance is that most of the video should be the real experience.
+
+<ComponentPreview name="phone-frame" />
+
+## Install
+
+```bash
+npx shadcn@latest add @snapcn/screen-recording @snapcn/phone-frame
+```
+
+More on devices in [how to add an iPhone mockup to a Remotion video](/remotion-iphone-mockup).
+
+Next: [product tour and onboarding videos in React](/onboarding-video-react).

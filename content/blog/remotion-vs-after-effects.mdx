@@ -1,0 +1,92 @@
+---
+title: Remotion vs After Effects for launch videos
+seoTitle: Remotion vs After Effects — which to use for a product video
+description: Remotion makes videos from React code; After Effects is a timeline you drag. For a developer's launch or demo video, here is when each one wins, and why most developers should not open After Effects.
+date: 2026-09-24
+tags:
+  - remotion
+  - comparison
+faq:
+  - question: Is Remotion a replacement for After Effects?
+    answer: For product, launch and data-driven videos, yes. For character animation, compositing live footage, rotoscoping and heavy visual effects, no. After Effects is still the better tool there.
+  - question: Is Remotion easier than After Effects?
+    answer: For a React developer, usually. Remotion is React, so there is no new interface to learn, and animation is interpolate() and spring() on a frame number. After Effects has a long learning curve for anyone who does not already use it.
+  - question: Can Remotion generate videos automatically?
+    answer: Yes. Because a Remotion video is a React component with props, you can render the same template with different data from a script, a server, or AWS Lambda, which After Effects cannot do without extra tooling.
+  - question: How much does Remotion cost compared with After Effects?
+    answer: Remotion is free for individuals and small companies, and larger companies pay for a company license. After Effects is a Creative Cloud subscription. Check remotion.dev/license and Adobe's pricing page for current terms.
+---
+
+**Short answer:** if you are a developer making a launch, demo or changelog
+video, use **Remotion** — it is React, it lives in your repo, and one template
+renders a hundred variations. Use **After Effects** for what code is bad at:
+character animation, compositing filmed footage and heavy visual effects.
+
+## The difference in one sentence
+
+After Effects is a **timeline you drag**; Remotion is a **function of the frame
+number** that you write. Everything else follows from that.
+
+## Side by side
+
+| | Remotion | After Effects |
+| --- | --- | --- |
+| You work in | React / TypeScript | A desktop timeline |
+| Version control | Git, diffs, pull requests | Binary project files |
+| Reuse | Components with props | Templates and presets |
+| Data-driven video | Native — pass props, render | Scripts or plugins |
+| Rendering | CLI, server, or AWS Lambda | Desktop or Media Encoder |
+| Text and UI | Real DOM text and CSS | Text layers |
+| Character animation, VFX, compositing | Weak | Excellent |
+| Learning curve for a React dev | Hours | Weeks |
+| Cost | Free for individuals and small companies | Creative Cloud subscription |
+
+## When Remotion wins
+
+**Your video is made of UI.** A product demo is text, buttons, inputs, code and
+screenshots. In Remotion those are the same React and CSS you already ship, so
+type is crisp at every size and colours match your app.
+
+**You will make it more than once.** Changelog every release, a launch for every
+feature, a personalised video per customer. In Remotion that is one component and
+a list of props. In After Effects it is a new project each time.
+
+**An agent is doing the work.** Claude Code or Cursor can write and edit a
+Remotion composition; they cannot drive After Effects. This is the biggest shift
+of the past year.
+
+**It has to live in the repo.** Reviewable diffs, CI renders, no one-person
+dependency on whoever owns the `.aep` file.
+
+## When After Effects wins
+
+**Filmed footage.** Keying, tracking, rotoscoping and colour grading are After
+Effects' home ground.
+
+**Illustration and character work.** Hand-keyed motion with a designer's eye on
+every curve is faster in a timeline than in code.
+
+**Your team is designers.** If nobody writes React, Remotion's advantages do not
+apply.
+
+## The cost nobody mentions: motion quality
+
+The honest weakness of code-first video is that hand-written animation often
+*looks* hand-written — linear moves, springs that overshoot, text that judders
+while it scales. After Effects hides a lot of that behind good defaults.
+
+The fix is not to write every curve yourself. Use components whose motion was
+tuned and measured on rendered frames. That is what snapcn is: product demo shots
+for Remotion — [prompts](/docs/ai-input/prompt-send),
+[terminals](/docs/screens/terminal-simulator),
+[device frames](/docs/screens/phone-frame), [text](/docs/text) — installed as
+source you own:
+
+```bash
+npx shadcn@latest add @snapcn/hero-launch
+```
+
+<ComponentPreview name="hero-launch" />
+
+Next: [how to make a product demo video in React](/product-demo-video-react),
+step by step.

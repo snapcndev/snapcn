@@ -1,0 +1,114 @@
+---
+title: Remotion vs Framer Motion
+seoTitle: Remotion vs Framer Motion (Motion) — UI animation vs video
+description: Framer Motion, now called Motion, animates your app's UI in real time. Remotion renders React to a video file, frame by frame. They solve different problems, and Motion's animations do not render inside Remotion. Here is why, and how to use both.
+date: 2026-09-25
+tags:
+  - remotion
+  - comparison
+  - react
+faq:
+  - question: What is the difference between Remotion and Framer Motion?
+    answer: Framer Motion, now called Motion, is a React library for animating user interfaces in the browser as people use them. Remotion is a framework for rendering React components into video files such as MP4. One animates your app; the other makes videos.
+  - question: Can I use Framer Motion inside Remotion?
+    answer: Not for anything that has to render. Motion runs animations on real time through the Web Animations API or JavaScript, but a Remotion render captures frames out of order and in parallel. Remotion's docs warn that animations not driven by useCurrentFrame, such as CSS transitions, cause flickering in renders.
+  - question: Is Framer Motion renamed?
+    answer: Yes. Motion's docs describe Motion for React as previously Framer Motion. The package is motion and the React import path is motion/react.
+  - question: Should I use Remotion or Motion for my landing page?
+    answer: Both, for different jobs. Use Motion for interactive UI animation on the page, and Remotion to make the demo video, which you can embed with the Remotion Player or export as an MP4.
+---
+
+**Short answer:** they do different jobs. **Motion** (formerly Framer Motion)
+animates your app's UI live in the browser. **Remotion** renders React
+components into a **video file**. Motion's animations run on real time, so they
+do not render correctly inside Remotion — in a video, every value has to come
+from the frame number.
+
+## Side by side
+
+| | Motion (Framer Motion) | Remotion |
+| --- | --- | --- |
+| Output | Animation in a live web page | MP4 and other video files |
+| Clock | Real time (Web Animations API, JS fallback) | The frame number, `useCurrentFrame()` |
+| Triggered by | State, gestures, scroll, layout changes | Nothing — frame N is a pure function |
+| Package | `motion`, import from `motion/react` | `remotion` |
+| License | MIT | Remotion license (free for individuals and small companies) |
+| Use it for | Hover, enter/exit, layout, gestures | Demo videos, launch videos, social clips |
+
+## Why Motion does not work inside a Remotion render
+
+This looks fine in the Remotion Player:
+
+```tsx
+import { motion } from "motion/react";
+
+// Don't: runs on wall-clock time, not on the video's frame.
+export const Title = () => (
+  <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    Ship faster
+  </motion.h1>
+);
+```
+
+Then you render, and it is wrong. A Remotion render does not play the video: it
+opens the page, jumps to a frame, takes a screenshot, and does that for every
+frame — across several browser tabs, in any order. Motion's animation starts
+when the element mounts and advances with real time, so each screenshot catches
+it at whatever moment the tab happened to be at. Remotion's docs call this out:
+animations not driven by `useCurrentFrame()`, such as CSS transitions, cause
+flickering in renders.
+
+The Remotion version reads the frame instead:
+
+```tsx
+import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+
+export const Title = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const enter = spring({ frame, fps, config: { damping: 200 } });
+
+  return (
+    <h1
+      style={{
+        opacity: enter,
+        transform: `translateY(${interpolate(enter, [0, 1], [20, 0])}px)`,
+      }}
+    >
+      Ship faster
+    </h1>
+  );
+};
+```
+
+A spring with `damping: 200` settles without overshoot, and frame 45 is always
+the same picture, on any machine.
+
+## When you want both
+
+Most product sites use both, for different things:
+
+- **Motion on the site.** Hover states, menus, page transitions, scroll reveals —
+  anything that responds to the person using it.
+- **Remotion for the video.** The launch video, the demo on the landing page, the
+  clip for X. Embed it with `@remotion/player` or export an MP4.
+
+If a design exists as a Motion animation and you want it in a video, port the
+values, not the code: the durations, the spring stiffness, the offsets. Then
+drive them from `useCurrentFrame()`.
+
+## Skip the porting
+
+snapcn's components are written from scratch on Remotion's frame clock, so they
+render exactly as they preview. Text animations, prompts, device frames:
+
+```bash
+npx shadcn@latest add @snapcn/text-build
+```
+
+<ComponentPreview name="text-build" />
+
+See [how to animate text in Remotion](/remotion-text-animations) for the rules
+that keep scaled type from juddering in a render.
+
+Next: [Remotion vs Motion Canvas](/remotion-vs-motion-canvas).

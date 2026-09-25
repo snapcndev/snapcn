@@ -1,0 +1,176 @@
+---
+title: AI chat and prompt animations in Remotion
+seoTitle: Remotion AI chat animation — prompt, streaming answer and agent steps
+description: How to animate an AI product in Remotion — a prompt typed and sent, an answer streaming in, a highlight on the line that matters, an agent working through steps. A streaming-text effect from scratch, then six ready-made components.
+date: 2026-09-25
+tags:
+  - remotion
+  - ai
+  - product demo
+faq:
+  - question: How do you animate a streaming AI answer in Remotion?
+    answer: Split the answer into words and show as many as the current frame allows, for example Math.floor((frame - start) / framesPerWord) words. Because it is a function of the frame, it scrubs and renders identically.
+  - question: What shots does an AI product demo video need?
+    answer: Usually five. The prompt being typed, the send, the answer streaming in, a highlight on the one line that matters, and for agents, the steps it worked through before answering.
+  - question: Should I screen-record my AI app or rebuild it in Remotion?
+    answer: Rebuilding the chat as components gives you sharp text at any zoom, copy you can edit without re-recording, and deterministic timing. A screen recording is faster when the real UI is the point, and works best cropped with a camera move.
+  - question: Are there ready-made AI chat animations for Remotion?
+    answer: Yes. snapcn's AI input category has Prompt Send, Prompt Zoom, Search Typing, Answer Stream, Answer Highlight and Agent Steps, installed with npx shadcn@latest add @snapcn/<name>.
+---
+
+**Short answer:** an AI product demo is five shots — the prompt typed, the send,
+the answer streaming in, a highlight on the line that matters, and (for agents)
+the steps it took. In Remotion each is a component whose text is a function of
+the frame: words shown so far = frames elapsed ÷ frames per word. Build them
+yourself, or compose snapcn's six AI input components.
+
+## The beats of an AI demo
+
+| Beat | What it proves | snapcn component |
+| --- | --- | --- |
+| Prompt typed | It takes plain language | [Prompt Send](/docs/ai-input/prompt-send), [Prompt Zoom](/docs/ai-input/prompt-zoom), [Search Typing](/docs/ai-input/search-typing) |
+| Send | The moment of commitment | Prompt Send |
+| Answer streams | It answers, fast | [Answer Stream](/docs/ai-input/answer-stream) |
+| Highlight | The answer contains the thing you wanted | [Answer Highlight](/docs/ai-input/answer-highlight) |
+| Agent steps | It did real work to get there | [Agent Steps](/docs/ai-input/agent-steps) |
+
+You rarely need all five. A chat product is prompt → stream → highlight. An
+agent is prompt → steps → result.
+
+## Streaming text from scratch
+
+The whole trick is that the number of visible words is derived from the frame,
+never accumulated:
+
+```tsx
+import { AbsoluteFill, useCurrentFrame } from "remotion";
+
+export const StreamingAnswer = ({
+  answer,
+  start = 10,
+  framesPerWord = 2,
+}: {
+  answer: string;
+  start?: number;
+  framesPerWord?: number;
+}) => {
+  const frame = useCurrentFrame();
+  const words = answer.split(" ");
+  const shown = Math.max(
+    0,
+    Math.min(words.length, Math.floor((frame - start) / framesPerWord)),
+  );
+  const done = shown === words.length;
+  const caretOn = done ? Math.floor(frame / 15) % 2 === 0 : true;
+
+  return (
+    <AbsoluteFill style={{ padding: 96, justifyContent: "center" }}>
+      <p style={{ fontSize: 40, lineHeight: 1.4, maxWidth: 900 }}>
+        {words.slice(0, shown).join(" ")}
+        <span style={{ opacity: caretOn ? 1 : 0 }}>▍</span>
+      </p>
+    </AbsoluteFill>
+  );
+};
+```
+
+Details that make it read as real:
+
+- **Render all words, hide the rest**, if layout must not reflow — map every
+  word to a span and set `opacity: 0` on the ones not yet shown. Then lines break
+  where they finally will, from the first frame.
+- **Hold the caret solid while text is arriving**, and only blink once it stops.
+- **Words, not characters.** Model output arrives in tokens, which look like
+  words. Character-by-character reads as a typewriter, which is the prompt, not
+  the answer.
+
+## Ready-made: the six AI input components
+
+Each installs as source you own:
+
+```bash
+npx shadcn@latest add @snapcn/prompt-send @snapcn/answer-stream @snapcn/agent-steps
+```
+
+**Prompt Send** — a composer unrolls from a hairline, a brief types itself with
+the camera riding the caret, then a pointer arrives and sends it. The typing is
+eased, not constant, which is what makes the camera glide.
+
+<ComponentPreview name="prompt-send" />
+
+```tsx
+<PromptSend
+  text="Add a text reveal, a soft blur transition, and a gradient background"
+  chips={["Add a text reveal", "Try a blur transition", "Pick a background"]}
+/>
+```
+
+**Prompt Zoom** — typing in a wide shot, then a hard cut into the caret while the
+typing carries straight on.
+
+```tsx
+<PromptZoom greeting="Up late?" text="Get me a plan for tomorrow" />
+```
+
+**Search Typing** — a search field wider than the frame: it comes forward,
+types across its left half, pages to its right half, then pulls back to show
+the whole field.
+
+```tsx
+<SearchTyping text="How do I make my product demo actually look expensive?" />
+```
+
+**Answer Stream** — the beat after send: a macro shot on the button that cuts
+hard to the answer building itself while the camera pulls back.
+
+```tsx
+<AnswerStream
+  question="How do I rank higher in AI answers?"
+  answer={"Analysing your prompt gaps…\nFound 27 prompts you should rank for and don't yet."}
+  headline="Your AI visibility score: 34% — here's how I'd fix it:"
+/>
+```
+
+**Answer Highlight** — the answer writes itself, then a selection drags across
+one statement and settles on one word. `statement` and `word` are strings matched
+against the answer, so editing the copy never misplaces the band.
+
+```tsx
+<AnswerHighlight
+  question="How should we structure the demo video?"
+  answer="Build one composition per scene and keep the timeline declarative, so the same props always render the same frames."
+  statement="keep the timeline declarative"
+  word="declarative"
+/>
+```
+
+**Agent Steps** — an agent narrating its work: each step arrives running,
+flips to done, and the last one resolves into the result.
+
+<ComponentPreview name="agent-steps" />
+
+```tsx
+<AgentSteps
+  query="A 30-second launch video for a Next.js analytics dashboard"
+  steps={[
+    { running: "Searching the registry…", done: "Searched the registry", icon: "globe" },
+    { running: "Building the timeline…", done: "Set 9 scene timings" },
+    { running: "Rendering frames…", done: "Rendered frames" },
+  ]}
+  result="Rendered 900 frames"
+/>
+```
+
+Write the last step in the present tense — it never finishes; the `result` chip
+is what it becomes.
+
+## Putting them in order
+
+Sequence the beats with `<Series>` or a `TransitionSeries` using `slide()` —
+not `fade()`, which stacks two centred scenes on top of each other
+([why](/remotion-scene-transitions-overlap)). The components render transparent,
+so one background runs under the whole video.
+
+The whole [AI input category](/docs/ai-input) is free and MIT.
+
+Next: [how to make a product demo video in React](/product-demo-video-react).

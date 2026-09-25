@@ -1,0 +1,125 @@
+---
+title: Kinetic typography in Remotion
+seoTitle: Remotion kinetic typography — cuts, punches and rhythm in React
+description: Kinetic typography in Remotion — why it is built from cuts rather than tweens, how to set hierarchy and rhythm on a frame clock, a punchy word-scale cut in code, and ready-made components.
+date: 2026-09-25
+tags:
+  - remotion
+  - text
+  - typography
+faq:
+  - question: What is kinetic typography?
+    answer: Text that moves to carry meaning, where the timing, size and order of words do the work a voiceover or footage would otherwise do. It is the standard look for launch videos, title sequences and short social clips.
+  - question: How do you make kinetic typography in Remotion?
+    answer: Split the script into beats, give each beat a fixed number of frames with Series or Sequence, and inside each beat drive scale, position and opacity from useCurrentFrame(). Change beats with hard cuts rather than long crossfades.
+  - question: Why does my kinetic typography feel slow?
+    answer: Usually because every change is a tween. Kinetic type gets its energy from cuts, with a short move of a few frames inside each shot. Replace crossfades between lines with cuts and shorten each hold.
+  - question: How long should each word or line stay on screen?
+    answer: Long enough to read once. A short line needs roughly a second and a half at 30fps, and a single punch word can hold for less. Keep holds regular so the video has a beat.
+---
+
+Kinetic typography in Remotion is a sequence of short shots: each line or word
+gets a fixed run of frames, moves a little inside it, and **cuts** to the next.
+The energy comes from the cuts and the rhythm, not from long tweens. Build it
+with `<Series>`, drive every value from `useCurrentFrame()`, and keep holds
+regular.
+
+<ComponentPreview name="punch-lines" />
+
+## Three principles
+
+**Cut, don't crossfade.** A crossfade between two lines puts both on screen at
+half opacity — for a few frames the viewer reads neither. A cut is instant and
+reads as intent. Inside a shot, move; between shots, cut.
+
+**One thing is biggest.** Each beat has one word that matters. Make it the
+largest thing in the frame, or the last to arrive, or the only one in colour —
+not all three, and never on two words at once.
+
+**Keep a beat.** Give shots regular lengths — say 36 or 48 frames at 30fps — and
+break the pattern once, on purpose, for the line that matters. Irregular holds
+read as a mistake; one broken rhythm reads as emphasis.
+
+## A punchy word-scale cut, in code
+
+Each word punches up from a third of its size over a few frames, then pushes
+slowly forward until the cut:
+
+```tsx
+import { AbsoluteFill, Easing, interpolate, Series, useCurrentFrame } from "remotion";
+
+const Punch = ({ word }: { word: string }) => {
+  const frame = useCurrentFrame();
+  const punch = interpolate(frame, [0, 5], [0.33, 1], {
+    easing: Easing.out(Easing.cubic),
+    extrapolateRight: "clamp",
+  });
+  const push = 1 + frame * 0.003; // a slow drift toward the viewer
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <h1
+        style={{
+          fontSize: 140,
+          fontWeight: 800,
+          textRendering: "geometricPrecision",
+          transform: `scale(${punch * push})`,
+        }}
+      >
+        {word}
+      </h1>
+    </AbsoluteFill>
+  );
+};
+
+export const Titles = () => (
+  <Series>
+    {["Build.", "Ship.", "Show it."].map((word) => (
+      <Series.Sequence key={word} durationInFrames={24}>
+        <Punch word={word} />
+      </Series.Sequence>
+    ))}
+  </Series>
+);
+```
+
+Why these choices:
+
+- **Five frames for the punch, cubic ease-out.** A quint or expo ease-out spends
+  its last frames moving less than a pixel each; on a 30fps clock that reads as a
+  freeze before the push starts.
+- **`textRendering: "geometricPrecision"`.** Scaling text re-hints the letter
+  stems every frame and the letterforms visibly shake. This turns that off.
+- **No transition between sequences.** `<Series>` cuts when a sequence ends —
+  exactly what you want.
+
+For a multi-word line, pivot the scale on the **baseline** rather than the
+centre; see [how to animate text in Remotion](/remotion-text-animations) for why
+that removes the "stuck" look on scaled type.
+
+## Ready-made kinetic type
+
+snapcn's text components are built on these rules, installed as source:
+
+| Component | What it does |
+| --- | --- |
+| [Punch Lines](/docs/text/punch-lines) | Full-frame title cards that cut hard between beats; the hero line's words punch up from a third of their size and push forward |
+| [Word Gather](/docs/text/word-gather) | Words arrive out of order and gather into the sentence, landing in the accent colour and cooling to ink |
+| [Text Swell](/docs/text/text-swell) | The lead word floats toward you, then the sentence pushes in and shoves it aside |
+| [Word Wheel](/docs/text/word-wheel) | A column of words spins like a reel and stops on one |
+
+Punch Lines takes the whole script as one string — `|` starts a card, `/`
+starts a line inside it:
+
+```tsx
+import { PunchLines } from "@/components/snap-cn/punch-lines";
+
+<PunchLines script="Ready-made scenes / for Remotion. | One command. Own it. | snapcn." />;
+```
+
+Its `durationInFrames` is the sum of `holds`, and `punchLinesDuration(script,
+holds)` is exported so the composition length follows the script.
+
+<ComponentPreview name="word-wheel" />
+
+Next: [typewriter effect in Remotion](/remotion-typewriter-effect).

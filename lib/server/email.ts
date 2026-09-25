@@ -1,5 +1,6 @@
 import "server-only";
 import { PRO_ITEMS } from "@/config/catalogue";
+import { X_URL } from "@/config/site";
 import { PRO_SAMPLE } from "@/lib/plans";
 import { isSuppressed } from "@/lib/server/suppression";
 
@@ -67,6 +68,8 @@ export interface Email {
    * Overrides `EMAIL_FROM`. Only the list sets it — see `NEWSLETTER_FROM`.
    */
   from?: string;
+  /** Where Reply goes. `FROM` receives nothing, `SUPPORT` forwards to a person. */
+  reply_to?: string;
   /**
    * Extra headers, verbatim. This exists for exactly one thing: RFC 8058
    * one-click unsubscribe, which is a header pair and cannot be expressed any
@@ -552,12 +555,120 @@ If you did not ask for this, ignore it — nothing happens until the link is ope
   };
 }
 
+/** Forwarded to a real inbox by Cloudflare Email Routing; `FROM` receives nothing. */
+const SUPPORT = "support@snapcn.dev";
+
+/**
+ * The account frame's paint, sampled off the reference layout the account mail
+ * copies (a 21st.dev payout notice), and its type scale measured off the same
+ * frame at a 600px card. Its own set, not `C`: the list keeps the quiet frame.
+ */
+const A = {
+  blue: "#1232f5",
+  blueEdge: "#021cbf",
+  onBlue: "#91a1fb",
+  heading: "#000000",
+  ink: "#171717",
+  muted: "#525252",
+  line: "#eeeeee",
+} as const;
+
+/** One paragraph in the account frame. */
+function ap(html: string, size: number, color: string, margin: string): string {
+  return `<p style="margin:${margin};font-family:${FONT};font-size:${size}px;line-height:1.5;color:${color};">${html}</p>`;
+}
+
+/** A link inside the account card. */
+function alink(text: string, href: string): string {
+  return `<a href="${href}" style="color:${A.blue};text-decoration:underline;">${text}</a>`;
+}
+
+/**
+ * The account frame: blue backdrop, mark + wordmark above a white card, a big
+ * headline, optional label/value rows, one button, a help line, and a footer.
+ *
+ * Still transactional — no navigation row. The one remote image is the mark
+ * beside the wordmark; the alt is empty because the word already says it.
+ * Its help line says "reply", so every mail built on it goes out with
+ * `reply_to: SUPPORT`.
+ */
+function accountShell({
+  preheader,
+  greeting,
+  heading,
+  lead,
+  rows = [],
+  cta,
+  note,
+}: {
+  preheader: string;
+  greeting: string;
+  heading: string;
+  lead: string;
+  rows?: [label: string, value: string][];
+  cta: { label: string; href: string };
+  note: string;
+}): string {
+  const row = ([label, value]: [string, string]) =>
+    `<tr><td style="padding:0 0 14px;font-family:${FONT};font-size:14px;color:${A.muted};">${label}</td><td align="right" style="padding:0 0 14px;font-family:${FONT};font-size:14px;color:${A.ink};">${value}</td></tr>`;
+  return `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>${heading}</title>
+</head>
+<body style="margin:0;padding:0;background:${A.blue};">
+<span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">${preheader}${"&zwnj;&nbsp;".repeat(60)}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${A.blue};">
+<tr><td align="center" style="padding:28px 16px 40px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+
+    <tr><td style="padding:0 48px 28px;">
+      <a href="${SITE}" style="text-decoration:none;color:#ffffff;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td valign="middle" style="padding-right:10px;"><img src="${SITE}/logo/snapcn-white.png" width="36" height="32" alt="" style="display:block;border:0;outline:none;width:36px;height:32px;"></td>
+        <td valign="middle" style="font-family:${FONT};font-size:30px;font-weight:800;letter-spacing:-0.04em;color:#ffffff;">snapcn</td>
+      </tr></table></a>
+    </td></tr>
+
+    <tr><td style="background:#ffffff;border-radius:24px;padding:48px;">
+      ${ap(greeting, 18, A.ink, "0 0 20px")}
+      <h1 style="margin:0 0 20px;font-family:${FONT};font-size:32px;line-height:1.15;font-weight:700;letter-spacing:-0.03em;color:${A.heading};">${heading}</h1>
+      ${ap(lead, 18, A.ink, "0 0 28px")}
+      ${rows.length ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">${rows.map(row).join("")}</table>` : ""}
+      <a href="${cta.href}" style="display:inline-block;background:${A.blue};border:1px solid ${A.blueEdge};color:#ffffff;font-family:${FONT};font-size:14px;font-weight:600;line-height:1;text-decoration:none;padding:12px 14px;border-radius:6px;">${cta.label}</a>
+      ${ap(note, 14, A.muted, "28px 0 24px")}
+      <div style="border-top:1px solid ${A.line};padding-top:28px;">
+        ${ap(`For help, reply to this email or write to ${alink(SUPPORT, `mailto:${SUPPORT}`)}.`, 14, A.muted, "0")}
+      </div>
+    </td></tr>
+
+    <tr><td style="padding:28px 48px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:${FONT};font-size:14px;"><a href="${SITE}" style="color:${A.onBlue};text-decoration:none;">snapcn.dev</a></td>
+        <td align="right" style="font-family:${FONT};font-size:14px;"><a href="${X_URL}" style="color:${A.onBlue};text-decoration:none;">Twitter</a></td>
+      </tr></table>
+    </td></tr>
+
+  </table>
+</td></tr>
+</table>
+</body></html>`;
+}
+
+/** "September 25, 2026 (UTC)" — the date a receipt row shows. */
+function utcDate(d = new Date()): string {
+  return `${d.toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" })} (UTC)`;
+}
+
 /**
  * Sent from `events.createUser`, which Auth.js fires the first time a row is
  * written for an account — so this is "welcome", not "you signed in again".
  */
 export function welcomeUserEmail(to: string, name?: string | null): Email {
-  const greeting = name ? `Welcome, ${name.split(" ")[0]}.` : "Welcome.";
+  const first = name?.split(" ")[0];
+  const greeting = first ? `Welcome, ${first}.` : "Welcome.";
   const text = `${greeting}
 
 Your snapcn account is live. Two things it unlocks:
@@ -567,30 +678,29 @@ Your snapcn account is live. Two things it unlocks:
 
 Rendering the components locally with your own Remotion setup was never watermarked and never will be — that code is MIT and it is yours. The mark is only on videos our machines render.
 
+For help, reply to this email or write to ${SUPPORT}.
+
 — Sri`;
 
   return {
     to,
     subject: "Welcome to snapcn",
+    reply_to: SUPPORT,
     text,
-    html: shell({
-      // Transactional: it answers an action the reader just took, and it is not
-      // a list. No unsubscribe, and no chrome that reads as a campaign.
-      chrome: "plain",
+    html: accountShell({
       preheader: "Your account is live — saved videos and your keys.",
-      heading: greeting,
-      body: [
-        p("Your snapcn account is live. Two things it unlocks:"),
-        `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">
-        <tr><td style="padding:0 0 10px;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};">— The ${link("video editor", `${SITE}/docs/video-editor`)} saves what you build as you go.</td></tr>
-        <tr><td style="font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};">— Your plan and your API keys live on your ${link("account page", `${SITE}/account`)}.</td></tr>
-      </table>`,
-        p(
-          "Rendering the same components locally with your own Remotion setup was never watermarked and never will be — that code is MIT and it is yours. The mark is only on videos our machines render.",
-        ),
-        `<div style="margin:22px 0 6px;">${button("Open the video editor", `${SITE}/docs/video-editor`)}</div>`,
-        p("— Sri", `margin:18px 0 0;color:${C.muted};`),
-      ].join("\n      "),
+      greeting: first ? `Hi ${esc(first)},` : "Hi,",
+      heading: "Welcome to snapcn",
+      lead: `Your account is live. The ${alink("video editor", `${SITE}/docs/video-editor`)} saves what you build as you go.`,
+      rows: [
+        ["Account", esc(to)],
+        ["Plan and API keys", alink("Account page", `${SITE}/account`)],
+      ],
+      cta: {
+        label: "Open the video editor",
+        href: `${SITE}/docs/video-editor`,
+      },
+      note: "Rendering the components locally with your own Remotion setup was never watermarked and never will be — that code is MIT and it is yours. The mark is only on videos our machines render.",
     }),
   };
 }
@@ -608,23 +718,26 @@ Sign in with this address (${to}) to get your API key and the install steps:
 
 ${url}
 
+For help, reply to this email or write to ${SUPPORT}.
+
 — Sri`;
 
   return {
     to,
     subject: "Your snapcn Pro is ready",
+    reply_to: SUPPORT,
     text,
-    html: shell({
-      chrome: "plain",
+    html: accountShell({
       preheader: "Sign in with this address to get your API key.",
-      heading: "Your snapcn Pro is ready",
-      body: [
-        p(
-          `Sign in with this address (<strong>${esc(to)}</strong>) to get your API key and the install steps.`,
-        ),
-        `<div style="margin:22px 0 18px;">${button("Sign in and get your key", url)}</div>`,
-        p("— Sri", `margin:18px 0 0;color:${C.muted};`),
-      ].join("\n      "),
+      greeting: "Hi,",
+      heading: "Your Pro is ready",
+      lead: "Thanks for buying snapcn Pro. Sign in with the address you paid with to get your API key and the install steps.",
+      rows: [
+        ["Account", esc(to)],
+        ["Purchase date", utcDate()],
+      ],
+      cta: { label: "Sign in and get your key", href: url },
+      note: "Sign in with this exact address — the plan is attached to it.",
     }),
   };
 }

@@ -41,6 +41,13 @@ export const blog = defineDocs({
       /** Overrides the `<title>` where the H1 is written for the reader. */
       seoTitle: z.string().optional(),
       tags: z.array(z.string()).default([]),
+      /**
+       * Rendered as the post's closing FAQ *and* as `FAQPage` schema, from one
+       * list — Google only honours FAQ markup that is visible on the page.
+       */
+      faq: z
+        .array(z.object({ question: z.string(), answer: z.string() }))
+        .default([]),
     }),
     postprocess: {
       includeProcessedMarkdown: true,

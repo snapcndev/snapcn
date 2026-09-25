@@ -1,0 +1,116 @@
+---
+title: MCP servers for Remotion, explained
+seoTitle: Remotion MCP server — what exists in 2026 and how to set one up
+description: Remotion's own documentation MCP is deprecated in favour of a skill. What an MCP server still adds to a Remotion project, and how to set up snapcn's — search, real props, video plans and rendered frames inside Claude Code, Cursor or Codex.
+date: 2026-09-25
+tags:
+  - remotion
+  - ai
+  - mcp
+faq:
+  - question: Does Remotion have an MCP server?
+    answer: Remotion had a hosted documentation MCP server called remotion-documentation. Remotion's docs mark it deprecated, recommend the remotion-docs skill instead, and say the hosted server will shut down no earlier than August 31, 2026.
+  - question: What does the snapcn MCP server do?
+    answer: It gives a coding agent six tools, to search the snapcn component registry, read a component's real props, plan a whole video from a brief, render preview frames with your own Remotion CLI, measure a screen recording, and read snapcn's motion and design rules.
+  - question: Is the snapcn MCP server free?
+    answer: No. It is part of snapcn Pro and needs the key from your snapcn account. The free components install with the shadcn CLI without it.
+  - question: How do I add the snapcn MCP server to Claude Code?
+    answer: Run claude mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY with your Pro key in place of YOUR_KEY, then restart the Claude Code session.
+---
+
+**Short answer:** Remotion's own documentation MCP server is deprecated —
+Remotion now recommends a skill for docs. An MCP server is still worth adding
+when it gives the agent something docs cannot: a component catalogue it can
+search, real props, and rendered frames of its own work. snapcn's server does
+that, for Claude Code, Cursor, Codex and other clients, as part of snapcn Pro.
+
+## What Remotion offers agents
+
+Per Remotion's AI docs, as of September 2026:
+
+- **The Remotion MCP (`remotion-documentation`) is deprecated.** It served the
+  Remotion documentation. The docs note its data "can be less current than the
+  Remotion documentation", recommend migrating to the `/remotion-docs` skill, and
+  say the hosted MCP will shut down no earlier than August 31, 2026.
+- **Every docs page as markdown.** Append `.md` to a docs URL, or request it with
+  an `Accept: text/markdown` header. Agents such as Claude Code fetch the
+  markdown version automatically when given a docs link.
+- **Agent skills**, installed with `npx skills add remotion-dev/skills` or
+  offered by `npx create-video@latest`.
+
+So for "how does `interpolate()` work", a skill is now the answer. An MCP server
+earns its place only if it does work the agent cannot do by reading.
+
+## What an MCP server adds
+
+Docs tell an agent how to animate. They do not stop it improvising the
+animation, guessing props, or shipping frames it never looked at — the
+[mistakes agents make in Remotion](/why-ai-writes-bad-remotion-code). Tools can:
+
+| Tool | Job |
+| --- | --- |
+| `snapcn_search_components` | Describe a shot, get ranked components with length and install command |
+| `snapcn_component` | A component's tunable props, defaults, ranges and frame budget, read off the registry |
+| `snapcn_plan_video` | A one-line brief becomes beats, one component each, and a `TransitionSeries` skeleton |
+| `snapcn_preview` | Renders frames of your composition with your own Remotion CLI and returns the images |
+| `snapcn_analyze_recording` | Measures a screen recording: chrome to crop, where beats open, where to point the camera |
+| `snapcn_rules` | snapcn's motion and design rules, for the parts the agent writes itself |
+
+`snapcn_preview` is the one that changes results: the agent sees the frame it
+wrote and fixes it, instead of reporting success on a black screen.
+
+## Set it up
+
+You need Node 18 or newer and a [snapcn Pro](/docs/pricing) key, from your
+snapcn account. The key goes in the arguments; there is no env block.
+
+**Claude Code**
+
+```bash
+claude mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY
+```
+
+Restart the session. Add `--scope user` before the name to have it in every
+project.
+
+**Cursor** — `~/.cursor/mcp.json`, or `.cursor/mcp.json` for one project:
+
+```json
+{
+  "mcpServers": {
+    "snapcn": {
+      "command": "npx",
+      "args": ["-y", "@snapcn/mcp@latest", "SNAPCN_API_KEY=YOUR_KEY"]
+    }
+  }
+}
+```
+
+**Codex**
+
+```bash
+codex mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY
+```
+
+VS Code, Windsurf, Gemini CLI, Zed and others are on the [MCP page](/docs/mcp),
+each with the exact snippet. To check it worked, ask the agent to list the
+tools: there should be six.
+
+## Prompts to try
+
+- "Plan a 20-second launch video for this repo with snapcn. Dark mode."
+- "Find a snapcn component that shows our CLI install command running in a terminal."
+- "Measure public/demo.mp4 with snapcn and plan a product demo around it."
+- "Render frames 30 and 120 of the Video composition with snapcn and fix anything that looks wrong."
+
+<ComponentPreview name="agent-steps" />
+
+## Without Pro
+
+Everything the agent installs is still the free, MIT
+[component library](/docs/components) via `npx shadcn@latest add @snapcn/<name>`.
+Without the server, give the agent the [agent
+skill](/docs/getting-started/agent-skill) and snapcn's [llms.txt](/llms.txt) —
+that covers search and props, just not rendered previews or recording analysis.
+
+Next: [making videos with Claude Code and Remotion](/claude-code-remotion-videos).

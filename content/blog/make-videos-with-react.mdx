@@ -1,0 +1,141 @@
+---
+title: How to make videos with React, programmatically
+seoTitle: Make videos with React programmatically — Remotion from zero to MP4
+description: Remotion turns React components into MP4s. How it works, a minimal composition, rendering one template with many sets of props from the CLI or Node, and when code is the right way to make a video.
+date: 2026-09-24
+tags:
+  - remotion
+  - react
+faq:
+  - question: How do you make a video with React?
+    answer: Use Remotion. Write the video as a React component that reads the current frame with useCurrentFrame(), register it as a Composition with a size, fps and length, preview it in Remotion Studio, and render it with npx remotion render.
+  - question: Can I generate many videos from one React template?
+    answer: Yes. Give the composition props, then render it repeatedly with different values, from the CLI with the props flag or from Node with renderMedia and inputProps.
+  - question: Where can I render Remotion videos?
+    answer: Locally with the CLI, on your own server with the Node renderer APIs, or serverless with Remotion Lambda on AWS.
+  - question: Do CSS animations work in Remotion?
+    answer: No. Remotion renders frames independently and often in parallel, so animation must be computed from the frame number. CSS transitions and keyframes run on wall-clock time and do not render correctly.
+---
+
+**Short answer:** use **Remotion**. A video is a React component that reads the
+current frame with `useCurrentFrame()`; a `<Composition>` gives it a size, frame
+rate and length; `npx remotion render` screenshots every frame in a headless
+browser and encodes the MP4. Because it is a component, props make one template
+into as many videos as you have data.
+
+## How Remotion works
+
+A video is a function of time. Remotion gives your component the frame number and
+asks for that frame's UI. It renders every frame — in parallel, out of order —
+and stitches them together with audio. Two consequences:
+
+- **Everything animated must be computed from `frame`.** No `setTimeout`, no CSS
+  transitions, no state carried between frames.
+- **Everything the web can draw, a video can show** — CSS, SVG, canvas, WebGL,
+  fonts, your own design system.
+
+## A minimal video
+
+```bash
+npx create-video@latest
+```
+
+```tsx
+// src/Title.tsx
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+
+export const Title = ({ title }: { title: string }) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 20], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill
+      style={{ background: "white", alignItems: "center", justifyContent: "center" }}
+    >
+      <h1 style={{ fontSize: 96, opacity }}>{title}</h1>
+    </AbsoluteFill>
+  );
+};
+```
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { Title } from "./Title";
+
+export const RemotionRoot = () => (
+  <Composition
+    id="Title"
+    component={Title}
+    durationInFrames={90}
+    fps={30}
+    width={1920}
+    height={1080}
+    defaultProps={{ title: "Hello from React" }}
+  />
+);
+```
+
+`npx remotion studio` previews it with a scrubbable timeline;
+`npx remotion render Title out/title.mp4` renders it.
+
+## One template, many videos
+
+The point of making video in code is that the composition takes **props**.
+Render the same template with different values from the CLI:
+
+```bash
+npx remotion render Title out/acme.mp4 --props='{"title":"Welcome, Acme"}'
+```
+
+Or from Node, in a loop over your data:
+
+```ts
+import { bundle } from "@remotion/bundler";
+import { renderMedia, selectComposition } from "@remotion/renderer";
+
+const serveUrl = await bundle({ entryPoint: "./src/index.ts" });
+
+for (const customer of ["Acme", "Globex", "Initech"]) {
+  const inputProps = { title: `Welcome, ${customer}` };
+  const composition = await selectComposition({ serveUrl, id: "Title", inputProps });
+  await renderMedia({
+    composition,
+    serveUrl,
+    codec: "h264",
+    outputLocation: `out/${customer}.mp4`,
+    inputProps,
+  });
+}
+```
+
+Bundle once, render many. For volume, Remotion Lambda runs the same render on
+AWS, split across many functions.
+
+## When code is the right way to make a video
+
+- **The video is made of UI** — product demos, changelogs, onboarding. Your
+  components and CSS render as-is.
+- **You make it more than once** — per release, per customer, per locale.
+- **An agent writes it** — Claude Code and Cursor can write Remotion; they cannot
+  drive a timeline editor.
+
+It is the wrong tool for filmed footage and character animation — see
+[Remotion vs After Effects](/remotion-vs-after-effects).
+
+## Skip writing the motion
+
+The hard part is not the API; it is motion that looks professional. snapcn is a
+library of finished shots for Remotion — [text](/docs/text),
+[prompts and AI answers](/docs/ai-input), [devices and screens](/docs/screens),
+[captions](/docs/captions) — installed as source you own:
+
+```bash
+npx shadcn@latest add @snapcn/text-reveal
+```
+
+<ComponentPreview name="text-reveal" />
+
+Next: [how to make a product demo video in React](/product-demo-video-react).

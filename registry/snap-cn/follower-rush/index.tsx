@@ -12,6 +12,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import {
+  Item,
   parseColor,
   resolveFont,
   type SnapCnTheme,
@@ -632,28 +633,36 @@ export function FollowerRush({
             if (opacity <= 0.001) return null;
             const popScale = lerp(0.55, 1, popIn);
 
+            // The follower is the object Studio selects, by its place in
+            // `followers`. A pool shorter than the row shows one twice; the
+            // first copy is the one outlined.
             return (
-              <div
+              <Item
                 // biome-ignore lint/suspicious/noArrayIndexKey: slots are positional; the follower shown in a slot changes as the crowd scrolls, so keying by follower would remount every frame.
                 key={i}
-                style={{
-                  position: "absolute",
-                  left: cx,
-                  top: cy,
-                  transform: `translate(-50%, -50%) scale(${lerp(popScale, 1, sp)})`,
-                  opacity,
-                  zIndex: SLOTS - i, // leftmost on top
-                  willChange,
-                }}
+                index={(i + scrollUnit) % pool.length}
+                primary={i < pool.length}
               >
-                <Avatar
-                  follower={follower}
-                  size={D}
-                  ring={ring}
-                  theme={t}
-                  face={face}
-                />
-              </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: cx,
+                    top: cy,
+                    transform: `translate(-50%, -50%) scale(${lerp(popScale, 1, sp)})`,
+                    opacity,
+                    zIndex: SLOTS - i, // leftmost on top
+                    willChange,
+                  }}
+                >
+                  <Avatar
+                    follower={follower}
+                    size={D}
+                    ring={ring}
+                    theme={t}
+                    face={face}
+                  />
+                </div>
+              </Item>
             );
           })}
         </div>

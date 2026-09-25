@@ -1,0 +1,162 @@
+---
+title: How to install Remotion components with the shadcn CLI
+seoTitle: Install Remotion components with shadcn (npx shadcn add) — setup guide
+description: The shadcn CLI installs Remotion components as source into your video project. Remotion is not a framework shadcn recognises, so it takes three small config steps first — here they are, and the errors you hit without them.
+date: 2026-09-24
+tags:
+  - remotion
+  - shadcn
+  - setup
+faq:
+  - question: Does shadcn work with Remotion?
+    answer: Yes. The shadcn CLI can install components from any registry into a Remotion project. Because shadcn init does not recognise Remotion, you write components.json yourself and add the @ path alias to both tsconfig.json and remotion.config.ts.
+  - question: Why does my shadcn component import fail at render time in Remotion?
+    answer: Remotion's bundler does not read tsconfig paths. An @/ import resolves in your editor but fails in the render until you add the same alias to the bundler in remotion.config.ts.
+  - question: Why is my text invisible when I render a snapcn component?
+    answer: A Remotion render with no background is black, and components default to shadcn's light palette. Pass mode dark, or your own theme, or put a light background behind the scene.
+  - question: What does npx shadcn add @snapcn/text-reveal install?
+    answer: It copies text-reveal.tsx into src/components/snap-cn/ and the small lib/snap-cn-ui core it depends on, and installs any npm packages the component imports. You own and can edit every file.
+---
+
+**Short answer:** create a Remotion project, write a `components.json` by hand
+(`shadcn init` does not recognise Remotion), add the `@/` alias to **both**
+`tsconfig.json` and `remotion.config.ts`, then run
+`npx shadcn@latest add @snapcn/<name>`. The component's source lands in your
+project and is yours to edit.
+
+## Why shadcn for video components
+
+A video component is a thing you tweak — timing, copy, colour. The shadcn model
+fits that exactly: instead of an npm package you import and cannot change, the
+CLI **copies the source** into your project. No version pinning, no fighting a
+wrapper's props, no runtime dependency beyond Remotion.
+
+## 1. Start with a Remotion project
+
+```bash
+npx create-video@latest
+```
+
+## 2. Teach the project the `@/` alias — twice
+
+Components import `@/components/snap-cn/…` and `@/lib/snap-cn-ui`. A
+`create-video` project has no `@` alias, and **Remotion's bundler does not read
+`tsconfig` paths**, so an import that works in your editor fails in the render.
+Set it in both places:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] }
+  }
+}
+```
+
+On TypeScript 5, add `"baseUrl": "."` beside it. TypeScript 7 removed `baseUrl`
+and errors on it, so leave it out there.
+
+```ts title="remotion.config.ts"
+import path from "node:path";
+import { Config } from "@remotion/cli/config";
+import { enableTailwind } from "@remotion/tailwind-v4";
+
+Config.overrideBundlerConfig((config) => {
+  const c = enableTailwind(config);
+  return {
+    ...c,
+    resolve: {
+      ...c.resolve,
+      alias: { ...c.resolve?.alias, "@": path.join(process.cwd(), "src") },
+    },
+  };
+});
+```
+
+## 3. Write `components.json`
+
+The CLI reads this to know where files go. `npx shadcn@latest init` only writes
+one in a framework it recognises, and Remotion is not one, so create it:
+
+```json title="components.json"
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/index.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
+```
+
+## 4. Add a component
+
+```bash
+npx shadcn@latest add @snapcn/text-reveal
+```
+
+`@snapcn` is in the shadcn registry directory, so the CLI resolves the name with
+no extra config. The file lands in `src/components/snap-cn/`, along with anything
+it depends on. Several at once works too:
+
+```bash
+npx shadcn@latest add @snapcn/prompt-send @snapcn/answer-stream @snapcn/laptop-frame
+```
+
+## 5. Use it and render
+
+```tsx
+import { Composition } from "remotion";
+import { TextReveal } from "@/components/snap-cn/text-reveal";
+
+export const RemotionRoot = () => (
+  <Composition
+    id="HelloWorld"
+    component={TextReveal}
+    durationInFrames={60}
+    fps={30}
+    width={1280}
+    height={720}
+    defaultProps={{ text: "Hello, world", mode: "dark" }}
+  />
+);
+```
+
+```bash
+npx remotion render HelloWorld out.mp4
+```
+
+Note `mode: "dark"`. A render with no background of its own is **black**, and
+components default to shadcn's light palette — without it, near-black text lands
+on a near-black frame.
+
+<ComponentPreview name="text-reveal" />
+
+## Errors you will hit, and why
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `Module not found: @/components/...` at render, fine in the editor | Bundler has no `@` alias | Step 2, `remotion.config.ts` |
+| `shadcn init` does not set the project up | Remotion is not a framework it recognises | Write `components.json` by hand (step 3) |
+| `baseUrl` error from TypeScript | TypeScript 7 removed it | Delete `baseUrl` |
+| Render is a black frame, text invisible | Light palette on a black render | `mode="dark"` or a background |
+
+## Let an agent do it
+
+If you use Claude Code or Cursor, the snapcn
+[agent skill](/docs/getting-started/agent-skill) teaches it the catalogue and
+this setup: `npx skills add snapcndev/snapcn`.
+
+Next: [how to animate text in Remotion](/remotion-text-animations), or browse
+[all components](/docs/components).

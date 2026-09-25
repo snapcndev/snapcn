@@ -11,6 +11,7 @@ import {
   read,
   TILT,
   TRAVEL,
+  toCards,
 } from "../index";
 
 /**
@@ -57,5 +58,21 @@ describe("card-rail", () => {
   it("runs its backdrop across the frame rather than down it", () => {
     expect(ANGLE).toBeGreaterThan(90);
     expect(ANGLE).toBeLessThan(180);
+  });
+
+  it("reads one card per `|` entry, a URL alone being only a picture", () => {
+    expect(
+      toCards(
+        "data:image/png;base64,iVB= > Inbox > 4 screens > @acme/inbox | https://x.dev/a.webp | ",
+      ),
+    ).toEqual([
+      {
+        image: "data:image/png;base64,iVB=",
+        title: "Inbox",
+        note: "4 screens",
+        tag: "@acme/inbox",
+      },
+      { image: "https://x.dev/a.webp", title: "", note: "", tag: "" },
+    ]);
   });
 });

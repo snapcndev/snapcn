@@ -1,0 +1,155 @@
+---
+title: How to make a product demo video in React
+seoTitle: How to make a product demo video with React and Remotion
+description: Build a product demo video in React with Remotion — the five-beat structure that works, a screen recording with a camera and a cursor, and a rendered MP4, all in code.
+date: 2026-09-24
+tags:
+  - remotion
+  - product demo
+  - react
+faq:
+  - question: Can you make a video with React?
+    answer: Yes. Remotion renders React components frame by frame into an MP4. You write the video as components, preview it in the browser with Remotion Studio, and render it with npx remotion render.
+  - question: How long should a product demo video be?
+    answer: For a launch post or a landing page, 30 to 60 seconds. Show one job from start to finish, open on the result, and cut anything that does not move that job forward.
+  - question: Do I need a screen recording for a product demo?
+    answer: No. You can rebuild the UI as React components, which stays sharp at any zoom and is easy to edit. A screen recording works too, cropped and given a camera move so it reads as a shot rather than a capture.
+  - question: Is Remotion free for commercial use?
+    answer: Remotion is free for individuals and small companies; larger companies need a company license. Check remotion.dev/license for the current terms.
+---
+
+To make a product demo video in React, use **Remotion**: each scene is a React
+component, a `<Series>` puts them in order, and `npx remotion render` writes the
+MP4. Structure it in five beats — hook, problem, product, proof, call to action —
+and keep it under a minute.
+
+<ComponentPreview name="prompt-send" />
+
+## 1. Set up Remotion
+
+```bash
+npx create-video@latest
+cd my-video
+npx remotion studio
+```
+
+Studio opens in the browser with a timeline. Every composition in
+`src/Root.tsx` shows up there; scrub it, and what you see is exactly what renders.
+
+## 2. Plan five beats
+
+A demo that works is one job, shown end to end. At 30fps:
+
+| Beat | Length | What is on screen |
+| --- | --- | --- |
+| Hook | 2–3s | The result, or one line that names the pain |
+| Problem | 3–5s | The old way, briefly |
+| Product | 15–30s | The job, done in your product |
+| Proof | 3–5s | A number, a logo wall, a quote |
+| Call to action | 2–3s | Name, URL, install command |
+
+Open on the payoff, not the logo. People decide in the first two seconds whether
+to keep watching.
+
+## 3. Build the scenes as components
+
+Here is the whole video as one `<Series>`. Each beat is a component:
+
+```tsx
+// src/Demo.tsx
+import { AbsoluteFill, Series } from "remotion";
+import { TextReveal } from "@/components/snap-cn/text-reveal";
+import { PromptSend } from "@/components/snap-cn/prompt-send";
+import { ScreenRecording } from "@/components/snap-cn/screen-recording";
+import { CursorTrack } from "@/components/snap-cn/cursor-track";
+
+export const Demo = () => (
+  <AbsoluteFill style={{ background: "white" }}>
+    <Series>
+      <Series.Sequence durationInFrames={90}>
+        <TextReveal text="Invoices, sent before lunch" />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={165}>
+        <PromptSend text="Bill Acme for September's usage" chips={[]} />
+      </Series.Sequence>
+      <Series.Sequence durationInFrames={140}>
+        <CursorTrack
+          path={[
+            { at: 0, x: -0.06, y: 0.86, duration: 6 },
+            { at: 8, x: 0.34, y: 0.44, duration: 22, click: true },
+          ]}
+        >
+          <ScreenRecording
+            src="/recordings/checkout.mp4"
+            crop={{ top: 0.11 }}
+            camera={[
+              { at: 34, duration: 25, zoom: 1.6, x: 0.36, y: 0.42 },
+              { at: 96, duration: 25, zoom: 1 },
+            ]}
+          />
+        </CursorTrack>
+      </Series.Sequence>
+    </Series>
+  </AbsoluteFill>
+);
+```
+
+The components render with a transparent background, so the composition owns
+the backdrop — one colour, the whole video.
+
+## 4. Make the screen recording a shot
+
+A raw capture is not a shot. Three things turn it into one:
+
+- **Crop the chrome.** Browser tabs and the address bar say "recording". Crop them
+  off — [Screen Recording](/docs/screens/screen-recording) takes `crop` as fractions
+  of an edge, so it survives a re-record at another resolution.
+- **Move the camera.** Push in on the thing you are talking about, pull back when
+  you are done. A static 1080p screen is unreadable on a phone.
+- **Add the cursor back.** Most capture tools drop it.
+  [Cursor Track](/docs/screens/cursor-track) walks a pointer over any child and
+  pulses a ring on each click.
+
+Or skip the recording and put the UI in a device:
+[Laptop Frame](/docs/screens/laptop-frame) opens a MacBook and dives into the
+screen; [Phone Frame](/docs/screens/phone-frame) does the same for an iPhone.
+
+<ComponentPreview name="laptop-frame" />
+
+## 5. Register it and render
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { Demo } from "./Demo";
+
+export const RemotionRoot = () => (
+  <Composition
+    id="Demo"
+    component={Demo}
+    durationInFrames={395}
+    fps={30}
+    width={1920}
+    height={1080}
+  />
+);
+```
+
+```bash
+npx remotion render Demo out/demo.mp4
+```
+
+Render 1920×1080 for a landing page and 1080×1080 for X and LinkedIn — change
+`width` and `height`, and a well-built component reframes itself.
+
+## Where the components come from
+
+Every component above is from snapcn, installed as source into your project:
+
+```bash
+npx shadcn@latest add @snapcn/prompt-send @snapcn/screen-recording @snapcn/cursor-track
+```
+
+Browse the [AI input](/docs/ai-input), [screens](/docs/screens) and
+[scenes](/docs/scenes) categories for more beats, or try them without a Remotion
+project in the [video editor](/docs/video-editor).

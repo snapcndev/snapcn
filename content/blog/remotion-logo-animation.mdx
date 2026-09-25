@@ -1,0 +1,144 @@
+---
+title: Logo animations and stings in Remotion
+seoTitle: Remotion logo animation — build a logo sting in React
+description: Build a logo animation in Remotion — what makes a sting land (length, a sound on the hit, an end on a hold), a from-scratch mark-and-wordmark reveal, and six ready-made logo stings.
+date: 2026-09-25
+tags:
+  - remotion
+  - logos
+  - branding
+faq:
+  - question: How long should a logo sting be?
+    answer: Between about two and five seconds. The ready-made snapcn stings run from 52 frames (under two seconds) to 150 frames (five seconds) at 30fps. Anything longer stops being a sting and starts being a scene.
+  - question: How do you add a sound effect to a logo animation in Remotion?
+    answer: Wrap an Audio element in a Sequence whose from is the frame the logo lands on. Remotion plays the sound starting at that frame in the Player and mixes it into the rendered file.
+  - question: Should I scale the wordmark text in a logo animation?
+    answer: Avoid scaling type where you can. Scaled text judders because glyphs snap to whole pixels and hinting reshapes letters at every size. Reveal the wordmark with a clip and a small translate instead, and scale the mark, which is an image.
+  - question: Are there ready-made logo animations for Remotion?
+    answer: Yes. snapcn ships Logo Collapse, Logo Assemble, Logo Flicker, Logo Drift, Block Wordmark and Wordmark Cut. Each installs with npx shadcn@latest add @snapcn/<name> and takes your logo and brand name as props.
+---
+
+**Short answer:** a logo animation in Remotion is a short composition — two to
+five seconds — where the mark arrives, the wordmark reveals beside it, a sound
+lands on the hit, and the frame **holds** on the finished lockup. Scale the mark,
+clip-reveal the words, and put an `<Audio>` in a `<Sequence>` that starts on the
+landing frame.
+
+## What makes a sting land
+
+- **It is short.** A sting is punctuation, not a scene. The stings further down
+  run 52 to 150 frames at 30fps — under two seconds to five.
+- **It has one hit.** Every movement leads to a single frame where the logo is
+  finished. That is where the sound goes.
+- **It ends on a hold.** Half a second or more of the lockup sitting still. Cut
+  away mid-motion and nobody reads the name.
+- **It is simple at the end.** Whatever the build — cards, flicker, blocks — the
+  last frame is just the mark and the name.
+
+## A mark-and-wordmark reveal from scratch
+
+```tsx
+import {
+  AbsoluteFill,
+  Audio,
+  Img,
+  interpolate,
+  Sequence,
+  spring,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+const LAND = 18; // the frame the mark settles — the hit
+
+export const LogoSting = ({ name }: { name: string }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+
+  // The mark: a critically damped spring, so it settles without bouncing.
+  const mark = spring({ frame, fps, config: { damping: 200 }, durationInFrames: LAND });
+
+  // The wordmark: clipped open from the left and nudged in — no scale on type.
+  const reveal = interpolate(frame, [LAND, LAND + 14], [0, 1], clamp);
+
+  return (
+    <AbsoluteFill
+      style={{ alignItems: "center", justifyContent: "center", background: "#09090b" }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <Img
+          src={staticFile("logo.svg")}
+          style={{ width: 96, height: 96, opacity: mark, transform: `scale(${mark})` }}
+        />
+        <span
+          style={{
+            color: "white",
+            fontSize: 72,
+            fontWeight: 600,
+            clipPath: `inset(0 ${(1 - reveal) * 100}% 0 0)`,
+            transform: `translateX(${(1 - reveal) * -0.3}em)`,
+          }}
+        >
+          {name}
+        </span>
+      </div>
+      <Sequence from={LAND}>
+        <Audio src={staticFile("hit.wav")} />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
+```
+
+Register it at 30fps for about 60 frames: 18 to land, 14 to reveal the name, and
+the rest as the hold.
+
+Three choices in there are deliberate:
+
+- **`damping: 200` on the mark.** The default spring overshoots, and a logo that
+  wobbles past its size reads as cheap rather than playful.
+- **The wordmark is clipped, not scaled.** Scaled text judders: glyphs snap to
+  whole pixels vertically and the hinter reshapes letters at every size. A clip
+  and a translate keep the type pixel-stable.
+- **The sound is placed by frame.** `<Sequence from={LAND}>` starts the audio on
+  exactly the frame the mark lands, in the Player and in the render.
+
+## Six ready-made logo stings
+
+If you would rather not choreograph it yourself, snapcn has six. Each takes
+your logo and name as props and installs as source:
+
+| Component | The build | Length |
+| --- | --- | --- |
+| [Logo Collapse](/docs/logos/logo-collapse) | A stack of shots flicked through, collapsing into your mark, the wordmark landing beside it | 52 frames |
+| [Wordmark Cut](/docs/scenes/wordmark-cut) | A wordmark twice the frame's width, cooling from a lit gradient to ink, cut close on its last letters | 66 frames |
+| [Logo Flicker](/docs/logos/logo-flicker) | Images flip full-screen fast, then the flicker fades out as the logo fades in | 100 frames |
+| [Logo Assemble](/docs/logos/logo-assemble) | A ring of image cards orbits, collapses to the centre, and the logo is born there | 108 frames |
+| [Logo Drift](/docs/logos/logo-drift) | Integration tiles drift past a headline as the camera pulls back | 108 frames |
+| [Block Wordmark](/docs/logos/block-wordmark) | Blocks shuffle, split one per letter, flash and hard-cut to the letterforms | 150 frames |
+
+```bash
+npx shadcn@latest add @snapcn/logo-collapse
+```
+
+```tsx
+import { LogoCollapse } from "@/components/snap-cn/logo-collapse";
+
+<LogoCollapse mark="/logo/acme.png" wordmark="Acme" />;
+```
+
+<ComponentPreview name="logo-collapse" />
+
+Logo Drift is not a sting so much as an integrations beat — "works with the
+tools you already use" — and sits mid-video rather than at the end. Logo Flicker
+is a fast full-screen strobe; raise its `flipInterval` if it needs to be gentler
+for photosensitive viewers.
+
+<ComponentPreview name="block-wordmark" />
+
+Browse the [logos category](/docs/logos), or put a sting at the end of a
+[product demo video](/product-demo-video-react).
+
+Next: [how to animate text in Remotion](/remotion-text-animations).

@@ -1,0 +1,141 @@
+---
+title: How to animate a number counting up in Remotion
+seoTitle: Remotion counter animation — count-up numbers and follower counts
+description: Animate a number counting up in Remotion — interpolate and round, format with Intl.NumberFormat, stop the width jitter with tabular numbers, and count huge ranges on a log scale — plus drop-in follower and count scenes.
+date: 2026-09-25
+tags:
+  - remotion
+  - numbers
+  - social
+faq:
+  - question: How do you animate a number counting up in Remotion?
+    answer: Interpolate from the start value to the end value over a range of frames with clamped extrapolation, round the result, and format it with Intl.NumberFormat. Because it is computed from useCurrentFrame(), every frame of the render shows the right number.
+  - question: Why does my animated number jitter sideways?
+    answer: In most fonts each digit has a different width, so the number's width changes as it counts and anything centred around it shifts. Set font-variant-numeric to tabular-nums so every digit takes the same width, in a font that supports tabular figures.
+  - question: How do you count from 1 to a million without the start looking frozen?
+    answer: Interpolate the logarithm of the value instead of the value, then exponentiate. A linear count spends almost all of its time in the large numbers; a logarithmic one gives each order of magnitude equal time.
+  - question: Is there a ready-made follower count animation for Remotion?
+    answer: Yes. snapcn's Follower Rush piles up follower notifications while the count climbs to a total you set, and Count Grid fills a grid of cards as a count jumps from one number to another.
+---
+
+**Short answer:** interpolate from the start value to the end value over the
+frames you want, `Math.round()` it, and format it with `Intl.NumberFormat`. Set
+`font-variant-numeric: tabular-nums` so the digits do not change width as they
+count. For huge ranges, interpolate the logarithm so every order of magnitude
+gets equal time.
+
+<ComponentPreview name="follower-rush" />
+
+## 1. The basic count-up
+
+```tsx
+import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
+
+const format = new Intl.NumberFormat("en-US");
+
+export const Counter = ({ to = 12480 }: { to?: number }) => {
+  const frame = useCurrentFrame();
+  const value = interpolate(frame, [0, 45], [0, to], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <span style={{ fontSize: 120, fontVariantNumeric: "tabular-nums" }}>
+        {format.format(Math.round(value))}
+      </span>
+    </AbsoluteFill>
+  );
+};
+```
+
+Three details:
+
+- **Clamp both ends**, or the count keeps climbing past `to`.
+- **Create the formatter once**, outside the component — it is called every
+  frame.
+- **A cubic ease-out, not quint or expo.** An aggressive ease-out spends its last
+  dozen frames changing the number by less than one, so the final digits freeze
+  and then snap. A cubic lands in a frame or two.
+
+## 2. Stop the width jitter
+
+In most fonts a `1` is narrower than an `8`, so a counting number changes width
+every frame and anything centred on it wobbles sideways.
+`font-variant-numeric: tabular-nums` gives every digit the same advance. It only
+works if the font has tabular figures — most UI fonts do; check yours by
+rendering `111` above `888`.
+
+Thousands separators still add width when the number crosses 999 → 1,000. If the
+number sits in a line of text, anchor that edge — right-align it, or give it a
+`minWidth` in `ch` sized for the final value.
+
+## 3. Short numbers: 12.5K
+
+```tsx
+const compact = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+compact.format(12480); // "12.5K"
+compact.format(1200000); // "1.2M"
+```
+
+Compact notation jumps in visible steps (12.4K → 12.5K), which reads as a real
+counter updating rather than a blur of digits — often better for social numbers.
+
+## 4. Counting across orders of magnitude
+
+Count 1 → 1,000,000 linearly over 60 frames and the first frame is already past
+16,000 — the small numbers never show. Interpolate the logarithm instead:
+
+```tsx
+const value = Math.exp(
+  interpolate(frame, [0, 60], [Math.log(1), Math.log(1_000_000)], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  }),
+);
+```
+
+Now 1 → 10, 10 → 100 and 100,000 → 1,000,000 each take the same number of
+frames. That crawl-then-explode shape is what makes a milestone feel like one.
+
+## Drop-in scenes
+
+**[Follower Rush](/docs/social/follower-rush)** is the "we blew up" beat: an
+X-style "followed you" notification piles up into a stack of avatars while the
+count crawls to a couple dozen, then explodes on an eased exponential to your
+total and bends into a wave of faces.
+
+```bash
+npx shadcn@latest add @snapcn/follower-rush
+```
+
+```tsx
+import { FollowerRush } from "@/components/snap-cn/follower-rush";
+
+export const Milestone = () => <FollowerRush totalFollowers={5000} />;
+```
+
+Pass your own crowd as `followers` (`{ name, avatarId }`), and
+`orientation="vertical"` for 9:16.
+
+**[Count Grid](/docs/scenes/count-grid)** is a second-and-a-half beat for scale:
+a grid of cards rushes in and settles on a few, then every empty cell fills from
+the middle out as the count jumps.
+
+```tsx
+import { CountGrid } from "@/components/snap-cn/count-grid";
+
+export const Scale = () => <CountGrid from="5" to="500" noun="clips" />;
+```
+
+`from` and `to` are strings, so `"1"` and `"1k"` work too.
+
+<ComponentPreview name="count-grid" />
+
+Next: [how to make a SaaS demo video without After Effects](/saas-demo-video-without-after-effects).

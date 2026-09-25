@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { blogPosting, docsBreadcrumb, JsonLd } from "@/lib/structured-data";
+import { blogPosting, faqPage, JsonLd, SITE_URL } from "@/lib/structured-data";
 import { getMDXComponents } from "@/mdx-components";
 import { blogSource } from "@/source";
 
@@ -22,6 +22,7 @@ export default async function BlogPostPage(props: {
   if (!page) notFound();
 
   const MDX = page.data.body;
+  const { faq } = page.data;
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 pt-12 pb-20 md:pt-16 md:pb-28">
@@ -33,11 +34,28 @@ export default async function BlogPostPage(props: {
             date: page.data.date,
             url: page.url,
           }),
-          docsBreadcrumb(page.data.title, page.url),
+          {
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Blog",
+                item: `${SITE_URL}/blogs`,
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: page.data.title,
+                item: `${SITE_URL}${page.url}`,
+              },
+            ],
+          },
+          ...(faq.length ? [faqPage(page.url, faq)] : []),
         ]}
       />
       <Link
-        href="/blog"
+        href="/blogs"
         className="text-sm text-muted-foreground hover:text-foreground"
       >
         ← Blog
@@ -66,6 +84,17 @@ export default async function BlogPostPage(props: {
       ) : null}
       <div className="prose mt-10">
         <MDX components={getMDXComponents()} />
+        {faq.length ? (
+          <>
+            <h2 id="faq">FAQ</h2>
+            {faq.map(({ question, answer }) => (
+              <div key={question}>
+                <h3>{question}</h3>
+                <p>{answer}</p>
+              </div>
+            ))}
+          </>
+        ) : null}
       </div>
     </article>
   );

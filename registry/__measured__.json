@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "measuredAt": "2026-09-24T06:20:08.074Z",
+  "measuredAt": "2026-09-24T10:31:08.563Z",
   "components": {
     "agent-steps": {
       "sourceHash": "2ad029e1e05f",
@@ -93,7 +93,7 @@
       "detailCoverage": 0.0339
     },
     "card-rail": {
-      "sourceHash": "b39c3c4593ec",
+      "sourceHash": "00046e136669",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -111,20 +111,15 @@
       "detailCoverage": 0.2251
     },
     "channel-thread": {
-      "sourceHash": "85890bfe2db6",
+      "sourceHash": "c80758a0bf55",
       "width": 1280,
       "height": 720,
       "fps": 30,
       "durationInFrames": 110,
       "settle": {
         "base": 110,
-        "baseWords": 12,
+        "baseWords": 0,
         "perWord": 0
-      },
-      "copy": {
-        "prop": "people",
-        "pxPerChar": 37.67,
-        "maxChars": 34
       },
       "detailCoverage": 0.1331
     },
@@ -160,7 +155,7 @@
       "detailCoverage": 0.0011
     },
     "follower-rush": {
-      "sourceHash": "295e9c88e896",
+      "sourceHash": "359c9bd85ef0",
       "width": 1280,
       "height": 720,
       "fps": 30,
@@ -2332,11 +2327,6 @@
           "maxChars": 13,
           "atFontSize": null,
           "measuredWith": "Browse scenes"
-        },
-        "tags": {
-          "maxChars": 197,
-          "atFontSize": null,
-          "measuredWith": "@snapcn/orbit-gallery|@snapcn/moodboard-reveal|@snapcn/hero-launch|@snapcn/phone-frame|@snapcn/count-grid|@snapcn/terminal-simulator|@snapcn/logo-flicker|@snapcn/laptop-frame|@snapcn/announce-title"
         }
       },
       "detailCoverage": 0.22514,
@@ -2520,52 +2510,16 @@
           "pass": null,
           "frame": 126,
           "detail": "still animating on frame 126; the 18-frame transition starts at 90, so the next beat fades in over 37 frames of unfinished animation. Measured over 216 frames: at 13 chars the copy does not finish inside the component's own 108. Reported, not judged: the default copy already settles inside the transition overlap, so the copy length is not what did this."
-        },
-        {
-          "check": "capacity:titles",
-          "value": null,
-          "unit": "count",
-          "threshold": null,
-          "pass": null,
-          "detail": "changing this prop does not change a single frame — it is not copy the component lays out (an emphasis word that must match the body, a label the defaults never show). No copy budget to publish."
-        },
-        {
-          "check": "capacity:notes",
-          "value": null,
-          "unit": "count",
-          "threshold": null,
-          "pass": null,
-          "detail": "changing this prop does not change a single frame — it is not copy the component lays out (an emphasis word that must match the body, a label the defaults never show). No copy budget to publish."
-        },
-        {
-          "check": "settlesBeforeTransition@capacity:tags",
-          "value": 126,
-          "unit": "frames",
-          "threshold": 89,
-          "pass": null,
-          "frame": 126,
-          "detail": "still animating on frame 126; the 18-frame transition starts at 90, so the next beat fades in over 37 frames of unfinished animation. Measured over 216 frames: at 197 chars the copy does not finish inside the component's own 108. Reported, not judged: the default copy already settles inside the transition overlap, so the copy length is not what did this."
         }
       ]
     },
     "channel-thread": {
       "slug": "channel-thread",
       "settleFrame": null,
-      "settleFrameAtCapacity": 105,
+      "settleFrameAtCapacity": null,
       "neverSettles": true,
       "durationInFrames": 110,
-      "capacity": {
-        "script": {
-          "maxChars": 85,
-          "atFontSize": null,
-          "measuredWith": "Launch video by Thursday?|We have nothing shot.;Already done.|Built it out of snapcn."
-        },
-        "people": {
-          "maxChars": 34,
-          "atFontSize": null,
-          "measuredWith": "rhea 9:41 AM;sam 9:42 AM rhea 9:41"
-        }
-      },
+      "capacity": {},
       "detailCoverage": 0.13306,
       "subject": null,
       "measurements": [
@@ -2740,24 +2694,6 @@
           "pass": null,
           "detail": "partial [top] full-bleed [none]",
           "frame": 78
-        },
-        {
-          "check": "settlesBeforeTransition@capacity:script",
-          "value": 105,
-          "unit": "frames",
-          "threshold": 91,
-          "pass": null,
-          "frame": 105,
-          "detail": "still animating on frame 105; the 18-frame transition starts at 92, so the next beat fades in over 14 frames of unfinished animation. Measured over 220 frames: at 85 chars the copy does not finish inside the component's own 110. Reported, not judged: the default copy already settles inside the transition overlap, so the copy length is not what did this."
-        },
-        {
-          "check": "settlesBeforeTransition@capacity:people",
-          "value": 105,
-          "unit": "frames",
-          "threshold": 91,
-          "pass": null,
-          "frame": 105,
-          "detail": "still animating on frame 105; the 18-frame transition starts at 92, so the next beat fades in over 14 frames of unfinished animation. Measured over 220 frames: at 34 chars the copy does not finish inside the component's own 110. Reported, not judged: the default copy already settles inside the transition overlap, so the copy length is not what did this."
         }
       ]
     },

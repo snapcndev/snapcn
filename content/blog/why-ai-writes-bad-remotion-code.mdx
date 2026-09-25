@@ -1,0 +1,132 @@
+---
+title: Why AI writes bad Remotion code, and how to fix it
+seoTitle: Why AI agents write bad Remotion animations (and the fixes)
+description: Claude Code, Cursor and Codex write Remotion that compiles and still looks wrong — flicker, runaway values, bouncing type, stacked crossfades. The seven mistakes, why an agent makes each one, and the fix.
+date: 2026-09-25
+tags:
+  - remotion
+  - ai
+  - motion
+faq:
+  - question: Why does AI-generated Remotion code flicker when rendered?
+    answer: The agent used something that is not a function of the frame number, such as a CSS transition, Math.random() or Date.now(). Remotion renders frames in parallel and out of order, so those values differ between frames. Drive everything from useCurrentFrame() and use random(seed) from remotion.
+  - question: Why do values keep moving after an interpolate() in Remotion?
+    answer: interpolate() extrapolates past its output range by default. Pass extrapolateLeft and extrapolateRight set to clamp so the value stops at the ends.
+  - question: How do I stop an AI agent from writing bad Remotion animations?
+    answer: Give it context and components. Install Remotion's agent skills for the API, point it at a component library's llms.txt or MCP server so it composes tuned components instead of improvising motion, and have it render frames to check its own work.
+  - question: Why does animated text look shaky in an AI-written Remotion video?
+    answer: Scaling text from its centre moves the baseline across whole pixels, and font hinting reshapes the letters at every size. Pivot the scale on the baseline and set text-rendering to geometricPrecision.
+---
+
+**Short answer:** agents write Remotion the way they write web UI — with CSS
+transitions, random numbers and "make it pop" springs. A Remotion render is not
+a browser playing in real time, so that code compiles, previews almost right,
+and renders wrong. The fix is context (skills, `llms.txt`), components to compose
+instead of motion to invent, and making the agent look at rendered frames.
+
+This is the companion to [making videos with Claude Code and
+Remotion](/claude-code-remotion-videos), which covers the setup. This post is
+the failure list.
+
+## 1. Anything not driven by the frame
+
+The single rule of Remotion is that every visual value is a function of
+`useCurrentFrame()`. Frames render in parallel, in separate browser tabs, in any
+order. Agents break it three ways:
+
+| Agent writes | What happens | Write instead |
+| --- | --- | --- |
+| `transition: opacity 0.3s` / `@keyframes` | Frozen or wrong in the MP4 | `interpolate(frame, …)` |
+| `Math.random()` | Different value per frame — flicker | `random("seed")` from `remotion` |
+| `Date.now()`, `setTimeout`, `setInterval` | Tied to wall-clock, not the frame | Derive from `frame / fps` |
+
+```tsx
+import { random, useCurrentFrame } from "remotion";
+
+const frame = useCurrentFrame();
+const x = random(`star-${i}`) * 100; // same on every frame, every render
+```
+
+## 2. Unclamped interpolate
+
+`interpolate()` extrapolates by default. An agent writes a fade from frame 0 to
+20 and at frame 60 the opacity is 3; a slide keeps sliding off the frame.
+
+```tsx
+const opacity = interpolate(frame, [0, 20], [0, 1], {
+  extrapolateLeft: "clamp",
+  extrapolateRight: "clamp",
+});
+```
+
+## 3. Springs that bounce everything
+
+`spring()` with default config overshoots. On a button that is charm; on a
+headline or a whole scene it reads as a glitch. For type and full-frame moves,
+critically damp it:
+
+```tsx
+spring({ frame, fps, config: { damping: 200 } });
+```
+
+## 4. Crossfades that stack two scenes
+
+Ask for "a smooth transition" and you get `fade()`. Remotion's `fade()` keeps
+the outgoing scene at full opacity while the new one fades in on top — two
+headlines on the same pixels. Use `slide()` between scenes with centred content.
+The full breakdown: [why your Remotion scene transitions look
+broken](/remotion-scene-transitions-overlap).
+
+## 5. Text that judders while it scales
+
+"Zoom the title in" is a one-liner, and it looks cheap: the baseline climbs the
+pixel grid in whole-pixel steps and font hinting reshapes the letters every
+frame. Two fixes, both measured on rendered frames:
+
+- **Pivot the scale on the baseline**, not the centre of the box.
+- **`text-rendering: geometricPrecision`** so the letterforms stop changing shape.
+
+Agents also love `translateZ(0)` and `backface-visibility: hidden` "for
+performance" — they rasterise the text and make it worse. Details in
+[how to animate text in Remotion](/remotion-text-animations).
+
+## 6. Ease-outs that freeze
+
+Asked for something "snappy", agents reach for quint or expo ease-outs. On a
+30fps clock the last third of those curves moves under a pixel per frame, so the
+animation appears to stop early and then land. A cubic ease-out or a damped
+spring settles in a frame or two.
+
+## 7. Improvised motion
+
+The deeper problem is that an agent invents every animation from nothing, and
+invented motion is linear, evenly timed and the same in every scene. Motion that
+looks designed has holds, cuts, anticipation and settles that took someone
+frames of tuning.
+
+So do not ask the agent to animate. Ask it to **compose**: pick a tuned
+component per beat, fill in the copy, set the timing.
+
+```bash
+npx shadcn@latest add @snapcn/prompt-send @snapcn/answer-stream
+```
+
+<ComponentPreview name="answer-stream" />
+
+## Give the agent context
+
+- **Remotion's agent skills** — `npx skills add remotion-dev/skills` — teach the
+  API rules above.
+- **A library's `llms.txt`.** snapcn publishes
+  [llms.txt](/llms.txt), a full-text corpus and an exhaustive component list, so
+  the agent installs names that exist instead of guessing them.
+- **The snapcn [agent skill](/docs/getting-started/agent-skill)** —
+  `npx skills add snapcndev/snapcn` — with the catalogue, props and
+  anti-patterns.
+- **An [MCP server](/docs/mcp)** that returns a component's real props and can
+  render frames of the composition back to the agent, so it sees what it wrote.
+
+And whatever the setup, scrub it in Remotion Studio yourself. The agent cannot
+see motion.
+
+Next: [MCP servers for Remotion](/remotion-mcp-server).

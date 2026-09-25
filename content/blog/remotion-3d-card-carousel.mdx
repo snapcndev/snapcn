@@ -1,0 +1,160 @@
+---
+title: A 3D card carousel in Remotion
+seoTitle: Remotion 3D carousel — a card ring and a flicked card rail in React
+description: Build a 3D card carousel in Remotion — a ring of cards in CSS perspective, turned by a flick that decelerates instead of a timer — and when to use a tilted card rail instead.
+date: 2026-09-25
+tags:
+  - remotion
+  - 3d
+  - carousel
+faq:
+  - question: How do you make a 3D carousel in Remotion?
+    answer: Give a container CSS perspective and transform-style preserve-3d, place each card with rotateY of its angle and translateZ of the ring radius, and rotate the whole ring by an angle computed from the current frame.
+  - question: How do you work out the radius of a 3D card ring?
+    answer: For N cards of width w with no gap, the radius is w / 2 divided by tan(π / N). Add a little to the width for a gap between cards.
+  - question: Why does my Remotion carousel feel mechanical?
+    answer: It is probably turning at a constant rate or on a standard ease. A real carousel is flicked. It leaves fast and decelerates for a long time, so drive the offset with a curve that has a long tail, such as exponential decay, instead of a linear or cubic ease.
+  - question: Can I use CSS animations for a carousel in Remotion?
+    answer: No. CSS animations run on wall-clock time and a Remotion render does not play in real time. Every angle and offset must be computed from useCurrentFrame().
+---
+
+**Short answer:** give a container `perspective` and `transformStyle:
+"preserve-3d"`, place each card with `rotateY(angle) translateZ(radius)`, and turn
+the ring by an angle computed from `useCurrentFrame()`. Make the turn a
+**flick** — fast out, long deceleration — rather than a constant spin, or it
+reads as a screensaver.
+
+## A card ring from scratch
+
+```tsx
+import { AbsoluteFill, Img, useCurrentFrame } from "remotion";
+
+const CARD_W = 320;
+const CARD_H = 200;
+
+export const CardRing = ({ images }: { images: string[] }) => {
+  const frame = useCurrentFrame();
+  const n = images.length;
+  const step = 360 / n;
+  // Radius that puts the cards edge to edge, plus a 24px gap.
+  const radius = (CARD_W + 24) / 2 / Math.tan(Math.PI / n);
+
+  // A flick: moves two cards along, decelerating from frame 10.
+  const t = Math.max(0, frame - 10);
+  const turn = 2 * step * (1 - Math.exp(-t / 14));
+
+  return (
+    <AbsoluteFill
+      style={{ alignItems: "center", justifyContent: "center", perspective: 1400 }}
+    >
+      <div
+        style={{
+          position: "relative",
+          width: CARD_W,
+          height: CARD_H,
+          transformStyle: "preserve-3d",
+          transform: `translateZ(${-radius}px) rotateY(${-turn}deg)`,
+        }}
+      >
+        {images.map((src, i) => {
+          const angle = i * step;
+          // Cards facing away from the camera fade out rather than showing their backs.
+          const facing = Math.cos(((angle - turn) * Math.PI) / 180);
+          return (
+            <Img
+              key={i}
+              src={src}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: CARD_W,
+                height: CARD_H,
+                objectFit: "cover",
+                borderRadius: 12,
+                opacity: Math.max(0, facing),
+                transform: `rotateY(${angle}deg) translateZ(${radius}px)`,
+              }}
+            />
+          );
+        })}
+      </div>
+    </AbsoluteFill>
+  );
+};
+```
+
+How it fits together:
+
+- **The radius** is the one piece of geometry. For `n` cards of width `w`, the
+  ring that puts them edge to edge has radius `w / 2 / tan(π / n)`.
+- **`translateZ(-radius)` on the ring** pulls the whole thing back so the front
+  card sits at its natural size instead of pressed against the lens.
+- **Back cards fade by `cos(angle)`**, which is 1 facing the camera and 0 side
+  on. Fading them is gentler than `backface-visibility: hidden`, which pops
+  each card out the instant it turns edge-on.
+- **Every value is a function of `frame`.** Remotion renders frames in parallel
+  and out of order; nothing may depend on the frame before.
+
+## The flick is the whole feel
+
+The turn above is `1 − e^(−t/τ)`: it leaves at full speed and decelerates for
+the rest of the shot, never quite stopping on a snap. Change `τ` (14 here) to
+make it heavier or lighter.
+
+What to avoid:
+
+- **A constant spin.** Nothing in an interface turns at a steady rate. It reads
+  as a loading indicator.
+- **A cubic or quint ease-out.** They arrive too early and then crawl; on a
+  30fps clock the crawl reads as the carousel freezing.
+- **A bouncy spring.** A carousel under a thumb does not overshoot and come back.
+
+snapcn's Card Rail goes further and uses a curve measured off a real recording:
+it peaks three frames in and is still moving two pixels a frame a second later —
+a tail no standard ease has.
+
+## A rail on a tilted plane instead of a ring
+
+A ring shows off 3D. For showing **content** — templates, screens, products —
+a straight rail usually reads better, because every card faces the viewer.
+[Card Rail](/docs/scenes/card-rail) is that: cards flicked sideways across a
+plane tilted away from the camera, so the foot of each card runs wider than its
+head, with a title holding the top of the frame.
+
+```bash
+npx shadcn@latest add @snapcn/card-rail
+```
+
+```tsx
+import { CardRail } from "@/components/snap-cn/card-rail";
+
+<CardRail
+  heading="Browse templates"
+  cards={[
+    { image: "/shots/inbox.png", title: "Inbox", note: "4 screens", tag: "@acme/inbox" },
+    { image: "/shots/billing.png", title: "Billing", note: "3 screens", tag: "@acme/billing" },
+    // A picture alone is the whole card.
+    { image: "/shots/made-in-figma.png" },
+  ]}
+  flicks={3}
+  every={30}
+/>;
+```
+
+`flicks` is how many times the rail is pushed and `every` the frames between
+pushes. They add up the way repeated swipes do: a flick started while the last
+one is still creeping carries that creep with it. With three flicks you want at
+least six cards, or the repeat shows. A negative `from` opens the scene with the
+rail already moving.
+
+<ComponentPreview name="card-rail" />
+
+## Or a spiral
+
+For an opener rather than a browse, [Orbit Gallery](/docs/scenes/orbit-gallery)
+streams photos along a spiral from the frame edges into the centre, shrinking
+and turning to follow the coil, with a title held in the clear middle.
+
+<ComponentPreview name="orbit-gallery" />
+
+Next: [the Ken Burns effect in Remotion](/remotion-ken-burns-effect).

@@ -177,15 +177,47 @@ export function read(
   return last[1];
 }
 
+/** One card. Leave the words out and the picture is the whole card. */
+export interface RailCard {
+  image?: string;
+  title?: string;
+  /** A line of small print under the title. */
+  note?: string;
+  tag?: string;
+}
+
+const POSTERS = "https://media.snapcn.dev/demos/posters/";
+
+export const DEFAULT_CARDS: readonly RailCard[] = (
+  [
+    ["orbit-gallery", "Orbit Gallery", 300],
+    ["moodboard-reveal", "Moodboard Reveal", 150],
+    ["hero-launch", "Hero Launch", 170],
+    ["phone-frame", "Phone Frame", 240],
+    ["count-grid", "Count Grid", 47],
+    ["terminal-simulator", "Terminal Simulator", 200],
+    ["logo-flicker", "Logo Flicker", 100],
+    ["laptop-frame", "Laptop Frame", 240],
+    ["announce-title", "Announce Title", 170],
+  ] as const
+).map(([slug, title, frames]) => ({
+  image: `${POSTERS}${slug}.webp`,
+  title,
+  note: `Scene · ${frames} frames`,
+  tag: `@snapcn/${slug}`,
+}));
+
 export interface CardRailProps {
-  /** The pictures, split by `|`. The rail repeats them if it runs out. */
-  images?: string;
-  /** One title per card, split by `|`. Blank leaves the picture alone. */
-  titles?: string;
-  /** One line of small print per card, split by `|`. */
-  notes?: string;
-  /** One tag per card, split by `|`. */
-  tags?: string;
+  /**
+   * The cards, in order. The rail repeats them if it runs out.
+   *
+   * Also accepts one string, for the customizer and for quick edits: cards
+   * split by `|`, and each card's picture, title, small print and tag split by
+   * `>` — `"https://… > Inbox > 4 screens > @acme/inbox | https://…"`. A card
+   * that is only a URL is only a picture. Not commas or `;`: a data: URL has
+   * both.
+   */
+  cards?: readonly RailCard[] | string;
   /** The line that holds the top of the frame. */
   heading?: string;
   /** Frame the first flick starts on. Negative starts the scene already moving. */
@@ -211,10 +243,7 @@ export interface CardRailProps {
 }
 
 export function CardRail({
-  images = "https://media.snapcn.dev/demos/posters/orbit-gallery.webp|https://media.snapcn.dev/demos/posters/moodboard-reveal.webp|https://media.snapcn.dev/demos/posters/hero-launch.webp|https://media.snapcn.dev/demos/posters/phone-frame.webp|https://media.snapcn.dev/demos/posters/count-grid.webp|https://media.snapcn.dev/demos/posters/terminal-simulator.webp|https://media.snapcn.dev/demos/posters/logo-flicker.webp|https://media.snapcn.dev/demos/posters/laptop-frame.webp|https://media.snapcn.dev/demos/posters/announce-title.webp",
-  titles = "Orbit Gallery|Moodboard Reveal|Hero Launch|Phone Frame|Count Grid|Terminal Simulator|Logo Flicker|Laptop Frame|Announce Title",
-  notes = "Scene · 300 frames|Scene · 150 frames|Scene · 170 frames|Scene · 240 frames|Scene · 47 frames|Scene · 200 frames|Scene · 100 frames|Scene · 240 frames|Scene · 170 frames",
-  tags = "@snapcn/orbit-gallery|@snapcn/moodboard-reveal|@snapcn/hero-launch|@snapcn/phone-frame|@snapcn/count-grid|@snapcn/terminal-simulator|@snapcn/logo-flicker|@snapcn/laptop-frame|@snapcn/announce-title",
+  cards = DEFAULT_CARDS,
   heading = "Browse scenes",
   from = 0,
   flicks = 3,
@@ -233,10 +262,9 @@ export function CardRail({
   const u = height / REF_H;
   const ox = (width - REF_W * u) / 2;
 
-  const shots = columns(images);
-  const title = columns(titles);
-  const note = columns(notes);
-  const tag = columns(tags);
+  const deck = toCards(cards);
+  // No cards is a rail of blank ones, not a modulo by zero.
+  const count = Math.max(1, deck.length);
   const stops = split(backdrop);
   const only = stops.length === 1 ? (stops[0] ?? "") : "";
   const plate = only.startsWith("data:") || only.startsWith("/") ? only : "";
@@ -268,7 +296,7 @@ export function CardRail({
   const nearest = new Map<number, number>();
   for (let n = 0; n < span; n++) {
     const i = first + n;
-    const k = ((i % shots.length) + shots.length) % shots.length;
+    const k = ((i % count) + count) % count;
     const d = Math.abs(i * pitch - travelled + offset - (REF_W - CARD_W) / 2);
     const held = nearest.get(k);
     const dHeld =
@@ -356,15 +384,16 @@ export function CardRail({
             {Array.from({ length: span }, (_, n) => {
               const i = first + n;
               const x = i * pitch - travelled + offset;
-              const k = ((i % shots.length) + shots.length) % shots.length;
+              const k = ((i % count) + count) % count;
+              const card = deck[k] ?? {};
               return (
                 <Item key={i} index={k} primary={nearest.get(k) === i}>
                   <Card
                     x={x * u}
-                    src={shots[k] ?? ""}
-                    title={title[k] ?? ""}
-                    note={note[k] ?? ""}
-                    tag={tag[k] ?? ""}
+                    src={card.image ?? ""}
+                    title={card.title ?? ""}
+                    note={card.note ?? ""}
+                    tag={card.tag ?? ""}
                     t={t}
                     u={u}
                   />
@@ -384,15 +413,21 @@ const split = (s: string) =>
     .map((v) => v.trim())
     .filter(Boolean);
 
-/**
- * A per-card list: an empty entry is a card with nothing in that line, so it
- * keeps its place — dropping it would hand every later card its neighbour's.
- */
-const columns = (s: string) => {
-  const v = s.split("|").map((x) => x.trim());
-  while (v.length && !v[v.length - 1]) v.pop();
-  return v;
-};
+/** The string form of `cards`: see `CardRailProps.cards`. */
+export function toCards(
+  input: readonly RailCard[] | string,
+): readonly RailCard[] {
+  if (typeof input !== "string") return input;
+  return input
+    .split("|")
+    .filter((c) => c.trim())
+    .map((c) => {
+      const [image = "", title = "", note = "", tag = ""] = c
+        .split(">")
+        .map((v) => v.trim());
+      return { image, title, note, tag };
+    });
+}
 
 /**
  * One card: a picture, and under it a title and a line of small print. Forwards
