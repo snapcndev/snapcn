@@ -276,7 +276,7 @@ function Control({
               20px square. */}
           <ColorPicker
             id={id}
-            value={value as string}
+            value={(value as string) ?? ""}
             onValueChange={onChange}
             className="flex items-center gap-2"
           >

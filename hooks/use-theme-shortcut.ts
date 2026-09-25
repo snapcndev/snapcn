@@ -14,7 +14,8 @@ export function useThemeShortcut() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "d") return;
+      // `key` is undefined on the synthetic keydown Chrome fires for autofill.
+      if (event.key?.toLowerCase() !== "d") return;
       if (event.metaKey || event.ctrlKey || event.altKey) return;
 
       const target = event.target as HTMLElement | null;

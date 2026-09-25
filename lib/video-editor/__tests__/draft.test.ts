@@ -110,9 +110,12 @@ describe("draft — a hostile or stale draft cannot break the editor", () => {
     expect(out?.clips.map((c) => c.id)).toEqual(["b"]);
   });
 
-  it("drops duplicate ids — they break React keys and the budget maths", () => {
+  it("re-keys duplicate ids instead of dropping the clip", () => {
     put({ clips: [clip({ id: "dup" }), clip({ id: "dup" })] });
-    expect(loadDraft(anySlug)?.clips).toHaveLength(1);
+    const ids = loadDraft(anySlug)?.clips.map((c) => c.id);
+    expect(ids).toHaveLength(2);
+    expect(ids?.[0]).toBe("dup");
+    expect(new Set(ids).size).toBe(2);
   });
 
   it("clamps an absurd duration instead of dropping the clip", () => {

@@ -62,12 +62,6 @@ import { useEditorExport } from "./use-editor-export";
 import { useProjects } from "./use-projects";
 import { WatermarkBadge } from "./watermark-badge";
 
-let clipCounter = 0;
-function nextClipId() {
-  clipCounter += 1;
-  return `clip-${clipCounter}`;
-}
-
 export function VideoEditor({
   signedIn = false,
   canRemoveWatermark = false,
@@ -149,7 +143,17 @@ export function VideoEditor({
    * mount and every time a project is opened.
    */
   const restore = useCallback((draft: EditorDraft | null) => {
-    setClips(draft?.clips ?? []);
+    // A clip saved before its component grew a control has no value for it,
+    // and the properties panel crashed on the missing colour. Today's defaults
+    // fill the gaps; everything the clip did save wins.
+    setClips(
+      (draft?.clips ?? []).map((clip) => {
+        const controls = registry[clip.slug]?.config.controls;
+        return controls
+          ? { ...clip, props: { ...getDefaults(controls), ...clip.props } }
+          : clip;
+      }),
+    );
     setAudio(draft?.audio ?? null);
     setFont(draft?.font ?? DEFAULT_FONT);
     setBrandState(draft?.brand ?? EMPTY_BRAND);
@@ -213,7 +217,10 @@ export function VideoEditor({
       // the gallery showed it, not on an arbitrary black.
       const backdrop = entry.config.previewBackdrop;
       const clip: Clip = {
-        id: nextClipId(),
+        // Random, not a counter: a counter restarted at clip-1 on every load,
+        // while the restored project already held clip-1 — the new clip shared
+        // an id with an old one, and selecting it opened the old one.
+        id: crypto.randomUUID(),
         slug,
         props: getDefaults(entry.config.controls),
         durationInFrames: entry.config.durationInFrames,
