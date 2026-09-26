@@ -29,7 +29,14 @@ if (!KEY || !PROJECT_ID) {
   process.exit(0);
 }
 
-const release = process.env.SOURCE_COMMIT;
+// posthog-cli refuses to upload without a release version, and outside a git
+// checkout it cannot find one itself. Coolify only provides SOURCE_COMMIT to
+// the build when "Include Source Commit in Build" is on, so fall back to the
+// build's own timestamp rather than lose every upload. (Symbols are matched by
+// the chunk ids the CLI injects; the version only groups them.)
+const release =
+  process.env.SOURCE_COMMIT ||
+  `build-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
 const result = spawnSync(
   path.join(process.cwd(), "node_modules", ".bin", "posthog-cli"),
   [
@@ -39,7 +46,8 @@ const result = spawnSync(
     STATIC_DIR,
     "--release-name",
     "snapcn",
-    ...(release ? ["--release-version", release] : []),
+    "--release-version",
+    release,
   ],
   {
     stdio: "inherit",

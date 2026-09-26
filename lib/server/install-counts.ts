@@ -55,15 +55,20 @@ const HOST = (
  * Together they removed 17 of 663 installers — 2.6%. Small, and in the honest
  * direction: the badge already under-counted people and now under-counts
  * slightly more.
+ *
+ * It is HogQL, not ClickHouse SQL. HogQL will not parse a bare `not match(…)`
+ * after `and`, and it rejects `\(` inside a string literal. Either turns the
+ * whole query into a 400 and the badge silently disappears, hence `not(…)`
+ * and a character class for the literal "(+http".
  */
 const INSTALLERS = `
   from events
   where event = 'registry_component_fetched'
     and match(lower(coalesce(properties.user_agent, '')), '^(shadcn|node)')
-    and not match(
+    and not(match(
       lower(coalesce(properties.user_agent, '')),
-      'registry-|corpus|index|collector|vendor|\\(\\+http'
-    )
+      'registry-|corpus|index|collector|vendor|[(][+]http'
+    ))
     and distinct_id not in (
       select distinct_id from events
       where event = 'registry_pro_blocked'
