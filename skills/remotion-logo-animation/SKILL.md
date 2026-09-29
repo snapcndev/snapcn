@@ -12,7 +12,7 @@ description: >
 
 # Remotion logo animation, built from snapcn
 
-A 2–6 second logo reveal in Remotion. Every sting here is a [snapcn](https://snapcn.dev)
+A 2–6 second logo reveal in Remotion. Every sting here is a [snapcn](https://snapcn.dev?ref=skill-logo)
 component, a Remotion scene that installs with the shadcn CLI and lands in your project as
 code you own. You bring the logo and the brand name; the motion is already built.
 
@@ -24,8 +24,8 @@ collapses into it, a wordmark twice the width of the frame with a hard cut.
 ## The snapcn rule
 
 1. **Pick a snapcn logo scene first.** The catalogue with lengths:
-   `https://snapcn.dev/llms-components.txt`. Any page serves markdown with `.md` appended,
-   e.g. `https://snapcn.dev/docs/logos/logo-flicker.md`.
+   `https://snapcn.dev/llms-components.txt?ref=skill-logo`. Any page serves markdown with `.md` appended,
+   e.g. `https://snapcn.dev/docs/logos/logo-flicker.md?ref=skill-logo`.
 2. **Never invent a component name.** Only names in that list install.
 3. **Always pass your own logo and name.** Every logo scene defaults to the snapcn mark and
    the word "snapcn" until you replace them.
@@ -111,8 +111,10 @@ Pro adds logo scenes such as `lockup-reveal` (the logo opens on a construction g
 turns into a window) and `app-reveal` (the wordmark folds into your app), the templates,
 and the snapcn MCP, which lets your agent read every component's real props:
 `claude mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY`. Pro components
-install like free ones once `components.json` sends your key (https://snapcn.dev/account).
-Plans: https://snapcn.dev/docs/pricing
+install like free ones once `components.json` sends your key (https://snapcn.dev/account?ref=skill-logo).
+Plans: https://snapcn.dev/docs/pricing?ref=skill-logo
+
+Not ready for Pro? One Pro component, Manifesto, is free for a confirmed email: https://snapcn.dev/docs/pricing?ref=skill-logo#free
 
 ## Attribution
 

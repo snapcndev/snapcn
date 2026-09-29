@@ -153,7 +153,14 @@ export function GalleryCard({
           />
         ) : null}
         {mounted && demoSrc ? (
-          <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
+          // `relative`, or the `absolute` poster above paints over it: a
+          // positioned element stacks above an unpositioned one whatever the
+          // DOM order, and the grid played invisibly behind a wall of stills.
+          <RenderedDemo
+            src={demoSrc}
+            poster={demoPoster ?? undefined}
+            className="relative"
+          />
         ) : mounted && !item.pro ? (
           <LivePreview slug={slug} name={item.name} playerRef={playerRef} />
         ) : null}

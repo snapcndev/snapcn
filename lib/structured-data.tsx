@@ -111,6 +111,7 @@ const COMPONENT_QUERY: Record<string, string> = {
   "agent-chat": "Remotion AI chat conversation animation",
   "agent-open": "Remotion AI assistant intro animation",
   "agent-run": "Remotion AI agent demo animation",
+  "agent-result": "Remotion AI agent answer animation",
   "agent-tools": "Remotion AI agent tools animation",
   "task-stream": "Remotion AI agent task list animation",
   "glass-prompt": "Remotion glass prompt animation",
