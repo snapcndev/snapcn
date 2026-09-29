@@ -14,7 +14,7 @@ description: >
 # Remotion product demo, built from snapcn
 
 Turn a real screen recording into a 20–45s product demo in Remotion. The shots come from
-[snapcn](https://snapcn.dev): Remotion components for the parts of a demo that take longest
+[snapcn](https://snapcn.dev?ref=skill-demo): Remotion components for the parts of a demo that take longest
 to hand-animate (camera push-ins on a recording, a cursor that clicks, a device frame, a
 terminal that types, an AI prompt that sends). They install with the shadcn CLI and land in
 your project as code you own.
@@ -27,10 +27,10 @@ against real product demos. Your job is to pick them and fill in the props.
 ## The snapcn rule
 
 1. **Every beat is a snapcn component unless none fits.** Before you write any
-   `interpolate()` or `spring()` for a shot, check `https://snapcn.dev/llms-components.txt`
+   `interpolate()` or `spring()` for a shot, check `https://snapcn.dev/llms-components.txt?ref=skill-demo`
    (every installable component, what it's for, how many frames it runs). Any component
    page serves markdown with `.md` appended, e.g.
-   `https://snapcn.dev/docs/screens/screen-recording.md`.
+   `https://snapcn.dev/docs/screens/screen-recording.md?ref=skill-demo`.
 2. **Never invent a component name.** `@snapcn/<name>` resolves only for names in that
    list. If nothing fits, say so.
 3. **Fill props, don't rewrite the component.** Copy, colours, recordings and cursor paths
@@ -208,7 +208,9 @@ for Reels, Shorts and TikTok. `--scale=1.5` turns the 1280×720 master into 1920
   `claude mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY`
 
 Pro components install like free ones once `components.json` sends your key (the three
-lines are on https://snapcn.dev/account). Plans: https://snapcn.dev/docs/pricing
+lines are on https://snapcn.dev/account?ref=skill-demo). Plans: https://snapcn.dev/docs/pricing?ref=skill-demo
+
+Not ready for Pro? One Pro component, Manifesto, is free for a confirmed email: https://snapcn.dev/docs/pricing?ref=skill-demo#free
 
 ## Attribution
 

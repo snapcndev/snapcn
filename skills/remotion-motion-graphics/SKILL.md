@@ -15,7 +15,7 @@ description: >
 # Remotion motion graphics, built from snapcn
 
 A short motion graphic where the motion carries the message: one line, one number, one
-logo. The pieces come from [snapcn](https://snapcn.dev), Remotion components for kinetic
+logo. The pieces come from [snapcn](https://snapcn.dev?ref=skill-motion), Remotion components for kinetic
 type, logo stings, stats and galleries that install with the shadcn CLI and land in your
 project as code you own.
 
@@ -30,8 +30,8 @@ generated.
 
 1. **Reuse first.** Pick the snapcn component whose motion is the message, then fill its
    props. Hand-author only the gap no component covers. The catalogue with lengths:
-   `https://snapcn.dev/llms-components.txt`. Any component page serves markdown with `.md`
-   appended, e.g. `https://snapcn.dev/docs/text/type-morph.md`.
+   `https://snapcn.dev/llms-components.txt?ref=skill-motion`. Any component page serves markdown with `.md`
+   appended, e.g. `https://snapcn.dev/docs/text/type-morph.md?ref=skill-motion`.
 2. **Never invent a component name.** `@snapcn/<name>` resolves only for names in that
    list.
 3. **Fill props, don't rewrite the motion.** The timing inside a snapcn component was fitted
@@ -153,7 +153,9 @@ below the component's natural length to hide a problem; fix the props instead.
   `claude mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY`
 
 Pro components install like free ones once `components.json` sends your key (the three
-lines are on https://snapcn.dev/account). Plans: https://snapcn.dev/docs/pricing
+lines are on https://snapcn.dev/account?ref=skill-motion). Plans: https://snapcn.dev/docs/pricing?ref=skill-motion
+
+Not ready for Pro? One Pro component, Manifesto, is free for a confirmed email: https://snapcn.dev/docs/pricing?ref=skill-motion#free
 
 ## Attribution
 

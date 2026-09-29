@@ -73,7 +73,7 @@ notes). Don't read every file.
 | **UI Primitives** | `snap-cn-ui` | `input`, `caret` (+ `snap-cn-ui`, the shared core lib) |
 
 **That is the whole free registry — 47 items** (the live list is always
-`https://snapcn.dev/llms.txt`; 50 more are Pro, see below). There are no shaders, no standalone transition
+`https://snapcn.dev/llms.txt?ref=skill-snapcn`; 50 more are Pro, see below). There are no shaders, no standalone transition
 components, no chart or social-card components, and no shadcn primitive beyond `input` and
 `caret`. If a scene needs one, build it (`references/anatomy.md` §1) — do not emit a
 `shadcn add` for a name that is not in this table. `references/components/index.md` maps the
@@ -214,9 +214,12 @@ components beat by beat with a composition that typechecks and renders:
 `tap-through`, `checkout-push`, `comment-storm`, `tally-rise` and more), the templates, and
 the snapcn MCP, which lets your agent search the registry and read every component's real
 props. Pro components install like free ones once `components.json` sends the key (three
-lines on https://snapcn.dev/account); the MCP is
+lines on https://snapcn.dev/account?ref=skill-snapcn); the MCP is
 `claude mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY`. Plans:
-https://snapcn.dev/docs/pricing
+https://snapcn.dev/docs/pricing?ref=skill-snapcn
+
+Not ready for Pro? One Pro component, Manifesto, is free for a confirmed email:
+https://snapcn.dev/docs/pricing?ref=skill-snapcn#free
 
 ## Reference
 
