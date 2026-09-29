@@ -1,9 +1,12 @@
 "use client";
 
 import type { CaptureResult } from "posthog-js";
-import posthog from "posthog-js";
-import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { useEffect } from "react";
+import {
+  disablePostHog,
+  startPostHog,
+  withPostHog,
+} from "@/lib/posthog-client";
 
 /**
  * Boots posthog-js.
@@ -23,71 +26,91 @@ import { useEffect } from "react";
  * recipe predates `capture_pageview: "history_change"`, which makes the SDK
  * itself watch the History API and covers soft navigation without a component,
  * a Suspense boundary, or the double-fire that recipe is famous for.
+ *
+ * ## Why after `load`
+ *
+ * The SDK is imported once the page has loaded, not with it — see
+ * `lib/posthog-client.ts`. `init` still sends the landing pageview (with its
+ * URL and referrer) the moment it runs, and every event fired before then is
+ * queued and sent after it.
+ *
+ * No React context provider: nothing reads PostHog through `usePostHog`, and
+ * `posthog-js/react` was a second static import of the whole SDK.
  */
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
     // No key (a fork, a local checkout, a preview build) → no tracker, and every
     // `trackEvent` call downstream turns into a no-op rather than a crash.
-    if (!key) return;
+    if (!key) {
+      disablePostHog();
+      return;
+    }
 
-    posthog.init(key, {
-      api_host: "/ingest",
-      // Where the SDK sends people for the toolbar/debug links. The proxy above
-      // only covers ingestion, so this has to be the real dashboard host.
-      ui_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.posthog.com",
+    const boot = () =>
+      startPostHog((posthog) =>
+        posthog.init(key, {
+          api_host: "/ingest",
+          // Where the SDK sends people for the toolbar/debug links. The proxy above
+          // only covers ingestion, so this has to be the real dashboard host.
+          ui_host:
+            process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.posthog.com",
 
-      // App Router soft navigations, without a manual effect. See above.
-      capture_pageview: "history_change",
-      // Gives every pageview a duration, which is the only way to tell a docs
-      // page that was read from one that was bounced off.
-      capture_pageleave: true,
+          // App Router soft navigations, without a manual effect. See above.
+          capture_pageview: "history_change",
+          // Gives every pageview a duration, which is the only way to tell a docs
+          // page that was read from one that was bounced off.
+          capture_pageleave: true,
 
-      // Anonymous visitors are counted as events but do not each mint a person
-      // profile. On a marketing site that is the difference between a person
-      // count that reflects our users and one that reflects our crawlers.
-      // `identifyUser()` promotes someone the moment they sign in.
-      person_profiles: "identified_only",
+          // Anonymous visitors are counted as events but do not each mint a person
+          // profile. On a marketing site that is the difference between a person
+          // count that reflects our users and one that reflects our crawlers.
+          // `identifyUser()` promotes someone the moment they sign in.
+          person_profiles: "identified_only",
 
-      // Unhandled errors and rejections, reported with the session that caused
-      // them. Cheapest error monitoring that exists: one flag.
-      capture_exceptions: true,
+          // Unhandled errors and rejections, reported with the session that caused
+          // them. Cheapest error monitoring that exists: one flag.
+          capture_exceptions: true,
 
-      // Session replay. For a product whose entire pitch is "look at how this
-      // moves", watching one person fail to find the Customize panel is worth
-      // more than a month of aggregate counts. Inputs are masked by default.
-      //
-      // Off in development, and not for tidiness: `before_send` drops every dev
-      // event anyway, so the recorder has nothing to record — but it still
-      // fetches its own 60KB bundle through the `/ingest` rewrite on every page
-      // load. That is a server-side proxy hop to PostHog on a dev box, and when
-      // it resets it surfaces as a bare `TypeError: fetch failed` with
-      // ECONNRESET and no application frames, next to four "could not load
-      // recorder" lines. Both disappear when nothing asks for the recorder.
-      //
-      // And off at startup in production too — it is turned on below, once the
-      // page has loaded and gone idle. Starting it here put the recorder's 67KB
-      // download and its snapshot of the entire page into the same second as
-      // the hero, on every visit, and on a slow phone that second is several.
-      // Pageviews, clicks and identify are untouched: only the recording waits.
-      disable_session_recording: true,
+          // Session replay. For a product whose entire pitch is "look at how this
+          // moves", watching one person fail to find the Customize panel is worth
+          // more than a month of aggregate counts. Inputs are masked by default.
+          //
+          // Off in development, and not for tidiness: `before_send` drops every dev
+          // event anyway, so the recorder has nothing to record — but it still
+          // fetches its own 60KB bundle through the `/ingest` rewrite on every page
+          // load. That is a server-side proxy hop to PostHog on a dev box, and when
+          // it resets it surfaces as a bare `TypeError: fetch failed` with
+          // ECONNRESET and no application frames, next to four "could not load
+          // recorder" lines. Both disappear when nothing asks for the recorder.
+          //
+          // And off at startup in production too — it is turned on below, once the
+          // page has loaded and gone idle. Starting it here put the recorder's 67KB
+          // download and its snapshot of the entire page into the same second as
+          // the hero, on every visit, and on a slow phone that second is several.
+          // Pageviews, clicks and identify are untouched: only the recording waits.
+          disable_session_recording: true,
 
-      // `pnpm dev` would otherwise post local clicking-around into the same
-      // project the conversion numbers are read from. Events are still built and
-      // logged (`debug()`), just not sent — so you can verify wiring from the
-      // console. To verify end-to-end, run `pnpm build && pnpm start`: NODE_ENV
-      // is "production" there and events go out for real.
-      loaded: (ph) => {
-        if (process.env.NODE_ENV === "development") ph.debug();
-      },
-      before_send: (event) => {
-        if (process.env.NODE_ENV === "development") return null;
-        // Error tracking is only worth reading if everything in it is
-        // actionable. Three classes of noise are not — see `isNoise`.
-        if (event?.event === "$exception" && isNoise(event)) return null;
-        return event;
-      },
-    });
+          // `pnpm dev` would otherwise post local clicking-around into the same
+          // project the conversion numbers are read from. Events are still built and
+          // logged (`debug()`), just not sent — so you can verify wiring from the
+          // console. To verify end-to-end, run `pnpm build && pnpm start`: NODE_ENV
+          // is "production" there and events go out for real.
+          loaded: (ph) => {
+            if (process.env.NODE_ENV === "development") ph.debug();
+          },
+          before_send: (event) => {
+            if (process.env.NODE_ENV === "development") return null;
+            // Error tracking is only worth reading if everything in it is
+            // actionable. Three classes of noise are not — see `isNoise`.
+            if (event?.event === "$exception" && isNoise(event)) return null;
+            return event;
+          },
+        }),
+      );
+    if (document.readyState === "complete") boot();
+    else window.addEventListener("load", boot, { once: true });
+    return () => window.removeEventListener("load", boot);
   }, []);
 
   // Session replay, after the page is up. `startSessionRecording()` with no
@@ -101,11 +124,12 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       cancelIdleCallback?: (id: number) => void;
     };
     let idle = 0;
+    const record = () =>
+      withPostHog((posthog) => posthog.startSessionRecording());
     const start = () => {
       idle =
-        w.requestIdleCallback?.(() => posthog.startSessionRecording(), {
-          timeout: 3000,
-        }) ?? window.setTimeout(() => posthog.startSessionRecording(), 1000);
+        w.requestIdleCallback?.(record, { timeout: 3000 }) ??
+        window.setTimeout(record, 1000);
     };
     if (document.readyState === "complete") start();
     else window.addEventListener("load", start, { once: true });
@@ -116,7 +140,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  return <PHProvider client={posthog}>{children}</PHProvider>;
+  return children;
 }
 
 /**

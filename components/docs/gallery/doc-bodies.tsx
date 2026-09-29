@@ -1,6 +1,13 @@
 import { DocsBody } from "fumadocs-ui/page";
 import type { ReactNode } from "react";
-import { GALLERY_ITEMS, slugFromHref } from "@/lib/gallery-data";
+import { FaqSection } from "@/components/docs/faq-section";
+import {
+  CATALOGUE_ITEMS,
+  GALLERY_ITEMS,
+  ITEM_BY_SLUG,
+  slugFromHref,
+} from "@/lib/gallery-data";
+import { componentQuestions } from "@/lib/structured-data";
 import { getMDXComponents } from "@/mdx-components";
 import { source } from "@/source";
 
@@ -23,7 +30,7 @@ function pageForSlug(slug: string) {
 }
 
 /**
- * One component's documentation body, rendered from its MDX.
+ * One component's documentation body: its MDX, then its FAQ.
  *
  * This used to be `getDocBodies()`, which returned *every* component's body in
  * one record so the gallery page could hand the whole set to the overlay. That
@@ -32,24 +39,28 @@ function pageForSlug(slug: string) {
  * every client-side navigation, of which 800KB was documents nobody had asked
  * to read yet. Measured with and without: 835KB → 37KB.
  *
- * The MDX under `content/docs/**` is still the single source of truth, and it
- * is still what `/docs/<category>/<slug>` renders — this is the same body,
- * fetched when the overlay actually opens.
+ * The MDX under `content/docs/**` is still the single source of truth. The FAQ
+ * is the visible half of the component URL's `FAQPage` schema (see
+ * `componentQuestions`) — so it is here, where the panel shows it, and a paid
+ * component, which has no MDX, still gets a body.
  */
 export function docBodyFor(slug: string): ReactNode | null {
-  const page = pageForSlug(slug);
-  if (!page) return null;
+  const item = ITEM_BY_SLUG.get(slug);
+  if (!item) return null;
+  const page = item.pro ? null : pageForSlug(slug);
   // biome-ignore lint/suspicious/noExplicitAny: fumadocs page.data.body is loosely typed, matching app/docs/(docs)/[[...slug]]/page.tsx
-  const MDX = (page.data as any).body;
+  const MDX = page ? (page.data as any).body : null;
   return (
     <DocsBody>
-      <MDX components={OVERLAY_MDX} />
+      {MDX ? <MDX components={OVERLAY_MDX} /> : null}
+      <FaqSection questions={componentQuestions(slug, item)} />
     </DocsBody>
   );
 }
 
 /**
- * Which slugs have documentation at all.
+ * Which slugs have documentation — every component, since every one has at
+ * least its FAQ.
  *
  * A list of strings, not documents — small enough to ship with the page, which
  * is the point: the overlay has to choose between its two layouts (docs column
@@ -57,7 +68,5 @@ export function docBodyFor(slug: string): ReactNode | null {
  * find out would land the user on the wrong one and then reflow it.
  */
 export function slugsWithDocs(): string[] {
-  return GALLERY_ITEMS.map((item) => slugFromHref(item.href)).filter((slug) =>
-    Boolean(pageForSlug(slug)),
-  );
+  return CATALOGUE_ITEMS.map((item) => slugFromHref(item.href));
 }

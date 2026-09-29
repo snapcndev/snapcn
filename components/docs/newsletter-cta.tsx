@@ -9,8 +9,8 @@ import { NewsletterForm } from "@/components/newsletter-form";
  * copied the install line and left was never given a way to hear about the next
  * component, and that is most of the traffic this site gets.
  *
- * Deliberately a quiet strip rather than a second hero: it sits under
- * `RelatedComponents` at the end of the prose, where a reader who got this far
+ * Deliberately a quiet strip rather than a second hero: it sits at the end of
+ * the prose, where a reader who got this far
  * has already had the thing they came for. A docs page that opens with a
  * capture band is a docs page people stop linking to.
  *

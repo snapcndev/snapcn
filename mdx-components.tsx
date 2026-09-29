@@ -1,18 +1,31 @@
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
+import dynamic from "next/dynamic";
 import { Note, Warning } from "@/components/docs/callout";
 import { CategoryDoc } from "@/components/docs/category-doc";
 import { CategoryGrid } from "@/components/docs/category-grid";
 import { CollectionDoc } from "@/components/docs/collection-doc";
 import { ComponentCardGrid } from "@/components/docs/component-card-grid";
 import { ComponentExample } from "@/components/docs/component-example";
-import { ComponentPreview } from "@/components/docs/component-preview";
 import { ComponentSource } from "@/components/docs/component-source";
 import { Dependencies } from "@/components/docs/dependencies";
 import { DocsIndex } from "@/components/docs/docs-index";
 import { InstallAll } from "@/components/docs/install-all";
 import { InstallBlock } from "@/components/docs/install-block";
 import { PropsTable } from "@/components/docs/props-table";
+
+/**
+ * Loaded only by a page that renders one. Registered statically, it was in the
+ * shared client bundle of every docs page and post — Turbopack groups the
+ * client components a route *imports*, not the ones it renders — so an
+ * installation guide shipped the preview, its tabs and its customizer.
+ */
+const LazyComponentPreview = dynamic(() =>
+  import("@/components/docs/component-preview").then((m) => m.ComponentPreview),
+);
+function ComponentPreview(props: { name: string }) {
+  return <LazyComponentPreview {...props} />;
+}
 
 /**
  * MDX prose mapping for snapcn docs.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import { blogPosting, faqPage, JsonLd, SITE_URL } from "@/lib/structured-data";
 import { getMDXComponents } from "@/mdx-components";
 import { blogSource } from "@/source";
@@ -118,8 +119,8 @@ export async function generateMetadata(props: {
   const ogImage = `/og${url}`;
 
   return {
-    title,
-    description,
+    title: metaTitle(title),
+    description: metaDescription(description),
     alternates: { canonical: url },
     openGraph: {
       // `article`, not `website` — it is what makes a share card show a date.

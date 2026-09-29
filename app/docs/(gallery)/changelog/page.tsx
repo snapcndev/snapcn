@@ -7,8 +7,8 @@ import {
   CATALOGUE_COUNT,
   CATALOGUE_ITEMS,
   itemsByReleaseDate,
-  slugFromHref,
 } from "@/lib/gallery-data";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import {
   docsBreadcrumb,
   JsonLd,
@@ -21,8 +21,8 @@ const { title: TITLE, description: DESCRIPTION } = DOCS_PAGE_META["changelog"];
 const OG_IMAGE = "/og/changelog";
 
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: metaTitle(DOCS_PAGE_META.changelog.seoTitle ?? TITLE),
+  description: metaDescription(DESCRIPTION),
   alternates: {
     canonical: "/docs/changelog",
     // Declared so a reader's feed reader — and a crawler — can find it without
@@ -152,7 +152,7 @@ export default function ChangelogPage() {
                         page: the overlay is where a component is actually
                         demonstrated, and it is one back-button from here. */}
                     <Link
-                      href={`/docs/components?item=${slugFromHref(item.href)}`}
+                      href={item.href}
                       className="font-medium text-foreground underline-offset-4 hover:underline"
                     >
                       {item.name}

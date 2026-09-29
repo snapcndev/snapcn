@@ -1,8 +1,17 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-const WIDTH = 464;
-const HEIGHT = 409;
+/**
+ * The largest it is ever drawn (`h-8`), at the source's 464:409. `next/image`
+ * builds its srcset from these, so they are the rendered size, not the file's:
+ * at 464×409 it served a 1080px-wide PNG for a 32px mark, and with `priority`
+ * on both twins it preloaded the hidden one too — two early, high-priority
+ * requests on every page, racing the content for a phone's bandwidth.
+ * `lazy` on both: the twin the theme hides is `display: none` and is never
+ * fetched, and the visible one is in the viewport, so it loads at first layout.
+ */
+const WIDTH = 36;
+const HEIGHT = 32;
 
 /**
  * The snapcn mark, as a light/dark pair.
@@ -27,7 +36,7 @@ export function SnapCnLogo({ className }: { className?: string }) {
         alt="snapcn"
         width={WIDTH}
         height={HEIGHT}
-        priority
+        loading="lazy"
         className={cn(size, "dark:hidden")}
       />
       {/* Decorative twin: the light copy above already carries the alt text, so
@@ -38,7 +47,7 @@ export function SnapCnLogo({ className }: { className?: string }) {
         aria-hidden
         width={WIDTH}
         height={HEIGHT}
-        priority
+        loading="lazy"
         className={cn(size, "hidden dark:block")}
       />
     </>

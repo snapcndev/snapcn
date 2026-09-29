@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import { ROADMAP, STAGE_LABEL, type Stage } from "@/lib/roadmap-data";
 import {
   docsBreadcrumb,
@@ -16,8 +17,8 @@ const { title: TITLE, description: DESCRIPTION } = DOCS_PAGE_META["roadmap"];
 const OG_IMAGE = "/og/roadmap";
 
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: metaTitle(DOCS_PAGE_META.roadmap.seoTitle ?? TITLE),
+  description: metaDescription(DESCRIPTION),
   alternates: { canonical: "/docs/roadmap" },
   openGraph: {
     type: "website",

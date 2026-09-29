@@ -5,7 +5,10 @@ import { z } from "zod";
 export const docs = defineDocs({
   dir: "content/docs",
   docs: {
-    schema: pageSchema,
+    schema: pageSchema.extend({
+      /** Overrides the `<title>` where the H1 is a bare label ("Installation"). */
+      seoTitle: z.string().optional(),
+    }),
     postprocess: {
       includeProcessedMarkdown: true,
     },

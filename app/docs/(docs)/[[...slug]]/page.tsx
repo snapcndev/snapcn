@@ -1,11 +1,10 @@
 import { DocsBody, DocsDescription, DocsTitle } from "fumadocs-ui/page";
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { notFound, permanentRedirect } from "next/navigation";
-import { Fragment } from "react";
-import { InstallBlock } from "@/components/docs/install-block";
+import { FaqSection } from "@/components/docs/faq-section";
+import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { DocsNewsletterCta } from "@/components/docs/newsletter-cta";
-import { ProCta } from "@/components/docs/pro-cta";
-import { RelatedComponents } from "@/components/docs/related-components";
 import { collectionBySlug, collectionItems } from "@/lib/collections";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import {
@@ -18,10 +17,8 @@ import {
   slugFromHref,
 } from "@/lib/gallery-data";
 import { collectDocsPages } from "@/lib/llms";
-import { CATALOGUE_PRICE, PRO_SAMPLE } from "@/lib/plans";
-import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
-import { RenderedDemo } from "@/lib/rendered-demos";
-import { installCounts, MIN_SHOWN } from "@/lib/server/install-counts";
+import { metaDescription, metaTitle } from "@/lib/meta";
+import { proDemoSrc } from "@/lib/pro-demos";
 import {
   categoryItemList,
   categoryQuestions,
@@ -41,11 +38,15 @@ import { source } from "@/source";
 const SITE_URL = "https://snapcn.dev";
 
 /**
- * Rebuilt daily rather than once per deploy, for the install counts: they are a
- * 30-day window, so a page baked at build time would show last month's number
- * until the next release.
+ * Only a component URL renders the gallery. Imported statically, its explorer,
+ * panel and cards were in the client bundle of every prose page in this route
+ * too — see `mdx-components.tsx` for why an import is enough.
  */
-export const revalidate = 86400;
+const ComponentsGallery = dynamic(() =>
+  import("@/components/docs/gallery/components-gallery").then(
+    (m) => m.ComponentsGallery,
+  ),
+);
 
 const AUTHOR = {
   "@type": "Person",
@@ -62,8 +63,11 @@ const AUTHOR = {
  * parameter is not a page: it cannot carry its own title, description, canonical
  * or schema, so twenty-two long-tail intents competed for one result.
  *
- * The gallery overlay is unchanged and is still how the gallery is browsed. It
- * simply is no longer the *only* place a component's documentation exists.
+ * So the URL, its title, description, canonical and schema stay. What it
+ * *shows* is the gallery with that component's panel open — the one way a
+ * component is presented anywhere on the site (see `ComponentsGallery`). It
+ * used to be a separate article page, which meant every component looked two
+ * different ways depending on how you arrived at it.
  */
 
 export default async function Page(props: {
@@ -79,12 +83,7 @@ export default async function Page(props: {
     if (pro.href !== `/docs/${params.slug?.join("/")}`) {
       permanentRedirect(pro.href);
     }
-    return (
-      <ProComponentPage
-        item={pro}
-        installers={(await installCounts())?.total}
-      />
-    );
+    return <ProComponent item={pro} />;
   }
 
   const data = page.data as any;
@@ -108,12 +107,8 @@ export default async function Page(props: {
   const slug = page.slugs[page.slugs.length - 1] ?? "";
   const demoSrc = renderedDemoSrc(slug);
   const demoPoster = renderedDemoPoster(slug);
-  // Only for a page with a component behind it: a prose page has no install
-  // command to answer with, and a FAQ invented for one would be the drift
-  // this helper exists to avoid.
-  // A category index is the other page that can answer a real question: it is
-  // a hub for a whole query ("remotion text animations"), and it shipped with
-  // nothing quotable on it at all.
+  // A category index can answer a real question: it is a hub for a whole query
+  // ("remotion text animations"), and it shipped with nothing quotable on it.
   const category = isCategoryIndex(page.slugs) ? page.slugs[0] : undefined;
   const categoryItems = category
     ? CATALOGUE_ITEMS.filter((i) => i.category === category)
@@ -125,6 +120,7 @@ export default async function Page(props: {
       ? collectionBySlug(page.slugs[1])
       : undefined;
   const collectionCards = collection ? collectionItems(collection) : [];
+  // A component's are rendered in its panel, under the docs (`docBodyFor`).
   const questions =
     item && slug
       ? componentQuestions(slug, item)
@@ -133,9 +129,6 @@ export default async function Page(props: {
         : collection && collectionCards.length > 0
           ? collectionQuestions(collection.query, collectionCards)
           : [];
-  const installers = item
-    ? (await installCounts())?.byComponent[slug]
-    : undefined;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -192,35 +185,44 @@ export default async function Page(props: {
   // `app/docs/(docs)/layout.tsx`) — no fumadocs `DocsPage`, so there's no TOC
   // rail or breadcrumb, matching the Components page. The prose is centred in a
   // readable, roomy-enough column for the inline component previews.
+  if (item) {
+    return (
+      <>
+        <JsonLd graph={jsonLd["@graph"]} />
+        <ComponentsGallery open={slug} />
+      </>
+    );
+  }
+
+  // The layout is only the frame: a component URL renders the gallery, which
+  // brings its own top bar (`GalleryHeaderRow`), so the prose page brings this one.
   return (
-    <article className="mx-auto w-full max-w-4xl pt-4 pb-16 md:pt-6 md:pb-20">
-      <script
-        type="application/ld+json"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD built from page frontmatter
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <DocsTitle
-        style={{ fontFamily: "var(--font-display)" }}
-        className="text-4xl font-semibold tracking-tight text-balance md:text-5xl lg:text-6xl"
-      >
-        {data.title}
-      </DocsTitle>
-      <DocsDescription className="mt-3 mb-0 max-w-3xl text-balance text-lg text-muted-foreground md:text-xl">
-        {data.description}
-      </DocsDescription>
-      {installers !== undefined && installers >= MIN_SHOWN ? (
-        <InstalledBy count={installers} />
-      ) : null}
-      <DocsBody className="mt-8">
-        <MDX components={getMDXComponents()} />
-        <FaqSection questions={questions} />
-      </DocsBody>
-      {/* Renders nothing on a page that is not a component. */}
-      <RelatedComponents slug={page.slugs.at(-1) ?? ""} />
-      {/* Every docs page, not just component ones — a guide reader is as good
+    <>
+      <DocsTopBar />
+      <article className="mx-auto w-full max-w-4xl pt-4 pb-16 md:pt-6 md:pb-20">
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD built from page frontmatter
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <DocsTitle
+          style={{ fontFamily: "var(--font-display)" }}
+          className="text-4xl font-semibold tracking-tight text-balance md:text-5xl lg:text-6xl"
+        >
+          {data.title}
+        </DocsTitle>
+        <DocsDescription className="mt-3 mb-0 max-w-3xl text-balance text-lg text-muted-foreground md:text-xl">
+          {data.description}
+        </DocsDescription>
+        <DocsBody className="mt-8">
+          <MDX components={getMDXComponents()} />
+          <FaqSection questions={questions} />
+        </DocsBody>
+        {/* Every docs page, not just component ones — a guide reader is as good
           an address as a component reader, and this is the only ask on them. */}
-      <DocsNewsletterCta />
-    </article>
+        <DocsNewsletterCta />
+      </article>
+    </>
   );
 }
 
@@ -258,7 +260,7 @@ export async function generateMetadata(props: {
     ? {
         url: page.url,
         slugs: page.slugs,
-        name: page.data.title,
+        name: page.data.seoTitle ?? page.data.title,
         summary: page.data.description ?? "",
         category: galleryItemByHref(page.url)?.category,
       }
@@ -281,8 +283,8 @@ export async function generateMetadata(props: {
   );
 
   return {
-    title,
-    description,
+    title: metaTitle(title),
+    description: metaDescription(description),
     alternates: { canonical: data.url },
     openGraph: {
       type: "article",
@@ -302,54 +304,7 @@ export async function generateMetadata(props: {
 }
 
 /**
- * The visible half of the FAQPage schema — same list, so they cannot disagree.
- *
- * Inside the prose body so it reads as the page's last section, and `#faq` is
- * the `@id` the schema points at. Backticks in an answer are inline code.
- */
-function FaqSection({
-  questions,
-}: {
-  questions: { question: string; answer: string }[];
-}) {
-  if (questions.length === 0) return null;
-  return (
-    <>
-      <h2 id="faq">Frequently asked questions</h2>
-      {questions.map(({ question, answer }) => (
-        <Fragment key={question}>
-          <h3>{question}</h3>
-          <p>
-            {answer
-              .split("`")
-              .map((part, i) =>
-                i % 2 ? <code key={part}>{part}</code> : part,
-              )}
-          </p>
-        </Fragment>
-      ))}
-    </>
-  );
-}
-
-/**
- * The proof on a free component's page: how many developers installed it.
- *
- * Distinct CLI and agent installers over 30 days — see `installCounts` for what
- * is and is not counted, and `MIN_SHOWN` for why a small number shows nothing.
- */
-function InstalledBy({ count }: { count: number }) {
-  return (
-    <p className="mt-3 mb-0 flex items-center gap-2 text-muted-foreground text-sm">
-      <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
-      Installed by {count.toLocaleString("en-US")} developers in the last 30
-      days
-    </p>
-  );
-}
-
-/**
- * A paid component's page: the video, how it moves, the price, the install.
+ * A paid component's URL: its schema, and the gallery with its panel open.
  *
  * It used to have no page at all — the card linked to a redirect — so the
  * forty-four pro components could not be found by searching for what they do,
@@ -357,14 +312,7 @@ function InstalledBy({ count }: { count: number }) {
  * search engine could land on. There is no MDX behind it (the source is
  * private), so everything here is the catalogue entry the card already shows.
  */
-function ProComponentPage({
-  item,
-  installers,
-}: {
-  item: GalleryItem;
-  /** Everyone who installed a snapcn component this month — there is no per-Pro count until Pro sells. */
-  installers?: number;
-}) {
+function ProComponent({ item }: { item: GalleryItem }) {
   const slug = slugFromHref(item.href);
   const url = `${SITE_URL}${item.href}`;
   // The OG card doubles as the video's thumbnail: the pro demos have no poster
@@ -373,14 +321,12 @@ function ProComponentPage({
   const ogImage = `${SITE_URL}/og${item.href.slice("/docs".length)}`;
   const demoSrc = proDemoSrc(slug);
   const lead = firstSentence(item.description);
-  const rest = item.description.startsWith(lead)
-    ? item.description.slice(lead.length).trim()
-    : "";
-  const questions = componentQuestions(slug, item);
   const category = GALLERY_CATEGORIES.find((c) => c.id === item.category);
   const dated = item.added
     ? { datePublished: item.added, dateModified: item.added }
     : {};
+  // Rendered in the panel, under the video — see `docBodyFor`.
+  const questions = componentQuestions(slug, item);
 
   const graph = [
     {
@@ -426,52 +372,10 @@ function ProComponentPage({
   ];
 
   return (
-    <article className="mx-auto w-full max-w-4xl pt-4 pb-16 md:pt-6 md:pb-20">
+    <>
       <JsonLd graph={graph} />
-      <DocsTitle
-        style={{ fontFamily: "var(--font-display)" }}
-        className="text-4xl font-semibold tracking-tight text-balance md:text-5xl lg:text-6xl"
-      >
-        {item.name}
-      </DocsTitle>
-      <DocsDescription className="mt-3 mb-0 max-w-3xl text-balance text-lg text-muted-foreground md:text-xl">
-        {lead}
-      </DocsDescription>
-      <DocsBody className="mt-8">
-        {demoSrc ? (
-          // The free pages' preview frame (`ComponentPreview`), so the two read
-          // as one kind of page.
-          <div className="not-prose surface-card relative aspect-video w-full overflow-hidden rounded-2xl">
-            <RenderedDemo
-              src={demoSrc}
-              poster={proDemoPoster(slug) ?? undefined}
-            />
-          </div>
-        ) : null}
-        {/* Pricing for a reader without Pro, the install for one with it —
-            decided in the browser, since this page is static. */}
-        <ProCta
-          name={item.name}
-          sampleTitle={PRO_SAMPLE.title}
-          meta={`${PRO_GALLERY_ITEMS.length} Pro components · ${CATALOGUE_PRICE.annual} a year or ${CATALOGUE_PRICE.lifetime} once${
-            installers && installers >= MIN_SHOWN
-              ? ` · ${installers.toLocaleString("en-US")} developers installed snapcn components this month`
-              : ""
-          }`}
-        />
-        {rest ? (
-          <>
-            <h2 id="how-it-moves">How it moves</h2>
-            <p>{rest}</p>
-          </>
-        ) : null}
-        <h2 id="installation">Installation</h2>
-        <InstallBlock name={slug} />
-        <FaqSection questions={questions} />
-      </DocsBody>
-      <RelatedComponents slug={slug} />
-      <DocsNewsletterCta />
-    </article>
+      <ComponentsGallery open={slug} />
+    </>
   );
 }
 

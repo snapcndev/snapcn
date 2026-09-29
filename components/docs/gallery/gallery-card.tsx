@@ -40,8 +40,11 @@ const LivePreview = dynamic(() => import("./live-preview"), { ssr: false });
 export function GalleryCard({
   item,
   onOpen,
+  priority = false,
 }: {
   item: GalleryItem;
+  /** In the first row: its poster is the page's LCP, so fetch it first. */
+  priority?: boolean;
   /** When provided, a plain click opens the overlay instead of navigating.
    *  May return the state-commit promise so the morph can wait for it. */
   onOpen?: (slug: string) => unknown;
@@ -97,6 +100,10 @@ export function GalleryCard({
       ref={cardRef}
       {...cardAttr(slug)}
       href={item.href}
+      // A plain click opens the panel in place; nothing navigates. Prefetching
+      // was a route payload per visible card — 227KB of fetches racing the
+      // first posters for the connection on `/docs/components`.
+      prefetch={false}
       onClick={handleClick}
       title={item.name}
       aria-label={`${item.name}: ${item.description}`}
@@ -128,6 +135,23 @@ export function GalleryCard({
       style={{ aspectRatio }}
     >
       <div ref={containerRef} className="absolute inset-0">
+        {/* The poster, in the server HTML. The video below only mounts once
+            the card has hydrated and been seen, so until then the card was an
+            empty box and the first row's LCP could not start downloading
+            before the page's JavaScript had run. Same URL as the video's
+            poster, so it is one fetch; the video covers it once it mounts. */}
+        {demoPoster ? (
+          // biome-ignore lint/performance/noImgElement: a fixed-size still under a <video>; next/image would re-encode an already-optimised webp and add a wrapper
+          <img
+            src={demoPoster}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+            className="absolute inset-0 size-full object-contain"
+          />
+        ) : null}
         {mounted && demoSrc ? (
           <RenderedDemo src={demoSrc} poster={demoPoster ?? undefined} />
         ) : mounted && !item.pro ? (

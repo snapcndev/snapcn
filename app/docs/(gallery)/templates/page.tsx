@@ -10,6 +10,7 @@ import { PRO_ITEMS } from "@/config/catalogue";
 import { DOCS_PAGE_META } from "@/config/site";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import { ITEM_BY_SLUG } from "@/lib/gallery-data";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import { CATALOGUE_PRICE, CATALOGUE_PROMISE, EARLY_BIRD } from "@/lib/plans";
 import { RenderedDemo } from "@/lib/rendered-demos";
 import { cn } from "@/lib/utils";
@@ -19,8 +20,8 @@ const { title: TITLE, description: DESCRIPTION } = DOCS_PAGE_META.templates;
 const OG_IMAGE = "/og/templates";
 
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: metaTitle(DOCS_PAGE_META.templates.seoTitle ?? TITLE),
+  description: metaDescription(DESCRIPTION),
   alternates: { canonical: "/docs/templates" },
   openGraph: {
     type: "website",

@@ -92,41 +92,51 @@ export const NAV_LINKS: NavLink[] = [
  */
 export interface DocsPageMeta {
   title: string;
+  /** The `<title>`, where `title` is a bare label ("Changelog") — see lib/meta.ts. */
+  seoTitle?: string;
   description: string;
 }
 
 export const DOCS_PAGE_META: Record<string, DocsPageMeta> = {
   "video-editor": {
     title: "Video Editor",
+    seoTitle: "Online Video Editor for Remotion Components",
     description:
       "Compose a video from snapcn components — add clips, edit text and images, and export an MP4.",
   },
   "remotion-studio": {
     title: "Remotion Studio",
+    seoTitle: "Remotion Studio — add components in one click",
     description:
-      "Add a snapcn component to your Remotion project in one click: the site sends it to the Remotion Studio running on your computer, which installs it and puts it on your timeline. No CLI, no components.json. Every free component.",
+      "Add a snapcn component to your Remotion project in one click: Remotion Studio on your computer installs it and puts it on your timeline. No CLI needed.",
   },
   mcp: {
     title: "MCP Server",
+    seoTitle: "Remotion MCP Server for Claude Code and Cursor",
     description:
-      "Add the snapcn MCP server to Claude Code, Cursor, VS Code, Codex, Windsurf or Gemini CLI. Your agent searches the registry, reads real props and plans a Remotion video from a one-line brief. Included with snapcn Pro.",
+      "Add the snapcn MCP server to Claude Code, Cursor, VS Code, Codex, Windsurf or Gemini CLI. Your agent reads real props and plans a Remotion video. In Pro.",
   },
   pricing: {
     title: "Pricing",
+    seoTitle: "Pricing — snapcn Pro, the MCP server and exports",
     description: `The free components stay free and MIT. Pro is every Pro component, the MCP server and watermark-free 1080p exports — ${CATALOGUE_PRICE.annual} a year, ${CATALOGUE_PRICE.lifetime} once, or ${CATALOGUE_PRICE.commercial} for a team.`,
   },
   changelog: {
     title: "Changelog",
-    description: "Every component in snapcn, by the day it landed.",
+    seoTitle: "Changelog — new Remotion components by date",
+    description:
+      "Every Remotion component in snapcn, by the day it landed — new animations, captions, logo stings and scenes, each installable with the shadcn CLI.",
   },
   roadmap: {
     title: "Roadmap",
+    seoTitle: "Roadmap — what's next for snapcn components",
     description:
       "What snapcn is, what is being built next, and what is only an idea so far.",
   },
   templates: {
     title: "Templates",
-    description: `Around ten finished videos land on ${CATALOGUE_PROMISE.templatesOn} — a launch film, a feature walkthrough, a changelog clip — composed from the registry and ready to render with your own copy. Every one is included in Pro, and the early-bird prices run until then.`,
+    seoTitle: "Remotion Video Templates — launch, demo, changelog",
+    description: `Around ten finished Remotion videos land on ${CATALOGUE_PROMISE.templatesOn} — launch film, feature walkthrough, changelog clip — ready to render with your copy. In Pro.`,
   },
 };
 

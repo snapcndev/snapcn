@@ -5,6 +5,7 @@ import { ProBanner } from "@/components/pro-banner";
 import { VideoEditor } from "@/components/video-editor/video-editor";
 import { PRO_ITEMS } from "@/config/catalogue";
 import { DOCS_PAGE_META } from "@/config/site";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import { planFor } from "@/lib/server/entitlements";
 import {
   docsBreadcrumb,
@@ -20,8 +21,8 @@ const { title: TITLE, description: DESCRIPTION } =
 const OG_IMAGE = "/og/video-editor";
 
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: metaTitle(DOCS_PAGE_META["video-editor"].seoTitle ?? TITLE),
+  description: metaDescription(DESCRIPTION),
   alternates: { canonical: "/docs/video-editor" },
   openGraph: {
     type: "website",
@@ -102,6 +103,9 @@ export default async function VideoEditorPage({
   return (
     <GalleryFrame fill>
       <JsonLd graph={jsonLd} />
+      {/* The editor is all controls and no heading; the page still needs one
+          to be named by — for a screen reader's heading list and for search. */}
+      <h1 className="sr-only">snapcn {TITLE}</h1>
       <div className="flex h-full flex-col">
         <ProBanner
           count={PRO_ITEMS.length}

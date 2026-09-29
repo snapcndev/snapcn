@@ -15,6 +15,17 @@ import { ThemeShortcut } from "./theme-shortcut";
  * than re-derived, so the two sites stay one voice. (Serrif came over with it and
  * was never set on anything; it is gone.)
  *
+ * Subset to Latin, as the Google faces below are (`subsets: ["latin"]`): the
+ * full files were 55KB a weight — 788 glyphs, Latin Extended, IPA, seven
+ * stylistic sets — on every page, of which the site sets ~250 characters. Now
+ * 26KB. Everything the site's text uses outside Latin-1 (— … ⌘ ← → “ ” − π ≈ ≥
+ * ⁵) is kept; a glyph that is not falls back to the system face for that one
+ * character. To re-subset a new cut (fonttools + brotli):
+ *
+ *   pyftsubset Saans-Regular.woff2 --flavor=woff2 \
+ *     --layout-features=kern,liga,calt,ccmp,locl,tnum,case,mark,mkmk \
+ *     --unicodes=U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2070-209F,U+20AC,U+2122,U+2190-2199,U+2212,U+2215,U+2248,U+2260,U+2264-2265,U+2318,U+03C0,U+FEFF,U+FFFD
+ *
  * These are the *site's* faces only. `--font-geist-sans` below is a separate
  * thing and must stay: the registry's scenes render through it, and a Remotion
  * bundle has none of this CSS, so a locally-hosted face would silently fall
