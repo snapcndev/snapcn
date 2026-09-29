@@ -2,7 +2,7 @@
 
 Router for the per-component reference files in this directory. **Scan this table to pick candidates, then open only the `components/<name>.md` files you actually need** — do not read every file.
 
-The registry ships **36 items**. If a name is not in this file, it is not installable — check *Older names* at the bottom before assuming it exists.
+The registry ships **47 free items** (plus 50 Pro components that need a key — see the snapcn skill's Pro section). If a name is not in this file, it is not installable — check *Older names* at the bottom before assuming it exists.
 
 Install any entry: `shadcn add @snapcn/<name>` (lands at `components/snap-cn/<name>.tsx`; deps auto-install).
 
@@ -94,6 +94,25 @@ Overlays that sit on top of a scene.
 | Component | Use for | Avoid for | Length | Vibe |
 |---|---|---|---|---|
 | [`pulsing-border`](pulsing-border.md) | A scene needs to read as 'generating' or 'thinking' without a spinner. | You need a full animated background — this is a border overlay and `colorBack` is transparent… | 180f | tech |
+
+## Newer components
+
+Shipped after the per-component files above were written. Props: read the installed source,
+or fetch `https://snapcn.dev/docs/<category>/<name>.md`.
+
+| Component | Use for | Avoid for | Length | Vibe |
+|---|---|---|---|---|
+| `punch-lines` | A run of full-frame statements with hard cuts — a manifesto or promise. Script: `\|` starts a card, `/` a line. | One quiet line — use `text-reveal`. | 144f | premium |
+| `word-gather` | A short sentence that arrives out of order and settles — a tagline. | Lines over ~8 words; the scatter gets busy. | 49f | clean |
+| `word-wheel` | A fixed lead-in with a slot that spins through audiences or use-cases ("snapcn for …"). Pass `words` comma-separated. | One word only — use `text-reveal`. | 66f | playful |
+| `orb-swarm` | A sentence told beat by beat with glass orbs that swarm and ring the last words. `script` is six cards split with `\|`. | Tight budgets — it needs its full 160 frames. | 160f | playful |
+| `count-grid` | The "it scales" stat: cards multiply and a counter jumps (`from`, `to`, `noun`). | A number with no proof behind it. | 47f | data |
+| `roster-grant` | A cursor clicks a CTA and a team's avatars switch on — access granted, seats filled. | Solo products; it reads as teams. | 120f | clean |
+| `card-rail` | Feature or template cards flicked across a tilted 3D plane. | A single hero image — use `moodboard-reveal`. | 108f | premium |
+| `reel-collage` | A quick photo reel that shuts into a collage between two captions. | Screenshots of UI; built for photos. | 96f | playful |
+| `channel-thread` | A Slack-style work chat filling itself in — the team reacting to the launch. | Consumer chat — use `answer-stream` for AI replies. | 110f | social |
+| `logo-collapse` | A short intro: a stack of shots flicks through and collapses into your mark. | Long bumpers — use `logo-flicker` or `logo-assemble`. | 52f | premium |
+| `wordmark-cut` | The end card: a huge wordmark, then a hard cut to its last letters. | Long names; it reads best at 4–8 characters. | 66f | premium |
 
 ## UI Primitives
 

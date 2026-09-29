@@ -59,6 +59,12 @@ const nextConfig: NextConfig = {
     // cache the same pages sat at 0% CPU, and cold compiles were no slower
     // (/docs/components 5.3s without it, 8.4s with). Re-enable once Next prunes it.
     turbopackFileSystemCacheForDev: false,
+    // Inline CSS saves the render-blocking round trip for the stylesheet.
+    // Measured head to head (Lighthouse, real slow-4G + 4x CPU throttling):
+    // LCP 0.8–1.4s inlined vs 1.6–2.1s linked. The cost is that Next also
+    // serialises the stylesheet twice into the RSC payload, so every byte of
+    // CSS ships three times — keep `app/globals.css` lean; dead `components/ui`
+    // files cost CSS whether or not anything renders them.
     inlineCss: true,
   },
   // One canonical host. `www.` and the apex both served a 200, so Google saw two

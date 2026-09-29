@@ -1,0 +1,17 @@
+{
+  "name": "snapcn",
+  "description": "Agent skills that build Remotion videos from snapcn components: launch videos, product demos, motion graphics, kinetic type, logo animations and explainers.",
+  "version": "1.0.0",
+  "author": { "name": "snapcn", "url": "https://snapcn.dev" },
+  "homepage": "https://snapcn.dev",
+  "repository": "https://github.com/snapcndev/snapcn",
+  "license": "MIT",
+  "keywords": [
+    "remotion",
+    "video",
+    "shadcn",
+    "motion-graphics",
+    "launch-video",
+    "product-demo"
+  ]
+}

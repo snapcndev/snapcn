@@ -11,7 +11,7 @@ import {
   distinctIdFromCookie,
 } from "@/lib/analytics-server";
 import { MEDIA_BASE } from "@/lib/demo-urls";
-import { suggestComponents } from "@/lib/registry-suggest";
+import { COMPONENT_ALIASES, suggestComponents } from "@/lib/registry-suggest";
 
 /**
  * Every component that actually exists, from the same manifests the registry is
@@ -114,11 +114,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (pathname.startsWith("/demos/")) return demoRedirect(request);
   const requested = componentFromPath(pathname);
+  // A name people type for a component we ship under another one installs it.
+  const alias = requested ? COMPONENT_ALIASES[requested] : undefined;
   // Answer the miss here rather than letting it fall through to the HTML 404.
   // The analytics below still runs either way — `after()` is attached to
   // whichever response we return.
-  const response =
-    requested && !KNOWN_COMPONENTS.has(requested)
+  const response = alias
+    ? NextResponse.rewrite(new URL(`/r/${alias}.json`, request.url))
+    : requested && !KNOWN_COMPONENTS.has(requested)
       ? unknownComponent(requested, request.nextUrl.origin)
       : NextResponse.next();
 
@@ -155,7 +158,7 @@ export async function middleware(request: NextRequest) {
       return;
     }
 
-    const component = componentFromPath(pathname);
+    const component = alias ?? componentFromPath(pathname);
     if (component) {
       // A pro name with no key cannot become an install, whatever the route
       // decides — so it must not be counted as one. With a key it might, and
@@ -170,7 +173,7 @@ export async function middleware(request: NextRequest) {
             ? "registry_pro_blocked"
             : "registry_component_fetched",
         distinctId,
-        { ...shared, component },
+        { ...shared, component, ...(alias && { alias: requested }) },
       );
     }
   });

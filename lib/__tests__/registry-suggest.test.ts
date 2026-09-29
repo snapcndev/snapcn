@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { INSTALL_ALL_NAMES } from "@/config/catalogue";
-import { suggestComponents } from "@/lib/registry-suggest";
+import { ALL_COMPONENT_NAMES, INSTALL_ALL_NAMES } from "@/config/catalogue";
+import { COMPONENT_ALIASES, suggestComponents } from "@/lib/registry-suggest";
 
 const suggest = (q: string) => suggestComponents(q, INSTALL_ALL_NAMES);
 
@@ -53,6 +53,16 @@ describe("suggestComponents", () => {
   it("is not confused by an empty or absurd name", () => {
     expect(suggest("")).toEqual([]);
     expect(suggest("-".repeat(200))).toEqual([]);
+  });
+});
+
+describe("COMPONENT_ALIASES", () => {
+  it("points every alias at a free component that exists, and shadows none", () => {
+    for (const [alias, target] of Object.entries(COMPONENT_ALIASES)) {
+      // Free only: the rewrite serves the static file, which a Pro item never has.
+      expect(INSTALL_ALL_NAMES, alias).toContain(target);
+      expect(ALL_COMPONENT_NAMES, alias).not.toContain(alias);
+    }
   });
 });
 

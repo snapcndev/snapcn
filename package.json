@@ -24,6 +24,7 @@
     "render:previews": "node scripts/render-previews.mts",
     "cuts": "node scripts/cuts.mts",
     "motion:measure": "node scripts/motion-check.mts",
+    "sitemap:dates": "node scripts/page-dates.mts",
     "postinstall": "fumadocs-mdx",
     "split:pro": "node scripts/split-pro.mts",
     "db:migrate": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs migrate"

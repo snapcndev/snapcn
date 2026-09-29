@@ -18,7 +18,13 @@ import { GITHUB_URL, X_URL } from "@/config/site";
 import { DOCS_NAV } from "@/lib/docs-nav";
 import { CATALOGUE_COUNT, GALLERY_COUNT } from "@/lib/gallery-data";
 import { cn } from "@/lib/utils";
-import { DOCS_SECTIONS, sectionBadge, useSectionActive } from "./section-nav";
+import {
+  DOCS_SECTIONS,
+  NavLink,
+  PendingDot,
+  sectionBadge,
+  useSectionActive,
+} from "./section-nav";
 
 /**
  * The gallery's fixed left rail (desktop only), shared by every `/docs/*`
@@ -121,7 +127,7 @@ function SidebarBody({
         {DOCS_SECTIONS.map((item) => {
           const active = isActive(item);
           return (
-            <Link
+            <NavLink
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
@@ -143,8 +149,10 @@ function SidebarBody({
                   className="size-1.5 rounded-full bg-foreground"
                   aria-hidden="true"
                 />
-              ) : null}
-            </Link>
+              ) : (
+                <PendingDot />
+              )}
+            </NavLink>
           );
         })}
       </nav>
@@ -163,7 +171,7 @@ function SidebarBody({
                   // here — except the Getting Started pages, which are the leaf.
                   const current = pathname === link.href;
                   return (
-                    <Link
+                    <NavLink
                       key={link.href}
                       href={link.href}
                       aria-current={current ? "page" : undefined}
@@ -179,8 +187,10 @@ function SidebarBody({
                           className="size-1.5 rounded-full bg-foreground"
                           aria-hidden="true"
                         />
-                      ) : null}
-                    </Link>
+                      ) : (
+                        <PendingDot />
+                      )}
+                    </NavLink>
                   );
                 })}
               </div>

@@ -28,6 +28,7 @@ import { useTrackEvent } from "@/lib/analytics";
 import {
   GALLERY_CATEGORIES,
   type GalleryItem,
+  ITEM_BY_SLUG,
   slugFromHref,
 } from "@/lib/gallery-data";
 import { CATALOGUE_PRICE } from "@/lib/plans";
@@ -62,6 +63,26 @@ const CARD = "rounded-xl border border-border bg-muted/30 px-3.5 py-3";
 const CARD_LABEL =
   "font-medium text-[11px] text-muted-foreground uppercase tracking-[0.12em]";
 
+/**
+ * The backdrop and the popup, shared by the dialog and by `OpenPanel` — the
+ * server-rendered copy of it — so the two are the same box to the pixel and
+ * the hand-over between them cannot be seen.
+ *
+ * Offset by the sidebar width on lg so the overlay opens BESIDE the fixed
+ * sidebar, never over it (the detail panel sits at the sidebar's right edge).
+ * On mobile the sidebar is hidden, so it's full-width.
+ *
+ * Below `xl` the popup is one opaque, scrolling sheet — see `OverlayBody` for
+ * why. From `xl` it is transparent and click-through around its two columns,
+ * so the backdrop still closes it.
+ */
+const BACKDROP =
+  "fixed inset-0 z-50 bg-background/70 backdrop-blur-md duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)]";
+const POPUP =
+  "group/ov fixed inset-0 z-50 flex flex-col overflow-y-auto overscroll-contain bg-background outline-none duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)] xl:pointer-events-none xl:flex-row xl:overflow-hidden xl:bg-transparent";
+/** The panel was already on screen (see `OpenPanel`): no entrance, again. */
+const QUIET = "data-open:animate-none!";
+
 const ROUND_BTN =
   "flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted";
 
@@ -87,6 +108,7 @@ function typeLabel(href: string) {
 export function GalleryDetailOverlay({
   item,
   docSlugs,
+  initialDoc,
   onClose,
   onPrev,
   onNext,
@@ -94,6 +116,8 @@ export function GalleryDetailOverlay({
   item: GalleryItem | null;
   /** Slugs that have documentation — the layout choice, without the documents. */
   docSlugs?: string[];
+  /** The open component's documentation, rendered on the server — see `OpenPanel`. */
+  initialDoc?: { slug: string; body: ReactNode };
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -116,6 +140,13 @@ export function GalleryDetailOverlay({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // Open from the first frame — a component's own URL. The panel is already
+  // painted (`OpenPanel`, before mount), so the dialog takes it over without an
+  // entrance: animating in over a copy of itself reads as the page opening
+  // twice. Cleared on close, so every later open animates as normal.
+  const [quiet, setQuiet] = useState(item !== null);
+  const [entrySlug] = useState(item ? slugFromHref(item.href) : null);
+
   /**
    * Documentation for the components opened so far, by slug.
    *
@@ -125,7 +156,9 @@ export function GalleryDetailOverlay({
    * fetch lands. A ref alone would never re-render; state alone would refetch a
    * document already on the client.
    */
-  const cache = useRef<Map<string, ReactNode>>(new Map());
+  const cache = useRef<Map<string, ReactNode>>(
+    new Map(initialDoc ? [[initialDoc.slug, initialDoc.body]] : []),
+  );
   const [, setLoaded] = useState(0);
   const shownSlug = shown ? slugFromHref(shown.href) : null;
   const hasDoc = shownSlug ? (docSlugs?.includes(shownSlug) ?? false) : false;
@@ -149,6 +182,7 @@ export function GalleryDetailOverlay({
   // than at each call site so every close path — ×, Escape, backdrop — goes
   // through it.
   const closeWithMorph = useCallback(() => {
+    setQuiet(false);
     if (!item) {
       onClose();
       return;
@@ -156,26 +190,33 @@ export function GalleryDetailOverlay({
     morphToCard(slugFromHref(item.href), onClose);
   }, [item, onClose]);
 
+  // Before mount the dialog cannot be open (above), so an open panel is drawn
+  // as `OpenPanel` draws it on the server — the same frame, not a blank one.
+  if (!mounted) {
+    return item ? (
+      <PanelShell
+        item={item}
+        hasDoc={hasDoc}
+        docBody={shownSlug ? cache.current.get(shownSlug) : undefined}
+      />
+    ) : null;
+  }
+
   return (
     <Dialog.Root
-      open={mounted && item !== null}
+      open={item !== null}
       onOpenChange={(open) => {
         if (!open) closeWithMorph();
       }}
     >
       <Dialog.Portal>
-        {/* Offset by the sidebar width on lg so the overlay opens BESIDE the
-            fixed sidebar, never over it (the detail panel sits at the sidebar's
-            right edge). On mobile the sidebar is hidden, so it's full-width.
-
-            Below `xl` the popup is one opaque, scrolling sheet — see
-            `OverlayBody` for why. From `xl` it is transparent and click-through
-            around its two columns, so the backdrop still closes it. */}
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-background/70 backdrop-blur-md duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)]" />
-        <Dialog.Popup className="group/ov fixed inset-0 z-50 flex flex-col overflow-y-auto overscroll-contain bg-background outline-none duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)] xl:pointer-events-none xl:flex-row xl:overflow-hidden xl:bg-transparent">
+        <Dialog.Backdrop className={cn(BACKDROP, quiet && QUIET)} />
+        <Dialog.Popup className={cn(POPUP, quiet && QUIET)}>
           {shown ? (
             <OverlayBody
               item={shown}
+              quiet={quiet}
+              still={quiet && shownSlug === entrySlug}
               // Only while genuinely open. Base UI keeps this popup mounted
               // through its close animation, so if the preview kept the name it
               // would still be holding it when the card reclaims it on the way
@@ -194,8 +235,75 @@ export function GalleryDetailOverlay({
   );
 }
 
+/**
+ * The open panel, rendered on the server: a component's own URL
+ * (`/docs/<category>/<slug>`) *is* this panel over the gallery, and its HTML
+ * has to say so — its name, its description, its install line and its whole
+ * documentation, readable by anything that does not run JavaScript. The dialog
+ * cannot be server-rendered (see `mounted` above), so this draws the same boxes
+ * without it, and the dialog takes over on the first client frame.
+ *
+ * Takes a slug rather than the item: it is handed over by a server component,
+ * and a gallery item carries an icon component that cannot cross that line.
+ */
+export function OpenPanel({
+  slug,
+  docBody,
+}: {
+  slug: string;
+  docBody?: ReactNode;
+}) {
+  const item = ITEM_BY_SLUG.get(slug);
+  if (!item) return null;
+  return <PanelShell item={item} hasDoc={docBody != null} docBody={docBody} />;
+}
+
+const noop = () => {};
+
+/**
+ * The dialog's boxes without the dialog. A closed `Dialog.Root` is still
+ * rendered: `Dialog.Title` and `Dialog.Description` inside the body need its
+ * context, and there is nothing to open or trap before JavaScript runs.
+ */
+function PanelShell({
+  item,
+  hasDoc,
+  docBody,
+}: {
+  item: GalleryItem;
+  hasDoc: boolean;
+  docBody?: ReactNode;
+}) {
+  return (
+    <Dialog.Root open={false}>
+      <div className={cn(BACKDROP, QUIET)} data-open="" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={item.name}
+        className={cn(POPUP, QUIET)}
+        data-open=""
+      >
+        <OverlayBody
+          item={item}
+          quiet
+          still
+          holdsSharedName={false}
+          hasDoc={hasDoc}
+          docBody={docBody}
+          onClose={noop}
+          onPrev={noop}
+          onNext={noop}
+        />
+      </div>
+    </Dialog.Root>
+  );
+}
+
 function OverlayBody({
   item,
+  quiet,
+  still,
   holdsSharedName,
   hasDoc,
   docBody,
@@ -204,6 +312,10 @@ function OverlayBody({
   onNext,
 }: {
   item: GalleryItem;
+  /** No slide-in for the details column — see `quiet` in the overlay. */
+  quiet: boolean;
+  /** No fade-in for this component's content — the entry one, already shown. */
+  still: boolean;
   /** Whether this preview currently owns the shared view-transition name. */
   holdsSharedName: boolean;
   /**
@@ -306,7 +418,13 @@ function OverlayBody({
    */
   return (
     <>
-      <div className="contents xl:pointer-events-auto xl:relative xl:z-10 xl:flex xl:h-full xl:w-[360px] xl:shrink-0 xl:flex-col xl:gap-6 xl:overflow-y-auto xl:border-border xl:border-r xl:bg-background xl:px-8 xl:py-6 xl:duration-300 xl:ease-out xl:group-data-[open]/ov:animate-in xl:group-data-[open]/ov:fade-in-0 xl:group-data-[open]/ov:slide-in-from-left-8">
+      <div
+        className={cn(
+          "contents xl:pointer-events-auto xl:relative xl:z-10 xl:flex xl:h-full xl:w-[360px] xl:shrink-0 xl:flex-col xl:gap-6 xl:overflow-y-auto xl:border-border xl:border-r xl:bg-background xl:px-8 xl:py-6 xl:duration-300 xl:ease-out",
+          !quiet &&
+            "xl:group-data-[open]/ov:animate-in xl:group-data-[open]/ov:fade-in-0 xl:group-data-[open]/ov:slide-in-from-left-8",
+        )}
+      >
         <div className="sticky top-0 z-20 order-1 flex items-center gap-2 border-border border-b bg-background px-4 py-3 sm:px-6 xl:static xl:order-none xl:border-0 xl:p-0">
           <button
             type="button"
@@ -338,7 +456,10 @@ function OverlayBody({
 
         <div
           key={slug}
-          className="order-3 mx-auto flex w-full max-w-3xl animate-in flex-col gap-6 px-4 pt-2 pb-8 fade-in duration-150 sm:px-6 xl:order-none xl:mx-0 xl:max-w-none xl:p-0"
+          className={cn(
+            "order-3 mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pt-2 pb-8 sm:px-6 xl:order-none xl:mx-0 xl:max-w-none xl:p-0",
+            !still && "animate-in fade-in duration-150",
+          )}
         >
           <header>
             <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.12em]">

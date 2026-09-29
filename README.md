@@ -111,6 +111,20 @@ rules above — so your agent picks the right component and budgets the timeline
 npx skills add snapcndev/snapcn --skill snapcn --yes
 ```
 
+For a whole video, add the workflow skill for the job. Each composes snapcn components beat by beat:
+
+```bash
+npx skills add snapcndev/snapcn --skill remotion-launch-video     # launch films, announcements
+npx skills add snapcndev/snapcn --skill remotion-product-demo     # demos from a screen recording
+npx skills add snapcndev/snapcn --skill remotion-motion-graphics  # kinetic type, logo stings, stats
+npx skills add snapcndev/snapcn --skill remotion-kinetic-typography  # animated text, title cards
+npx skills add snapcndev/snapcn --skill remotion-logo-animation   # logo reveals, intro/outro stings
+npx skills add snapcndev/snapcn --skill remotion-explainer-video  # narrated explainers with captions
+```
+
+In Claude Code they also install as a plugin: `/plugin marketplace add snapcndev/snapcn`, then
+`/plugin install snapcn@snapcn`.
+
 Agents that read context files instead can pull [`llms.txt`](https://snapcn.dev/llms.txt) or the
 full corpus at [`llms-full.txt`](https://snapcn.dev/llms-full.txt).
 

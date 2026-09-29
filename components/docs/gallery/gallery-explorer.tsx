@@ -1,18 +1,28 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import {
   parseAsString,
   parseAsStringLiteral,
   useQueryState,
   useQueryStates,
 } from "nuqs";
-import { type ReactNode, useCallback, useEffect, useMemo } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTrackEvent } from "@/lib/analytics";
 import {
   CATALOGUE_ITEMS,
+  FIRST_ROW,
   GALLERY_CATEGORIES,
   type GalleryFilter,
   getFilteredItems,
+  ITEM_BY_HREF,
   ITEM_BY_SLUG,
   slugFromHref,
 } from "@/lib/gallery-data";
@@ -68,6 +78,14 @@ function NewChevrons() {
   );
 }
 
+/** `path` with the page's query (the category filter), minus a legacy `item`. */
+function withQuery(path: string): string {
+  const params = new URLSearchParams(window.location.search);
+  params.delete("item");
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
+
 function pillClassName(active: boolean) {
   return cn(
     "shrink-0 cursor-default rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-150",
@@ -80,25 +98,75 @@ function pillClassName(active: boolean) {
 /**
  * The gallery's client toolbar + masonry + detail overlay. Category pills
  * genuinely filter the grid (in the URL via nuqs `?category=`,
- * `history: "replace"`). Clicking a card opens the
- * in-place detail overlay via `?item=<slug>` (`history: "push"`, so Back closes
- * it); prev/next walk the on-screen list.
+ * `history: "replace"`). Prev/next walk the on-screen list.
+ *
+ * The open panel lives in the *path*: opening a card pushes the component's own
+ * URL (`/docs/<category>/<slug>`), closing pushes `/docs/components`, and Back
+ * undoes either. It used to be `?item=<slug>` on the gallery's URL, which is a
+ * URL Google files under "Components" — so every link somebody shared to a
+ * component credited the gallery instead of the component's page. Loading that
+ * path renders this same gallery with the panel open (the docs catch-all), so
+ * a shared link and a click land on the identical view.
  */
 export function GalleryExplorer({
   docSlugs,
+  initialDoc,
 }: {
   /** Slugs that have documentation; the bodies load when the overlay opens. */
   docSlugs?: string[];
+  /** The documentation of the component whose URL this is, server-rendered. */
+  initialDoc?: { slug: string; body: ReactNode };
 }) {
   const [{ category }, setState] = useQueryStates(
     { category: parseAsStringLiteral(FILTER_IDS) },
     { history: "replace" },
   );
 
-  const [activeSlug, setActiveSlug] = useQueryState(
-    "item",
-    parseAsString.withOptions({ history: "push", shallow: true }),
-  );
+  // The panel the URL asks for: the component's own path, or a `?item=` link
+  // from before there was one.
+  const pathname = usePathname();
+  const [legacyItem] = useQueryState("item", parseAsString);
+  const urlSlug = ITEM_BY_HREF.has(pathname)
+    ? slugFromHref(pathname)
+    : legacyItem && ITEM_BY_SLUG.has(legacyItem)
+      ? legacyItem
+      : null;
+
+  // Held locally as well as in the URL: a card's morph (see `GalleryCard`)
+  // waits one task for React to commit the open panel, and the router's sync
+  // of a pushed URL is a transition that may not have landed by then. Back and
+  // Forward still drive it, through the effect.
+  const [activeSlug, setActiveSlug] = useState(urlSlug);
+  useEffect(() => setActiveSlug(urlSlug), [urlSlug]);
+
+  const show = useCallback((slug: string | null) => {
+    const href = slug ? ITEM_BY_SLUG.get(slug)?.href : "/docs/components";
+    if (!href) return;
+    setActiveSlug(slug);
+    window.history.pushState(null, "", withQuery(href));
+  }, []);
+
+  // An old `?item=` link opens its panel at the component's own URL.
+  useEffect(() => {
+    if (!legacyItem) return;
+    const href = ITEM_BY_SLUG.get(legacyItem)?.href ?? window.location.pathname;
+    window.history.replaceState(null, "", withQuery(href));
+  }, [legacyItem]);
+
+  // The server titled the page for whatever it opened on; after that the
+  // title follows the panel, or a tab named after a component you closed a
+  // minute ago sits over the gallery.
+  const titled = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only the panel moves the title; `legacyItem` matters on the first run alone
+  useEffect(() => {
+    if (!titled.current) {
+      titled.current = true;
+      // A `?item=` link was served as the gallery, and titled as one.
+      if (!legacyItem) return;
+    }
+    const item = activeSlug ? ITEM_BY_SLUG.get(activeSlug) : null;
+    document.title = item ? `${item.name} · snapcn` : "Components · snapcn";
+  }, [activeSlug]);
 
   const trackEvent = useTrackEvent();
   // Which shelf people shop. A category nobody ever filters to is either badly
@@ -136,70 +204,69 @@ export function GalleryExplorer({
   // else over the full curated list (e.g. a deep link outside the filter).
   const step = useCallback(
     (dir: 1 | -1) => {
-      void setActiveSlug((current) => {
-        if (!current) return current;
-        const inList = items.some((i) => slugFromHref(i.href) === current);
-        const list = inList ? items : CATALOGUE_ITEMS;
-        const idx = list.findIndex((i) => slugFromHref(i.href) === current);
-        if (idx === -1) return current;
-        return slugFromHref(list[(idx + dir + list.length) % list.length].href);
-      });
+      if (!activeSlug) return;
+      const inList = items.some((i) => slugFromHref(i.href) === activeSlug);
+      const list = inList ? items : CATALOGUE_ITEMS;
+      const idx = list.findIndex((i) => slugFromHref(i.href) === activeSlug);
+      if (idx === -1) return;
+      show(slugFromHref(list[(idx + dir + list.length) % list.length].href));
     },
-    [items, setActiveSlug],
+    [activeSlug, items, show],
   );
 
   return (
-    <div className="not-prose">
-      {/* No border-b. The bar is sticky and already separates itself when it
+    <>
+      <div className="not-prose">
+        {/* No border-b. The bar is sticky and already separates itself when it
           overlaps the grid — the blurred background is the affordance. */}
-      <div className="sticky top-0 z-30 -mx-6 bg-background/90 px-6 py-3 backdrop-blur lg:-mx-8 lg:px-8">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: "none" }}
-          >
-            <button
-              type="button"
-              aria-pressed={category === null}
-              onClick={() => setFilter({ category: null })}
-              className={pillClassName(category === null)}
+        <div className="sticky top-0 z-30 -mx-6 bg-background/90 px-6 py-3 backdrop-blur lg:-mx-8 lg:px-8">
+          <div className="flex items-center gap-2">
+            <div
+              className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+              style={{ scrollbarWidth: "none" }}
             >
-              All
-            </button>
-            <button
-              type="button"
-              aria-pressed={category === "new"}
-              onClick={() => setFilter({ category: "new" })}
-              className={cn(
-                pillClassName(category === "new"),
-                "inline-flex items-center gap-0.5 pr-2.5",
-                // Only when unselected: the blue is what pulls the click. Once
-                // selected the pill takes the same inverted treatment as every
-                // other one, where sky on `bg-foreground` would fail contrast.
-                // sky-700/sky-400 rather than one sky-500 — 500 measures 2.35:1
-                // on the light gallery mat and 6.45:1 on the dark one.
-                category !== "new" && "text-sky-700 dark:text-sky-400",
-              )}
-            >
-              New
-              <NewChevrons />
-            </button>
-            {GALLERY_CATEGORIES.map((c) => (
               <button
-                key={c.id}
                 type="button"
-                aria-pressed={category === c.id}
-                onClick={() => setFilter({ category: c.id })}
-                className={pillClassName(category === c.id)}
+                aria-pressed={category === null}
+                onClick={() => setFilter({ category: null })}
+                className={pillClassName(category === null)}
               >
-                {c.label}
+                All
               </button>
-            ))}
+              <button
+                type="button"
+                aria-pressed={category === "new"}
+                onClick={() => setFilter({ category: "new" })}
+                className={cn(
+                  pillClassName(category === "new"),
+                  "inline-flex items-center gap-0.5 pr-2.5",
+                  // Only when unselected: the blue is what pulls the click. Once
+                  // selected the pill takes the same inverted treatment as every
+                  // other one, where sky on `bg-foreground` would fail contrast.
+                  // sky-700/sky-400 rather than one sky-500 — 500 measures 2.35:1
+                  // on the light gallery mat and 6.45:1 on the dark one.
+                  category !== "new" && "text-sky-700 dark:text-sky-400",
+                )}
+              >
+                New
+                <NewChevrons />
+              </button>
+              {GALLERY_CATEGORIES.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={category === c.id}
+                  onClick={() => setFilter({ category: c.id })}
+                  className={pillClassName(category === c.id)}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* A grid, not `columns-*`. Every card is 16:9 (every config is 1280x720),
+        {/* A grid, not `columns-*`. Every card is 16:9 (every config is 1280x720),
           so there was never anything for a masonry to stagger — and CSS multicol
           fills greedily: it picks the shortest height that holds the set, then
           packs each column to it. 21 cards across four columns is 6/6/6/3, which
@@ -207,23 +274,31 @@ export function GalleryExplorer({
           the screen dead. A grid lays the same cards out row-major, so the only
           hole is the tail of the last row. `items-start` keeps a card at its own
           aspect ratio instead of being stretched to its row. */}
-      <div className="mt-6 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map((item) => (
-          <GalleryCard
-            key={item.href}
-            item={item}
-            onOpen={(slug) => void setActiveSlug(slug)}
-          />
-        ))}
+        <div className="mt-6 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {items.map((item, i) => (
+            <GalleryCard
+              key={item.href}
+              item={item}
+              onOpen={show}
+              priority={i < FIRST_ROW}
+            />
+          ))}
+        </div>
       </div>
 
+      {/* Outside `not-prose`. The dialog portals to <body> and never sat under
+        it, but its pre-mount copy (`PanelShell`) renders in place — and
+        `not-prose` switches Typography off for everything inside it, so the
+        panel's documentation drew unstyled for a frame and then restyled when
+        the dialog took over: a 0.27 layout shift on every component URL. */}
       <GalleryDetailOverlay
         item={activeItem}
         docSlugs={docSlugs}
-        onClose={() => void setActiveSlug(null)}
+        initialDoc={initialDoc}
+        onClose={() => show(null)}
         onPrev={() => step(-1)}
         onNext={() => step(1)}
       />
-    </div>
+    </>
   );
 }

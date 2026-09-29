@@ -8,15 +8,17 @@
  *   src after one scroll to the bottom, 270 seconds of buffered video retained,
  *   and 18.7MB of mp4 pulled for a single visit.
  *
- * Three separate faults, and the ranking below fixes them in one place because
- * they are one decision: what is this element for, right now.
+ * Two faults, fixed in one place because they are one decision: what is this element for, right now.
  *
  *  - **Off-screen playback.** Each card observed itself with a 200px margin and
  *    played on intersect, so the band above and below the fold ran too.
- *  - **No cap.** Everything visible played. macOS gives Chrome a limited number
- *    of hardware decode sessions; past it the rest fall back to *software*
- *    decode, which is the fan. A cap is not a nicety, it is the difference
- *    between 12 cheap streams and 24 expensive ones.
+ *  - **There is deliberately no cap on what is on screen.** There was one
+ *    (twelve), and it was the "only thumbnails" report: this grid shows 16–24
+ *    cards on any desktop, so a third to half of what the reader was looking at
+ *    sat frozen on its poster — and because the losers were picked by a string
+ *    sort of numeric ids ("10" < "2"), a full row in the middle froze while
+ *    slivers at the bottom played, which reads as broken, not as throttled.
+ *    Visible means playing. Everything else below is what keeps that cheap.
  *  - **Nothing was ever released.** A card scrolled past kept its src, its
  *    buffer and its decoder for the life of the page.
  *
@@ -29,18 +31,13 @@
  * feeds it lives in `rendered-demos.tsx`.
  */
 
-/** How many may decode at once. Chosen to stay inside hardware decode. */
-export const MAX_PLAYING = 12;
-
 /** How long a card must stay on screen before it is worth starting. */
 export const SETTLE_MS = 180;
 
 /** What a demo element should be doing. */
 export type DemoState =
-  /** On screen and within the cap: decoding. */
+  /** On screen: decoding. */
   | "play"
-  /** On screen but over the cap: loaded, so it shows a frame, but not decoding. */
-  | "hold"
   /** Near the viewport: metadata only, so arriving is instant and cheap. */
   | "ready"
   /** Far away: no src, no buffer, no decoder. */
@@ -52,27 +49,15 @@ export interface DemoView {
   /** Whether it is inside the wider band we keep loaded. */
   near: boolean;
   /**
-   * The demo the reader opened — the gallery's detail overlay. Ranked ahead of
-   * every card: IntersectionObserver cannot see that a modal covers the grid,
-   * so the twelve cards behind it all read as fully on screen and took every
-   * slot, and the one video the reader had just asked for sat paused on its
-   * first frame.
+   * The demo the reader opened — the gallery's detail overlay.
+   * IntersectionObserver cannot see that a modal covers the grid, so the cards
+   * behind it read as fully on screen; this is how the plan knows they are not.
    */
   priority?: boolean;
 }
 
-/**
- * The state every element should be in, keyed the same way as the input.
- *
- * Ranked by priority (see `DemoView.priority`), then by how much of the card
- * is on screen, so the ones that lose are the slivers at the top and bottom
- * edges rather than whatever happened to mount first. Ties break on key, so the result is stable across scroll frames and a
- * card does not flicker between playing and held while the ratios wobble.
- */
-export function planDemos<K>(
-  views: Map<K, DemoView>,
-  cap: number = MAX_PLAYING,
-): Map<K, DemoState> {
+/** The state every element should be in, keyed the same way as the input. */
+export function planDemos<K>(views: Map<K, DemoView>): Map<K, DemoState> {
   // The opened demo sits in a modal over the grid. The cards under it read as
   // on screen and are not: left in the plan they fetched and decoded behind
   // the modal and split the connection with the one video being watched —
@@ -80,32 +65,14 @@ export function planDemos<K>(
   // while twelve hidden ones downloaded. Covered cards keep their src (so
   // closing the overlay is instant) and fetch nothing.
   const opened = [...views.values()].some((v) => v.priority && v.ratio > 0);
-  if (opened) {
-    const plan = new Map<K, DemoState>();
-    for (const [key, view] of views) {
-      if (view.priority && view.ratio > 0) plan.set(key, "play");
-      else plan.set(key, view.near || view.ratio > 0 ? "ready" : "release");
-    }
-    return plan;
-  }
-  const ranked = [...views.entries()]
-    .filter(([, v]) => v.ratio > 0)
-    .sort(
-      (a, b) =>
-        Number(b[1].priority ?? false) - Number(a[1].priority ?? false) ||
-        b[1].ratio - a[1].ratio ||
-        String(a[0]).localeCompare(String(b[0])),
-    );
-  const playing = new Set(ranked.slice(0, cap).map(([key]) => key));
 
-  // Built in the caller's own key order, not in rank order: the result is read
-  // against the previous plan element by element, and an order that reshuffles
-  // every scroll frame would make that comparison meaningless.
+  // Built in the caller's own key order: the result is read against the
+  // previous plan element by element.
   const plan = new Map<K, DemoState>();
   for (const [key, view] of views) {
-    if (playing.has(key)) plan.set(key, "play");
-    else if (view.ratio > 0) plan.set(key, "hold");
-    else plan.set(key, view.near ? "ready" : "release");
+    const covered = opened && !view.priority;
+    if (view.ratio > 0 && !covered) plan.set(key, "play");
+    else plan.set(key, view.near || view.ratio > 0 ? "ready" : "release");
   }
   return plan;
 }

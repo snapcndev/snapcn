@@ -5,6 +5,7 @@ import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
 import { ITEM_BY_SLUG } from "@/lib/gallery-data";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import { docsBreadcrumb, JsonLd } from "@/lib/structured-data";
 import STUDIO_ELEMENTS from "@/lib/studio-elements.json";
 
@@ -22,8 +23,8 @@ const PATH = "/docs/remotion-studio";
 const OG_IMAGE = "/og/remotion-studio";
 
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: metaTitle(DOCS_PAGE_META["remotion-studio"].seoTitle ?? TITLE),
+  description: metaDescription(DESCRIPTION),
   alternates: { canonical: PATH },
   openGraph: {
     type: "website",

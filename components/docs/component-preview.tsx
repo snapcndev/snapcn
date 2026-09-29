@@ -16,7 +16,6 @@ import {
   renderedDemoSrc,
 } from "@/lib/rendered-demos";
 import { CONFIGS } from "@/registry/__configs__";
-import { ComponentCustomizer } from "./component-customizer";
 
 /**
  * The Remotion player, its scene and the registry behind it — fetched only when
@@ -35,6 +34,17 @@ const ComponentPreviewStage = dynamic(
       <div className="surface-card aspect-video w-full rounded-2xl" />
     ),
   },
+);
+
+/**
+ * The customizer's controls — and the spring slider that brings `motion` with
+ * it — after hydration. They sit under the preview, where nobody reaches them
+ * in the first second, and on the server they were in the first batch of
+ * scripts of every page that renders a preview.
+ */
+const ComponentCustomizer = dynamic(
+  () => import("./component-customizer").then((m) => m.ComponentCustomizer),
+  { ssr: false },
 );
 
 export function ComponentPreview({ name }: { name: string }) {

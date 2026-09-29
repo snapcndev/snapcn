@@ -744,9 +744,24 @@ export function itemsByReleaseDate(
     .map(([date, items]) => ({ date, items }));
 }
 
-/** slug → item, so a deep-linked ?item= opens even when filtered out. */
+/**
+ * Cards in the grid's first row at its widest (`xl:grid-cols-4`). Their
+ * posters are the gallery's LCP, so they load eagerly and first.
+ */
+export const FIRST_ROW = 4;
+
+/** slug → item, so a deep-linked component opens even when filtered out. */
 export const ITEM_BY_SLUG = new Map<string, GalleryItem>(
   CATALOGUE_ITEMS.map((item) => [slugFromHref(item.href), item]),
+);
+
+/**
+ * href → item: which paths are a component's own URL. That URL is the gallery
+ * with the component's panel open, so the explorer reads the open panel from
+ * the pathname and the section nav files it under Components.
+ */
+export const ITEM_BY_HREF = new Map<string, GalleryItem>(
+  CATALOGUE_ITEMS.map((item) => [item.href, item]),
 );
 
 /**

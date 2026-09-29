@@ -1,0 +1,19 @@
+{
+  "name": "snapcn",
+  "owner": { "name": "snapcn", "url": "https://snapcn.dev" },
+  "metadata": {
+    "description": "Hand-tuned Remotion components and the agent skills that compose them into launch films, demos and motion graphics."
+  },
+  "plugins": [
+    {
+      "name": "snapcn",
+      "source": "./",
+      "description": "Agent skills that build Remotion videos from snapcn components: launch videos, product demos, motion graphics, kinetic type, logo animations and explainers."
+    },
+    {
+      "name": "snapcn-mcp",
+      "source": "./plugins/snapcn-mcp",
+      "description": "The snapcn MCP server (snapcn Pro): search the registry, read every component's props and plan a video from a one-line brief. Needs SNAPCN_API_KEY."
+    }
+  ]
+}

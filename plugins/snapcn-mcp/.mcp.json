@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "snapcn": {
+      "command": "npx",
+      "args": ["-y", "@snapcn/mcp@latest"],
+      "env": { "SNAPCN_API_KEY": "${SNAPCN_API_KEY}" }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
-import posthog from "posthog-js";
 import { useCallback } from "react";
+import { withPostHog } from "@/lib/posthog-client";
 
 /**
  * The site's typed event vocabulary.
@@ -248,9 +248,9 @@ type AnalyticsEvents = {
 };
 
 /**
- * Fire a typed event. Safe to call before PostHog has initialised and safe to
- * call when it is unconfigured — posthog-js queues, and an unconfigured build
- * simply drops. No call site needs a guard.
+ * Fire a typed event. Safe to call before PostHog has loaded and safe to call
+ * when it is unconfigured — `withPostHog` queues until the SDK is up, and an
+ * unconfigured build simply drops. No call site needs a guard.
  */
 export function useTrackEvent() {
   return useCallback(
@@ -260,7 +260,8 @@ export function useTrackEvent() {
         ? []
         : [AnalyticsEvents[E]]
     ) => {
-      posthog.capture(event, args[0] as Record<string, unknown> | undefined);
+      const props = args[0] as Record<string, unknown> | undefined;
+      withPostHog((ph) => ph.capture(event, props));
     },
     [],
   );
@@ -274,22 +275,23 @@ export function useTrackEvent() {
  * server-rendered page that re-renders on every visit — there is no "on sign-in"
  * moment on the client to hook. `identify` merges the anonymous history the
  * first time and is wasted requests every time after, so compare against the id
- * PostHog is already using and return whether this call was the transition.
- * That boolean is the `signed_in` trigger.
- *
- * `get_distinct_id()` is safe before `init` (persistence is optional-chained),
- * so an unconfigured build takes this path without throwing.
+ * PostHog is already using, and call `onPromoted` only when this call was the
+ * transition. That callback is the `signed_in` trigger. It runs once the SDK
+ * has loaded, which is when the comparison can be made at all.
  */
 export function identifyUser(
   userId: string,
   properties?: { email?: string; name?: string },
-): boolean {
-  if (posthog.get_distinct_id() === userId) return false;
-  posthog.identify(userId, properties);
-  return true;
+  onPromoted?: () => void,
+): void {
+  withPostHog((ph) => {
+    if (ph.get_distinct_id() === userId) return;
+    ph.identify(userId, properties);
+    onPromoted?.();
+  });
 }
 
 /** Clear the identity on sign-out so a shared machine doesn't merge two people. */
 export function resetUser() {
-  posthog.reset();
+  withPostHog((ph) => ph.reset());
 }

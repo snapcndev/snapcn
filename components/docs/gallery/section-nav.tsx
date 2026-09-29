@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link, { useLinkStatus } from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import type { ComponentProps } from "react";
 import { NavBadge } from "@/components/nav-badge";
 import { DOCS_NAV } from "@/lib/docs-nav";
+import { ITEM_BY_HREF } from "@/lib/gallery-data";
 import { cn } from "@/lib/utils";
 
 /**
@@ -83,6 +85,54 @@ export const sectionBadge = (section: DocsSection): string | undefined =>
   "badge" in section ? section.badge : undefined;
 
 /**
+ * A rail link that prefetches when somebody reaches for it, not when it scrolls
+ * into view.
+ *
+ * Next prefetches every visible `<Link>` as soon as the page hydrates. The rail
+ * is a dozen links on every docs page, and that was ~40 route requests (one of
+ * them 41KB) fired in the first 150ms — racing the page's own content on a
+ * phone's connection, and counted in full by Lighthouse's mobile LCP. Hover,
+ * focus and touch come a few hundred milliseconds before the click, which is
+ * the head start a prefetch is for.
+ */
+export function NavLink(props: ComponentProps<typeof Link>) {
+  const router = useRouter();
+  const warm = () => router.prefetch(String(props.href));
+  return (
+    <Link
+      {...props}
+      prefetch={false}
+      onPointerEnter={warm}
+      onFocus={warm}
+      onTouchStart={warm}
+    />
+  );
+}
+
+/**
+ * The rail's "you are here" dot, pulsing on the link that was just clicked
+ * while its page is on the way. Put inside a `<Link>`; renders nothing once the
+ * page has arrived, or if it never had to wait.
+ *
+ * This is the feedback `app/docs/loading.tsx` used to give — a click on a slow
+ * link changed nothing on screen, and people clicked it again and again. That
+ * file gave it by wrapping every docs page in a Suspense boundary, which ships
+ * each page's content *hidden* in its HTML behind a skeleton: 116 of 153 pages
+ * showed a crawler that did not run JavaScript nothing but the skeleton. The
+ * link is where the click happened, so the feedback goes there instead.
+ */
+export function PendingDot() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      className="size-1.5 rounded-full bg-foreground/60 motion-safe:animate-pulse"
+      aria-hidden="true"
+    />
+  );
+}
+
+/**
  * Returns a predicate that reports whether a section is the active one for the
  * current pathname. Exact match or a child path both count, so
  * `/docs/ui/components/button` lights up the "UI" link.
@@ -91,7 +141,9 @@ export const sectionBadge = (section: DocsSection): string | undefined =>
  * prefix is the bare `/docs`, would be active on every route in the group.
  */
 export function useSectionActive() {
-  const pathname = usePathname();
+  // A component's own URL is the Components gallery with its panel open.
+  const path = usePathname();
+  const pathname = ITEM_BY_HREF.has(path) ? "/docs/components" : path;
   const hits = (match: string) =>
     pathname === match || pathname.startsWith(`${match}/`);
 
@@ -129,7 +181,7 @@ export function DocsSectionNav({ className }: { className?: string }) {
         {DOCS_SECTIONS.map((item) => {
           const active = isActive(item);
           return (
-            <Link
+            <NavLink
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
@@ -144,7 +196,8 @@ export function DocsSectionNav({ className }: { className?: string }) {
               {sectionBadge(item) ? (
                 <NavBadge>{sectionBadge(item) as string}</NavBadge>
               ) : null}
-            </Link>
+              {active ? null : <PendingDot />}
+            </NavLink>
           );
         })}
       </div>
@@ -161,7 +214,7 @@ export function DocsSectionNav({ className }: { className?: string }) {
               {group.links.map((link) => {
                 const current = pathname === link.href;
                 return (
-                  <Link
+                  <NavLink
                     key={link.href}
                     href={link.href}
                     aria-current={current ? "page" : undefined}
@@ -173,7 +226,7 @@ export function DocsSectionNav({ className }: { className?: string }) {
                     )}
                   >
                     {link.label}
-                  </Link>
+                  </NavLink>
                 );
               })}
             </div>

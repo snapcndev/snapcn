@@ -9,7 +9,8 @@ const DESCRIPTION =
 const OG_IMAGE = "/og";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  // The H1 stays "Blog"; the tab and the search result say what it is about.
+  title: "Blog — Remotion and React video guides",
   description: DESCRIPTION,
   alternates: {
     canonical: "/blogs",

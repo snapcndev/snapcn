@@ -8,6 +8,7 @@ import { EarlyBirdStrip } from "@/components/early-bird";
 import { NewsletterForm } from "@/components/newsletter-form";
 import { DOCS_PAGE_META } from "@/config/site";
 import { GALLERY_COUNT, PRO_GALLERY_ITEMS } from "@/lib/gallery-data";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import { PRO_SAMPLE } from "@/lib/plans";
 import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import { RenderedDemo } from "@/lib/rendered-demos";
@@ -20,8 +21,8 @@ const { title: TITLE, description: DESCRIPTION } = DOCS_PAGE_META.pricing;
 const OG_IMAGE = "/og/pricing";
 
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: metaTitle(DOCS_PAGE_META.pricing.seoTitle ?? TITLE),
+  description: metaDescription(DESCRIPTION),
   alternates: { canonical: "/docs/pricing" },
   openGraph: {
     type: "website",

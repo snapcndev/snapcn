@@ -257,20 +257,13 @@ function prefersReducedMotion(): boolean {
 
 function observers() {
   if (onScreen && nearby) return;
-  // Thresholds, not a bare `isIntersecting`: the ranking needs to know *how
-  // much* of each card is showing, or the cap would drop whichever card
-  // happened to register last rather than the sliver at the edge of the fold.
-  onScreen = new IntersectionObserver(
-    (list) => {
-      for (const e of list) {
-        const entry = entries.get(idOf.get(e.target as HTMLVideoElement) ?? -1);
-        if (entry)
-          entry.view.ratio = e.isIntersecting ? e.intersectionRatio : 0;
-      }
-      schedule();
-    },
-    { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
-  );
+  onScreen = new IntersectionObserver((list) => {
+    for (const e of list) {
+      const entry = entries.get(idOf.get(e.target as HTMLVideoElement) ?? -1);
+      if (entry) entry.view.ratio = e.isIntersecting ? e.intersectionRatio : 0;
+    }
+    schedule();
+  });
   // Half a viewport either side keeps its src; past that the element is
   // emptied. 150% sounds generous and is not: this grid is nineteen rows, so a
   // band that wide is the whole page and nothing was ever released.
@@ -362,6 +355,8 @@ function attach(el: HTMLVideoElement, src: string) {
 
 function applyState(entry: Entry, state: DemoState) {
   const { el, src } = entry;
+  // A card scrolled away before `load` must not start when `load` arrives.
+  if (state !== "play") waitingForLoad.delete(el);
   switch (state) {
     case "play":
       if (userPaused.has(el)) {
@@ -370,34 +365,23 @@ function applyState(entry: Entry, state: DemoState) {
         break;
       }
       // The demo the reader opened is not a card being swept past, and it has
-      // no competition for the connection (see `planDemos`): fetch and start
-      // now, without the settle and without waiting on the page's `load`.
+      // no competition for the connection (see `planDemos`): no settle. It
+      // still waits for `load` — on a component's own URL it is open from the
+      // first frame, its poster is the page's LCP, and a megabyte of video
+      // fetched alongside that poster is what made the poster late.
       if (entry.view.priority) {
         attach(el, src);
-        el.preload = "auto";
-        void el.play().catch(() => {});
+        playWhenLoaded(el);
         break;
       }
       // Wait, THEN fetch, then start. A flick to the bottom of the grid sweeps
       // every card through "on screen" for a few frames each; the settle is
       // what makes that free, and it only is if `preload` stays `none` until it
       // fires — deferring `play()` alone still had `auto` pulling all 76 files,
-      // which measured 22.4MB for a scroll nobody looked at.
+      // which measured 22.4MB for a scroll nobody looked at. `playWhenLoaded`
+      // turns the download on, and not before the page's `load`.
       attach(el, src);
-      entry.settle = setTimeout(() => {
-        el.preload = "auto";
-        playWhenLoaded(el);
-      }, SETTLE_MS);
-      break;
-    case "hold":
-      // On screen, over the cap. Fetched — so it shows a frame rather than a
-      // hole — but never decoded; it becomes "play" the moment a card above it
-      // leaves. Same settle, for the same reason.
-      attach(el, src);
-      el.pause();
-      entry.settle = setTimeout(() => {
-        el.preload = "auto";
-      }, SETTLE_MS);
+      entry.settle = setTimeout(() => playWhenLoaded(el), SETTLE_MS);
       break;
     case "ready":
       // Addressed but not fetched. `metadata` here cost 76 range requests and
@@ -420,24 +404,21 @@ function applyState(entry: Entry, state: DemoState) {
 }
 
 /**
- * Playback waits for `load`, and for nothing else.
+ * Fetching and playback wait for `load`, and for nothing else.
  *
- * A demo is ~450KB and every one on screen plays, so starting them while the
- * page is still fetching puts them in competition with the critical path — and
+ * A demo is ~450KB and every one on screen plays, so fetching them while the
+ * page is still loading puts them in competition with the critical path — and
  * one of them is usually the largest element on screen, so that competition
- * lands directly on LCP. Waiting costs the reader nothing: the poster is
- * already painted, and `load` arrives before anyone has finished reading the
- * heading.
+ * lands directly on LCP. It used to be only `play()` that waited: `preload` was
+ * already `auto`, so the bytes came down with the page regardless — 684KB of
+ * video before the first card's poster on `/docs/components`. Waiting costs
+ * the reader nothing: the poster is already painted, and `load` arrives before
+ * anyone has finished reading the heading.
  *
  * Exported for the test that pins the staleness bug: the only way to catch it
  * is to call this once while the document is still loading and again after it
  * has finished, on a fresh element, and a pure helper cannot see that.
- *
- * ponytail: no cap on concurrent playback — a wide `/docs/components` can run
- * all 22 at once, which is what the grid is *for*, at the cost of ~9.9MB and a
- * page that never goes idle. `preload="none"` still means a card never scrolled
- * to is never fetched. If mobile data or fan noise ever becomes the complaint,
- * the fix is a cap on the most-visible N, not a return to hover-to-play.
+
  */
 const waitingForLoad = new Set<HTMLVideoElement>();
 let listening = false;
@@ -458,7 +439,7 @@ export function playWhenLoaded(el: HTMLVideoElement): void {
   // `readyState` stays "complete" for the rest of the session, so asking it
   // each time answers both cases with one branch.
   if (typeof document === "undefined" || document.readyState === "complete") {
-    if (el.paused) void el.play().catch(() => {});
+    start(el);
     return;
   }
   waitingForLoad.add(el);
@@ -467,11 +448,15 @@ export function playWhenLoaded(el: HTMLVideoElement): void {
   window.addEventListener(
     "load",
     () => {
-      for (const pending of waitingForLoad) {
-        if (pending.paused) void pending.play().catch(() => {});
-      }
+      for (const pending of waitingForLoad) start(pending);
       waitingForLoad.clear();
     },
     { once: true },
   );
+}
+
+function start(el: HTMLVideoElement): void {
+  if (!el.paused) return;
+  el.preload = "auto";
+  void el.play().catch(() => {});
 }

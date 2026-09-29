@@ -4,6 +4,7 @@ import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
 import { JOBS, SERVER } from "@/lib/mcp-clients";
+import { metaDescription, metaTitle } from "@/lib/meta";
 import {
   docsBreadcrumb,
   JsonLd,
@@ -30,8 +31,8 @@ const PATH = "/docs/mcp";
 const OG_IMAGE = "/og/mcp";
 
 export const metadata: Metadata = {
-  title: TITLE,
-  description: DESCRIPTION,
+  title: metaTitle(DOCS_PAGE_META.mcp.seoTitle ?? TITLE),
+  description: metaDescription(DESCRIPTION),
   alternates: { canonical: PATH },
   openGraph: {
     type: "website",
