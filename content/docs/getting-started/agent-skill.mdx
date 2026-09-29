@@ -1,5 +1,6 @@
 ---
 title: Agent Skill
+seoTitle: Agent Skill — better Remotion videos from your AI
 description: Install the snapcn agent skill with skills.sh so your AI generates better Remotion videos
 ---
 
@@ -19,8 +20,34 @@ the snapcn repo. Install it with the [`skills`](https://skills.sh) CLI:
 npx skills add snapcndev/snapcn
 ```
 
-`snapcn` is the only skill the repo publishes, so the CLI just asks which agent to install it into
-(for Claude Code that is `.claude/skills/snapcn/`).
+The CLI asks which skills and which agent to install them into (for Claude Code that is
+`.claude/skills/<name>/`). `snapcn` is the catalogue; the six below are workflows built on it.
+
+## Workflow skills
+
+Each one takes a brief to a finished Remotion video, one snapcn component per beat, with a
+composition that typechecks and renders as written:
+
+| Skill | For | Install |
+|---|---|---|
+| `remotion-launch-video` | Launch films, announcements, Product Hunt and X promos | `npx skills add snapcndev/snapcn --skill remotion-launch-video` |
+| `remotion-product-demo` | Walkthroughs from a real screen recording, CLI and AI-app demos | `npx skills add snapcndev/snapcn --skill remotion-product-demo` |
+| `remotion-motion-graphics` | Kinetic type, logo stings, stats and short openers | `npx skills add snapcndev/snapcn --skill remotion-motion-graphics` |
+| `remotion-kinetic-typography` | Animated text and title cards | `npx skills add snapcndev/snapcn --skill remotion-kinetic-typography` |
+| `remotion-logo-animation` | Logo reveals, intro and outro stings | `npx skills add snapcndev/snapcn --skill remotion-logo-animation` |
+| `remotion-explainer-video` | Narrated explainers with burned-in captions | `npx skills add snapcndev/snapcn --skill remotion-explainer-video` |
+
+## Claude Code plugin
+
+The same skills install as a Claude Code plugin:
+
+```bash
+/plugin marketplace add snapcndev/snapcn
+/plugin install snapcn@snapcn
+```
+
+With snapcn Pro, `snapcn-mcp@snapcn` adds the MCP server. Set `SNAPCN_API_KEY` (from
+[your account](https://snapcn.dev/account)) in your environment first.
 
 ### Common flags
 

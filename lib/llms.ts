@@ -345,6 +345,13 @@ component in one table with what it is for, how many frames it runs and what it
 pulls in, linking to each component's full page. Any docs URL also serves raw
 markdown: append \`.md\`.
 
+Agent skills that build a whole video from these components (skills.sh):
+\`npx skills add snapcndev/snapcn --skill remotion-launch-video\` (launch films),
+\`--skill remotion-product-demo\` (demos from a screen recording),
+\`--skill remotion-motion-graphics\` (kinetic type, logo stings, stats),
+\`--skill remotion-kinetic-typography\`, \`--skill remotion-logo-animation\`,
+\`--skill remotion-explainer-video\` (narrated, with captions).
+
 ${INSTALLABLE}`;
 
 /**

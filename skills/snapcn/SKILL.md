@@ -62,17 +62,18 @@ notes). Don't read every file.
 
 | Category | Tier | Components |
 |---|---|---|
-| **Text & Titles** | `snapcn` | `text-reveal`, `text-swell`, `text-highlight`, `text-swap`, `text-build`, `word-flip` |
+| **Text & Titles** | `snapcn` | `text-reveal`, `type-morph`, `text-swell`, `text-highlight`, `text-swap`, `text-build`, `text-rewrite`, `text-select`, `word-flip`, `punch-lines`, `word-gather`, `word-wheel` |
 | **Captions** | `snapcn` | `word-captions`, `karaoke-captions` |
-| **AI Chat Input** | `snapcn` | `search-typing`, `prompt-zoom`, `answer-stream` |
-| **Screens & Devices** | `snapcn` | `phone-frame`, `laptop-frame`, `terminal-simulator` |
-| **Logos** | `snapcn` | `logo-assemble`, `logo-flicker`, `block-wordmark` |
-| **Scenes** | `snapcn` | `announce-title`, `hero-launch`, `orbit-gallery`, `moodboard-reveal`, `status-cycle` |
-| **Social Proof** | `snapcn` | `follower-rush` |
+| **AI Chat Input** | `snapcn` | `prompt-send`, `search-typing`, `prompt-zoom`, `answer-stream`, `answer-highlight`, `agent-steps` |
+| **Screens & Devices** | `snapcn` | `phone-frame`, `laptop-frame`, `terminal-simulator`, `screen-recording`, `cursor-track` |
+| **Logos** | `snapcn` | `logo-assemble`, `logo-flicker`, `logo-collapse`, `logo-drift`, `block-wordmark`, `wordmark-cut` |
+| **Scenes** | `snapcn` | `announce-title`, `hero-launch`, `orbit-gallery`, `moodboard-reveal`, `status-cycle`, `count-grid`, `roster-grant`, `orb-swarm`, `reel-collage`, `card-rail` |
+| **Social Proof** | `snapcn` | `follower-rush`, `channel-thread` |
 | **Effects** | `snapcn` | `pulsing-border` |
 | **UI Primitives** | `snap-cn-ui` | `input`, `caret` (+ `snap-cn-ui`, the shared core lib) |
 
-**That is the whole registry — 27 items.** There are no shaders, no standalone transition
+**That is the whole free registry — 47 items** (the live list is always
+`https://snapcn.dev/llms.txt`; 50 more are Pro, see below). There are no shaders, no standalone transition
 components, no chart or social-card components, and no shadcn primitive beyond `input` and
 `caret`. If a scene needs one, build it (`references/anatomy.md` §1) — do not emit a
 `shadcn add` for a name that is not in this table. `references/components/index.md` maps the
@@ -188,6 +189,34 @@ Don't dump components — compose one story. When asked to build a full video ("
 5. **Check the quality bar** — one accent, sentence-case kinetic type, real content, no glow halos, no
    feature-list enumeration, no decorative gradient wash behind the type. See
    `references/anatomy.md` §3.
+
+## Workflows
+
+For a whole video, install the workflow skill for the job. Each one composes these
+components beat by beat with a composition that typechecks and renders:
+
+- `npx skills add snapcndev/snapcn --skill remotion-launch-video`: launch films,
+  announcements, Product Hunt / X promos.
+- `npx skills add snapcndev/snapcn --skill remotion-product-demo`: walkthroughs from a real
+  screen recording, CLI and AI-app demos.
+- `npx skills add snapcndev/snapcn --skill remotion-motion-graphics`: kinetic type, logo
+  stings, stats and short openers.
+- `npx skills add snapcndev/snapcn --skill remotion-kinetic-typography`: animated text and
+  title cards.
+- `npx skills add snapcndev/snapcn --skill remotion-logo-animation`: logo reveals, intro and
+  outro stings.
+- `npx skills add snapcndev/snapcn --skill remotion-explainer-video`: narrated explainers
+  with burned-in captions.
+
+## snapcn Pro
+
+50 more components (`version-drop`, `library-flight`, `read-through`, `focus-pull`,
+`tap-through`, `checkout-push`, `comment-storm`, `tally-rise` and more), the templates, and
+the snapcn MCP, which lets your agent search the registry and read every component's real
+props. Pro components install like free ones once `components.json` sends the key (three
+lines on https://snapcn.dev/account); the MCP is
+`claude mcp add snapcn -- npx -y @snapcn/mcp@latest SNAPCN_API_KEY=YOUR_KEY`. Plans:
+https://snapcn.dev/docs/pricing
 
 ## Reference
 

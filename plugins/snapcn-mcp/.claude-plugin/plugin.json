@@ -1,0 +1,8 @@
+{
+  "name": "snapcn-mcp",
+  "description": "The snapcn MCP server (snapcn Pro): search the registry, read every component's props and plan a Remotion video from a one-line brief. Set SNAPCN_API_KEY from https://snapcn.dev/account before installing.",
+  "version": "1.0.0",
+  "author": { "name": "snapcn", "url": "https://snapcn.dev" },
+  "homepage": "https://snapcn.dev/docs/mcp",
+  "license": "MIT"
+}

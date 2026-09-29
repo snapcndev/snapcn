@@ -17,6 +17,22 @@
  * An invented name passes neither, which is the point.
  */
 
+/**
+ * Names people keep typing into `shadcn add` for a component we already ship
+ * under another name. Unlike a suggestion, these install: the middleware
+ * rewrites `/r/<alias>.json` to the real file. Measured in
+ * `registry_component_missing` from 20 Aug to 29 Sep 2026, each one typed by
+ * real `shadcn` CLI users (3 each), not only bots.
+ *
+ * Only add a name here when the component does exactly what the name says;
+ * anything looser belongs in `suggestComponents`.
+ */
+export const COMPONENT_ALIASES: Readonly<Record<string, string>> = {
+  // The retired `cursor` was a typing caret, not a pointer — its callers want `caret`.
+  cursor: "caret",
+  "product-hero": "hero-launch",
+};
+
 /** Edit distance, capped — anything past `max` is "far" and the value is unused. */
 function editDistance(a: string, b: string, max = 3): number {
   if (Math.abs(a.length - b.length) > max) return max + 1;
