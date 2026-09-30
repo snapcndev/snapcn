@@ -1,11 +1,15 @@
 import { MailCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth, getConfiguredProviders, isEmailSignInConfigured } from "@/auth";
 import { SignInButtons } from "@/components/showcase/sign-in-buttons";
 import { SnapCnLogo } from "@/components/snapcn-logo";
 
 const TITLE = "Sign in";
+
+/** Query params a Dodo checkout echoes back onto its return URL. */
+const DODO_ECHO = ["email", "payment_id", "status"];
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -61,7 +65,18 @@ export default async function SignInPage({
     paid?: string;
   }>;
 }) {
-  const { error, callbackUrl, check, paid } = await searchParams;
+  const params = await searchParams;
+  // Dodo appends `payment_id`, `status` and the buyer's `email` to the return
+  // URL. Nothing here reads them, and left in the address bar the email lands
+  // in PostHog pageviews and session replay. Redirecting server-side means the
+  // browser never renders that URL.
+  if (DODO_ECHO.some((k) => k in params)) {
+    const kept = Object.entries(params).filter(
+      ([k, v]) => !DODO_ECHO.includes(k) && typeof v === "string",
+    ) as [string, string][];
+    redirect(`/signin?${new URLSearchParams(kept)}`);
+  }
+  const { error, callbackUrl, check, paid } = params;
   const session = await auth().catch(() => null);
   const providers = getConfiguredProviders();
   const emailEnabled = isEmailSignInConfigured();

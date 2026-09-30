@@ -5,6 +5,7 @@ import { FeaturedQuote } from "@/app/(home)/components/sections/featured-quote";
 import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { EarlyBirdStrip } from "@/components/early-bird";
+import { NewsletterForm } from "@/components/newsletter-form";
 import { buttonVariants } from "@/components/ui/button";
 import { PRO_ITEMS } from "@/config/catalogue";
 import { DOCS_PAGE_META } from "@/config/site";
@@ -317,6 +318,19 @@ export default function TemplatesPage() {
               className="size-4 transition-transform duration-150 ease-out group-hover/cta:translate-x-0.5"
             />
           </Link>
+          {/* The second-busiest docs page asked for nothing from anyone not
+              buying today, and the list the 20 Oct launch goes to was 5
+              people (Sep 2026). */}
+          <p className="mt-10 text-muted-foreground text-sm">
+            Not ready? One email when the templates land, before the price goes
+            up.
+          </p>
+          <NewsletterForm
+            defaultSource="templates"
+            id="templates-email"
+            buttonLabel="Email me"
+            className="mt-3 w-full max-w-sm"
+          />
         </section>
       </div>
     </GalleryFrame>
