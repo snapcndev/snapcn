@@ -696,6 +696,27 @@
       ]
     },
     {
+      "name": "check-cycle",
+      "type": "registry:component",
+      "docs": "Docs and props: https://snapcn.dev/docs/text/check-cycle?ref=cli — headline is the part of the sentence that never changes; words is what finishes it, comma separated, rolled through in order beside a ticked checkbox, then the line steps back to 80% and rests. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette.",
+      "title": "Check Cycle",
+      "description": "Rotating words beside a checkbox: a sentence that finishes itself several ways. \"Create your own\" sits left of a ticked shadcn-style checkbox and the word to its right rolls up out of a slot — Intros, Demos, Launches, Changelogs, Tutorials, And more — then the line steps back a little and rests. Every number came off a recording, frame by frame: the two words in the slot move as one strip on the in-out cubic over exactly half a second, a roll every twenty frames. The type moves by fractions of a pixel instead of the whole-pixel steps a browser snaps text to.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "check-cycle/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/check-cycle.tsx"
+        }
+      ]
+    },
+    {
       "name": "channel-thread",
       "type": "registry:component",
       "docs": "Docs and props: https://snapcn.dev/docs/text/channel-thread?ref=cli — script is the conversation, groups split by `;` and a group's messages by `|`; people is one `name time` per group; beats is the frame each message lands on and opens is the frame its row appears, so a pause before someone answers is a number rather than a gap you have to guess at. avatars takes one image per group, split by `|` (not by comma — a data: URL has one of its own). Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette.",

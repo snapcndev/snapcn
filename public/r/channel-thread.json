@@ -18,6 +18,6 @@
       "target": "components/snap-cn/channel-thread.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/text/channel-thread?ref=cli — script is the conversation, groups split by `;` and a group's messages by `|`; people is one `name time` per group; beats is the frame each message lands on and opens is the frame its row appears, so a pause before someone answers is a number rather than a gap you have to guess at. avatars takes one image per group, split by `|` (not by comma — a data: URL has one of its own). Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/text/channel-thread?ref=cli — script is the conversation, groups split by `;` and a group's messages by `|`; people is one `name time` per group; beats is the frame each message lands on and opens is the frame its row appears, so a pause before someone answers is a number rather than a gap you have to guess at. avatars takes one image per group, split by `|` (not by comma — a data: URL has one of its own). Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette. — 51 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }

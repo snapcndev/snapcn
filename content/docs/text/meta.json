@@ -14,6 +14,7 @@
     "word-flip",
     "type-morph",
     "word-gather",
-    "word-wheel"
+    "word-wheel",
+    "check-cycle"
   ]
 }
