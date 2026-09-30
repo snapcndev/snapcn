@@ -2,8 +2,9 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, asc, count, eq, sql } from "drizzle-orm";
 import { apiKeys, billingSubscriptions } from "@/lib/db/schema";
-import type { PlanName } from "@/lib/plans";
+import { entitledPlan, type PlanName } from "@/lib/plans";
 import { getDb, isDbConfigured } from "@/lib/server/db";
+import { teamPlanFor } from "@/lib/server/team";
 
 /**
  * The API key: what turns a `shadcn add @snapcn/<pro>` from a 402 into a file.
@@ -27,9 +28,9 @@ export function newApiKey(): string {
  * line is the same 402 in every case, and distinguishing them out loud only
  * tells someone probing keys which of their guesses was a real customer.
  *
- * `status` is Dodo's vocabulary (see the schema note); anything but `active`
- * has stopped paying, and a key that outlives the subscription is a free tier
- * with extra steps.
+ * The same rule as the site's `planFor` — `entitledPlan` — so a subscriber who
+ * cancelled keeps `shadcn add` for the year they paid for, exactly as long as
+ * they keep Pro on the site, and a key that outlives that is refused.
  */
 export async function planForApiKey(
   key: string | null | undefined,
@@ -39,19 +40,32 @@ export async function planForApiKey(
   try {
     const [row] = await getDb()
       .select({
+        userId: apiKeys.userId,
         plan: billingSubscriptions.plan,
         status: billingSubscriptions.status,
+        currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
       })
       .from(apiKeys)
-      .innerJoin(
+      // Left, not inner: a teammate on someone's Commercial licence has keys
+      // and no billing row of their own.
+      .leftJoin(
         billingSubscriptions,
         eq(billingSubscriptions.userId, apiKeys.userId),
       )
       .where(eq(apiKeys.key, key))
       .limit(1);
 
-    if (!row || row.status !== "active" || row.plan === "free") return null;
-    return row.plan;
+    if (!row) return null;
+    const own =
+      row.plan && row.status
+        ? entitledPlan({
+            plan: row.plan,
+            status: row.status,
+            currentPeriodEnd: row.currentPeriodEnd,
+          })
+        : "free";
+    const plan = own === "free" ? (await teamPlanFor(row.userId)).plan : own;
+    return plan === "free" ? null : plan;
   } catch (error) {
     /**
      * A database that is unreachable must not become a 500 on the registry.

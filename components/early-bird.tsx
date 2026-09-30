@@ -1,9 +1,4 @@
-import {
-  EARLY_BIRD,
-  earlyBirdDaysLeft,
-  SEPTEMBER_BONUS,
-  septemberBonusActive,
-} from "@/lib/plans";
+import { EARLY_BIRD, earlyBirdDaysLeft } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,11 +33,6 @@ export function EarlyBirdStrip({
           {days} {days === 1 ? "day" : "days"} left
         </span>
       </p>
-      {septemberBonusActive() ? (
-        <p className="text-balance text-center font-medium text-foreground text-sm">
-          {SEPTEMBER_BONUS.line}
-        </p>
-      ) : null}
       {withLockIn ? (
         <p className="text-balance text-center text-muted-foreground text-xs">
           Subscribe before then and every renewal stays at today&apos;s price.

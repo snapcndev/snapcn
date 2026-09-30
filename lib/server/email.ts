@@ -743,6 +743,43 @@ For help, reply to this email or write to ${SUPPORT}.
 }
 
 /**
+ * An invitation onto someone's Commercial licence. The seat is already theirs:
+ * signing in with this address is the whole of accepting it.
+ */
+export function teamInviteEmail(to: string, from: string | null): Email {
+  const url = `${SITE}/signin?callbackUrl=${encodeURIComponent("/account")}`;
+  const who = from ?? "Your team";
+  const text = `${who} added you to their snapcn Commercial licence.
+
+That is every Pro component, the templates and the snapcn MCP server, licensed for client and company work. Sign in with this address (${to}) to get your own API key:
+
+${url}
+
+For help, reply to this email or write to ${SUPPORT}.
+
+— Sri`;
+
+  return {
+    to,
+    subject: `${who} added you to snapcn Pro`,
+    reply_to: SUPPORT,
+    text,
+    html: accountShell({
+      preheader: "Sign in with this address to get your own API key.",
+      greeting: "Hi,",
+      heading: "You're on the team",
+      lead: `${esc(who)} added you to their snapcn Commercial licence — every Pro component, the templates and the MCP server, for client and company work. Sign in with this address to get your own API key.`,
+      rows: [
+        ["Account", esc(to)],
+        ["Licence", "Commercial"],
+      ],
+      cta: { label: "Sign in and get your key", href: url },
+      note: "Sign in with this exact address — the seat is attached to it.",
+    }),
+  };
+}
+
+/**
  * Escape user-supplied text before it enters an HTML mail body.
  *
  * For any text we did not write ourselves — configuration included — before

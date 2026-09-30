@@ -4,8 +4,9 @@
  *     DODO_API_KEY=… node scripts/dodo-products.mts test|live
  *
  * `CHECKOUT_PRODUCTS` and `PPP_PRICES` in lib/plans.ts are the prices; this
- * writes them. Run it once per mode, and again after a price moves (the $299
- * lifetime on 20 Oct is a one-number edit and a re-run). Prints the env lines
+ * writes them. Run it once per mode, and again after a price moves. The 20 Oct
+ * rise needs no edit: `PRICES_RISEN` in lib/plans.ts flips the table when the
+ * date has passed, so run this after 00:00 UTC that day. Prints the env lines
  * the checkout route reads.
  *
  * A product is found by `metadata.snapcn` — the same tag the checkout writes —

@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   ANONYMOUS,
   CATALOGUE_PRICE,
   CHECKOUT_PRODUCTS,
+  entitledPlan,
   isCheckoutProduct,
   oneTimePlanFor,
   PLANS,
@@ -11,6 +12,15 @@ import {
   PPP_PRICES,
   planForProduct,
 } from "@/lib/plans";
+
+/**
+ * `PRICES_RISEN` is read when lib/plans loads, so this suite pins the clock to
+ * the early-bird window first — otherwise every assertion about $129 turns red
+ * on 20 October. `vi.hoisted` runs before the imports below.
+ */
+vi.hoisted(() => {
+  vi.useFakeTimers({ now: new Date("2026-09-17T12:00:00Z"), toFake: ["Date"] });
+});
 
 /**
  * The regression these exist for: `starter_annual` was in `CHECKOUT_PRODUCTS`'
@@ -160,6 +170,20 @@ describe("the catalogue ladder", () => {
     expect(oneTimePlanFor("anything-else")).toBeNull();
   });
 
+  it("switches the list prices to the risen ones in a process started after the rise", async () => {
+    vi.setSystemTime(new Date("2026-10-20T00:00:01Z"));
+    vi.resetModules();
+    const risen = await import("@/lib/plans");
+    expect(risen.PRICES_RISEN).toBe(true);
+    expect(risen.CATALOGUE_PRICE).toEqual({
+      annual: "$179",
+      lifetime: "$299",
+      commercial: "$499",
+    });
+    expect(risen.CHECKOUT_PRODUCTS.everything_annual.cents).toBe(17900);
+    vi.setSystemTime(new Date("2026-09-17T12:00:00Z"));
+  });
+
   it("quotes the prices Dodo charges", () => {
     expect(CATALOGUE_PRICE).toEqual({
       annual: "$129",
@@ -182,5 +206,39 @@ describe("the catalogue ladder", () => {
     const envs = Object.values(CHECKOUT_PRODUCTS).map((p) => p.env);
     expect(new Set(envs).size).toBe(envs.length);
     for (const e of envs) expect(e).toMatch(/^DODO_PRODUCT_[A-Z_]+$/);
+  });
+});
+
+describe("entitledPlan", () => {
+  const now = Date.parse("2026-10-01T00:00:00Z");
+  const later = new Date(now + 86_400_000);
+  const earlier = new Date(now - 86_400_000);
+  const row = (status: string, currentPeriodEnd: Date | null) => ({
+    plan: "pro" as const,
+    status,
+    currentPeriodEnd,
+  });
+
+  it("keeps an active or outright plan", () => {
+    expect(entitledPlan(row("active", later), now)).toBe("pro");
+    expect(entitledPlan(row("active", null), now)).toBe("pro");
+  });
+
+  it("keeps a cancelled plan until its paid period ends, and not after", () => {
+    expect(entitledPlan(row("cancelled", later), now)).toBe("pro");
+    expect(entitledPlan(row("cancelled", earlier), now)).toBe("free");
+  });
+
+  it("drops a plan whose money did not arrive, or whose period has passed", () => {
+    for (const status of [
+      "failed",
+      "on_hold",
+      "paused",
+      "expired",
+      "refunded",
+    ]) {
+      expect(entitledPlan(row(status, later), now), status).toBe("free");
+    }
+    expect(entitledPlan(row("active", earlier), now)).toBe("free");
   });
 });

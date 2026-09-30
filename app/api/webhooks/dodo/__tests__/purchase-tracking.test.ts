@@ -33,6 +33,7 @@ vi.mock("@/lib/analytics-server", () => ({
 vi.mock("@/lib/server/db", () => ({ isDbConfigured: true }));
 vi.mock("@/lib/server/entitlements", () => ({
   activatePlan: async () => {},
+  billingFor: async () => null,
   userIdForEmail: async () => "user_guest",
 }));
 vi.mock("@/lib/server/email", () => ({

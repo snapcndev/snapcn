@@ -1,9 +1,17 @@
 import "server-only";
 import { and, count, eq, lt, sql } from "drizzle-orm";
 import { billingSubscriptions, renderUsage, users } from "@/lib/db/schema";
-import { ANONYMOUS, PLANS, type PlanLimits, type PlanName } from "@/lib/plans";
+import {
+  ANONYMOUS,
+  entitledPlan,
+  type Licence,
+  PLANS,
+  type PlanLimits,
+  type PlanName,
+} from "@/lib/plans";
 import { ensureApiKey } from "@/lib/server/api-key";
 import { getDb, isDbConfigured } from "@/lib/server/db";
+import { teamPlanFor } from "@/lib/server/team";
 
 /**
  * The meter. Every export on every surface goes through `consumeRender`, and
@@ -123,33 +131,23 @@ export async function planFor(userId: string | null): Promise<ResolvedPlan> {
 
   // No row is the state every user starts in — only the webhook writes here, so
   // the entire paid tier can be absent (no Dodo keys, no webhook, no rows) and
-  // this still answers correctly.
-  if (!row) return { plan: "free", limits: PLANS.free };
-
-  const lapsed =
-    row.currentPeriodEnd !== null &&
-    row.currentPeriodEnd.getTime() <= Date.now();
-
-  // `cancelled` is not `revoked`. Someone who cancels on day 3 has paid for the
-  // month and keeps it until `current_period_end` passes — revoking the instant
-  // the webhook lands takes back something already paid for, which is both
-  // wrong and the shape of wrong that comes back as a chargeback. Every other
-  // non-active status (`failed`, `on_hold`, `paused`, `expired`) means the money
-  // did *not* arrive, so those do drop immediately.
-  //
-  // The `lapsed` check is what makes this safe without a cron: a cancelled row
-  // stops entitling anything the moment its period end passes, whether or not a
-  // further event ever arrives.
-  const entitled =
-    row.status === "active" || (row.status === "cancelled" && !lapsed);
-  if (!entitled || lapsed) {
-    return { plan: "free", limits: PLANS.free };
+  // this still answers correctly. A seat on someone's Commercial licence is the
+  // one other way to hold a plan, asked only once the user's own row says no.
+  if (!row) {
+    const { plan } = await teamPlanFor(userId);
+    return { plan, limits: PLANS[plan] };
   }
 
-  // `PLANS[row.plan]` is the one place the `plan` pgEnum and the plan table
-  // meet: add a plan to the enum without adding it to PLANS and this line stops
+  // `cancelled` keeps the paid period, every other non-active status drops at
+  // once, and a passed period end entitles nothing — see `entitledPlan`, which
+  // the CLI's key check shares so the two can never disagree again.
+  //
+  // `PLANS[plan]` is the one place the `plan` pgEnum and the plan table meet:
+  // add a plan to the enum without adding it to PLANS and this line stops
   // compiling, which is the only reason the two can be trusted to agree.
-  return { plan: row.plan, limits: PLANS[row.plan] };
+  const own = entitledPlan(row);
+  const plan = own === "free" ? (await teamPlanFor(userId)).plan : own;
+  return { plan, limits: PLANS[plan] };
 }
 
 /* ── pruneUsage ─────────────────────────────────────────────────────────── */
@@ -363,6 +361,12 @@ export async function activatePlan(args: {
   customerId?: string | null;
   status: string;
   currentPeriodEnd: Date | null;
+  /**
+   * The terms of a purchase — set by a grant, omitted by a lapse. It only ever
+   * moves up: a Commercial licence (bought, or carried by the September offer)
+   * is not taken back by a later Pro renewal written over the same row.
+   */
+  licence?: Licence;
 }): Promise<void> {
   const row = {
     plan: args.plan,
@@ -377,8 +381,22 @@ export async function activatePlan(args: {
 
   await getDb()
     .insert(billingSubscriptions)
-    .values({ userId: args.userId, ...row })
-    .onConflictDoUpdate({ target: billingSubscriptions.userId, set: row });
+    .values({
+      userId: args.userId,
+      ...row,
+      licence: args.licence ?? "personal",
+    })
+    .onConflictDoUpdate({
+      target: billingSubscriptions.userId,
+      set: {
+        ...row,
+        ...(args.licence
+          ? {
+              licence: sql`case when ${billingSubscriptions.licence} = 'commercial' then 'commercial' else ${args.licence} end`,
+            }
+          : {}),
+      },
+    });
 
   // A buyer lands on `/account` with a key already waiting. Only when the plan
   // installs components, and only if they hold none — see `ensureApiKey`.
@@ -476,6 +494,7 @@ export async function billingFor(userId: string) {
         status: billingSubscriptions.status,
         currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
         subscriptionId: billingSubscriptions.dodoSubscriptionId,
+        licence: billingSubscriptions.licence,
       })
       .from(billingSubscriptions)
       .where(eq(billingSubscriptions.userId, userId))

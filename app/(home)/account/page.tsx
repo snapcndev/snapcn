@@ -5,11 +5,13 @@ import { auth } from "@/auth";
 import { CommandLine } from "@/components/command-line";
 import { buttonVariants } from "@/components/ui/button";
 import { SERVER } from "@/lib/mcp-clients";
-import { PRO_SAMPLE } from "@/lib/plans";
+import { COMMERCIAL_SEATS, PRO_SAMPLE } from "@/lib/plans";
 import { listApiKeys } from "@/lib/server/api-key";
 import { billingFor, planFor } from "@/lib/server/entitlements";
+import { canInvite, listTeam, teamPlanFor } from "@/lib/server/team";
 import { cn } from "@/lib/utils";
 import { ApiKeys } from "./api-keys";
+import { Team } from "./team";
 
 export const metadata: Metadata = {
   title: "Account",
@@ -44,13 +46,16 @@ export default async function AccountPage({
     );
   }
 
-  const [{ limits }, billing, keys] = await Promise.all([
+  const [{ limits }, billing, keys, owner, seat] = await Promise.all([
     planFor(user.id),
     billingFor(user.id),
     listApiKeys(user.id).catch(() => []),
+    canInvite(user.id).catch(() => false),
+    teamPlanFor(user.id),
   ]);
   const pro = limits.components;
   const key = keys[0]?.key;
+  const team = owner ? await listTeam(user.id).catch(() => []) : [];
 
   return (
     <section className="relative py-16 sm:py-24">
@@ -83,7 +88,7 @@ export default async function AccountPage({
             </div>
             <div className="text-right">
               <p className="font-medium text-foreground text-sm">
-                {planLine(billing, pro)}
+                {planLine(billing, pro, seat.ownerEmail)}
               </p>
               {!pro ? (
                 <Link
@@ -187,6 +192,26 @@ export default async function AccountPage({
             </div>
           )}
 
+          {owner ? (
+            <>
+              <h2 className="mt-12 font-medium text-foreground text-lg">
+                Team
+              </h2>
+              <p className="mt-2 text-muted-foreground text-sm">
+                Your Commercial licence covers {COMMERCIAL_SEATS} people — you
+                and up to {COMMERCIAL_SEATS - 1} more. Each gets Pro and their
+                own API keys, and loses both the moment you remove them.
+              </p>
+              <Team
+                initial={team.map((m) => ({
+                  ...m,
+                  createdAt: m.createdAt.toISOString(),
+                }))}
+                seats={COMMERCIAL_SEATS}
+              />
+            </>
+          ) : null}
+
           {pro || keys.length > 0 ? (
             <>
               <h2 className="mt-12 font-medium text-foreground text-lg">
@@ -219,9 +244,22 @@ export default async function AccountPage({
 function planLine(
   billing: Awaited<ReturnType<typeof billingFor>>,
   pro: boolean,
+  teamOwner: string | null,
 ): string {
+  // A seat on someone's licence, and nothing better of their own.
+  const ownLive =
+    billing &&
+    billing.plan !== "free" &&
+    (billing.status === "active" || billing.status === "cancelled");
+  if (teamOwner && !ownLive)
+    return `Pro · on ${teamOwner}'s Commercial licence`;
   if (!billing || billing.plan === "free") return "Free plan";
-  const name = billing.plan === "pro" ? "Pro" : "Starter";
+  const name =
+    billing.plan === "pro"
+      ? billing.licence === "commercial"
+        ? "Pro · Commercial"
+        : "Pro"
+      : "Starter";
   const end = billing.currentPeriodEnd
     ? DATE.format(billing.currentPeriodEnd)
     : null;

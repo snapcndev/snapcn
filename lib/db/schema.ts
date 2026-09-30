@@ -8,6 +8,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
@@ -283,6 +284,18 @@ export const billingSubscriptions = pgTable("billing_subscription", {
    * subscription stops being honoured.
    */
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  /**
+   * The terms the plan was bought on: `personal` (Pro, Lifetime — your own
+   * work) or `commercial` (client and company work, and a team of up to
+   * `COMMERCIAL_SEATS` people). Text rather than a pgEnum for the reason the
+   * status is. Only ever moves up — see `activatePlan`.
+   *
+   * Before this column the product was not recorded at all, so a Commercial
+   * buyer and a Lifetime buyer were the same row. Migration 0008 backfills
+   * `commercial` onto every paid row from before 1 Oct 2026 12:00 UTC: Pro and
+   * Lifetime bought by 30 Sep carried the Commercial terms.
+   */
+  licence: text("licence").notNull().default("personal"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -290,6 +303,36 @@ export const billingSubscriptions = pgTable("billing_subscription", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * The people a Commercial owner has invited — by email, because that is all an
+ * owner knows about a teammate, and because the address is the account: an
+ * invitee who signs in with it (magic link, or Google/GitHub on the same
+ * address) has Pro for as long as the owner's licence does.
+ *
+ * No accepted flag and no member user id. Signing in with the address is the
+ * acceptance, and matching on the address at read time means removing a row
+ * is the whole of removing someone — their keys stop the next time they are
+ * used, with nothing else to update.
+ */
+export const teamMembers = pgTable(
+  "team_member",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Lowercased, like the Auth.js email it is matched against. */
+    email: text("email").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("team_member_owner_email").on(t.ownerId, t.email),
+    index("team_member_email_idx").on(t.email),
+  ],
+);
 
 /**
  * A customer's API keys — several, so a team can give each person their own and
