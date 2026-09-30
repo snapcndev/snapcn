@@ -6,6 +6,7 @@ import { answerStreamConfig } from "@/registry/snap-cn/answer-stream/config";
 import { blockWordmarkConfig } from "@/registry/snap-cn/block-wordmark/config";
 import { cardRailConfig } from "@/registry/snap-cn/card-rail/config";
 import { channelThreadConfig } from "@/registry/snap-cn/channel-thread/config";
+import { checkCycleConfig } from "@/registry/snap-cn/check-cycle/config";
 import { countGridConfig } from "@/registry/snap-cn/count-grid/config";
 import { cursorTrackConfig } from "@/registry/snap-cn/cursor-track/config";
 import { followerRushConfig } from "@/registry/snap-cn/follower-rush/config";
@@ -90,6 +91,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "word-gather": wordGatherConfig,
   "orb-swarm": orbSwarmConfig,
   "word-wheel": wordWheelConfig,
+  "check-cycle": checkCycleConfig,
   "text-highlight": textHighlightConfig,
   "text-reveal": textRevealConfig,
   "text-rewrite": textRewriteConfig,

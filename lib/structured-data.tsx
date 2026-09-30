@@ -86,6 +86,7 @@ const COMPONENT_QUERY: Record<string, string> = {
   "text-reveal": "Remotion word-by-word text reveal",
   "type-morph": "Remotion typewriter effect",
   "word-wheel": "Remotion rotating words animation",
+  "check-cycle": "Remotion checkbox rotating text animation",
   "karaoke-captions": "Remotion karaoke captions",
   "word-captions": "Remotion TikTok-style captions",
   "phone-frame": "Remotion iPhone mockup",

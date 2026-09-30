@@ -131,6 +131,14 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     added: "2026-09-12",
   },
   {
+    name: "Check Cycle",
+    description:
+      "A sentence that finishes itself over and over — the word beside a ticked checkbox rolls up out of a slot, Intros, Demos, Launches, Changelogs, Tutorials, And more — then the line steps back a little and rests",
+    category: "text",
+    href: "/docs/text/check-cycle",
+    added: "2026-09-30",
+  },
+  {
     name: "Word Wheel",
     description:
       "A column of words that spins like a reel and stops on one of them — the lead-in holds the left of the line while the answer rolls into the slot beside it, decelerating over a second and three quarters",

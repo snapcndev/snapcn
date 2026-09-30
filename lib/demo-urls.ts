@@ -226,6 +226,11 @@ export const RENDERED_DEMOS: readonly string[] = [
   //                   reduced — measured to 0.33/255 against its reference,
   //                   which only the rendered file can show.
   "orb-swarm",
+  //   check-cycle     type moved by fractions of a pixel via two cross-faded
+  //                   copies placed on whole device pixels — which assumes the
+  //                   render's pixel grid. The Player scales the scene with CSS
+  //                   and breaks that assumption; the file does not.
+  "check-cycle",
 ];
 
 /**

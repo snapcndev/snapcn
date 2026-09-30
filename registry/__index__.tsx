@@ -8,6 +8,7 @@ import { AnswerStream } from "@/registry/snap-cn/answer-stream";
 import { BlockWordmark } from "@/registry/snap-cn/block-wordmark";
 import { CardRail } from "@/registry/snap-cn/card-rail";
 import { ChannelThread } from "@/registry/snap-cn/channel-thread";
+import { CheckCycle } from "@/registry/snap-cn/check-cycle";
 import { CountGrid } from "@/registry/snap-cn/count-grid";
 import { CursorTrack } from "@/registry/snap-cn/cursor-track";
 import { FollowerRush } from "@/registry/snap-cn/follower-rush";
@@ -141,6 +142,7 @@ const registry: Record<string, RegistryEntry> = {
   "word-gather": { Component: WordGather, config: CONFIGS["word-gather"] },
   "orb-swarm": { Component: OrbSwarm, config: CONFIGS["orb-swarm"] },
   "word-wheel": { Component: WordWheel, config: CONFIGS["word-wheel"] },
+  "check-cycle": { Component: CheckCycle, config: CONFIGS["check-cycle"] },
   "text-highlight": {
     Component: TextHighlight,
     config: CONFIGS["text-highlight"],

@@ -17,6 +17,6 @@
       "target": "components/snap-cn/reel-collage.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/scenes/reel-collage?ref=cli — the page, glow and flush are props; the captions take the theme's foreground. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/reel-collage?ref=cli — the page, glow and flush are props; the captions take the theme's foreground. — 51 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }

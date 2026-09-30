@@ -136,6 +136,26 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Browser page translation (Chrome/Google Translate, Edge, Safari) swaps each
+ * text node for a `<font>` it owns. The next time React inserts or removes
+ * beside one, it asks a parent that no longer holds the child and throws
+ * `NotFoundError: insertBefore` / `removeChild` — the tree unmounts and the
+ * page goes blank. ~25% of visitors browse in zh-CN, pt-BR and the like; 9 hit
+ * it in Sep 2026, one on the pricing page's buy click (a lost sale).
+ *
+ * The guard skips a removal of a node that is already gone, and appends an
+ * insert whose anchor is gone (dropping it would hide the new node). React's
+ * workaround from facebook/react#11538, except for that append.
+ *
+ * ponytail: under translation a later text update can miss (React writes to the
+ * orphaned node) and an appended node can land out of order. Wrap such text in
+ * its own <span> if either ever shows up.
+ */
+const TRANSLATE_GUARD = `(function(){var P=Node.prototype,r=P.removeChild,i=P.insertBefore;
+P.removeChild=function(c){return c.parentNode!==this?c:r.apply(this,arguments)};
+P.insertBefore=function(n,b){return b&&b.parentNode!==this?i.call(this,n,null):i.apply(this,arguments)};})()`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -159,6 +179,13 @@ export default function RootLayout({
         saans.variable,
       )}
     >
+      <head>
+        {/* Must run before hydration — see TRANSLATE_GUARD. */}
+        <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: static constant, no user input
+          dangerouslySetInnerHTML={{ __html: TRANSLATE_GUARD }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <SessionProvider>
           <PostHogProvider>

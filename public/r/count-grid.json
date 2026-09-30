@@ -18,6 +18,6 @@
       "target": "components/snap-cn/count-grid.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/scenes/count-grid?ref=cli — pass cards an array of image URLs and from/to/noun for the label. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/count-grid?ref=cli — pass cards an array of image URLs and from/to/noun for the label. — 51 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }

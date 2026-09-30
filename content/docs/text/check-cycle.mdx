@@ -1,0 +1,114 @@
+---
+title: Check Cycle
+description: A sentence that finishes itself over and over — the word beside a ticked checkbox rolls up out of a slot, Intros, Demos, Launches, Changelogs, Tutorials, And more — then the line steps back a little and rests
+---
+
+<ComponentPreview name="check-cycle" />
+
+A sentence with a checkbox in the middle of it. `Create your own` sits to the
+left of a ticked box; the word to its right rolls up out of a slot and is
+replaced — Intros, Demos, Launches, Changelogs, Tutorials, And more — then the
+whole line steps back to 80% of its size and rests.
+
+## How it moves
+
+**The two words in the slot are one strip.** The word leaving and the word
+arriving keep the same distance on every frame of a roll, so it is one curve, not
+an ease-in exit and an ease-out entrance: the in-out cubic,
+`cubic-bezier(0.65, 0, 0.35, 1)`, over exactly half a second, a roll every twenty
+frames.
+
+**The type moves by fractions of a pixel.** A browser rounds a line of type's
+baseline to a whole pixel, so a word lifting off slowly holds still for four
+frames and then jumps. Each line is painted twice, one pixel apart, and
+cross-faded by the fraction between — which is exactly how a video of this line
+would look.
+
+## Notes
+
+Every number was measured off a recording, frame by frame, and verified by
+rendering this component at the recording's own timestamps and diffing them in
+Y′CbCr: 0.24/255 mean error across all 65 frames, which is the size of the
+recording's own compression noise.
+
+The checkbox never moves. The lead-in is right-aligned to it and the word
+left-aligned from it, so new copy changes the words' widths, not where the
+sentence sits.
+
+The type is Inter 3.19, loaded from fontsource; the recording was set in Inter 3,
+not the Inter 4 Google serves today. If it cannot load, Google's Inter paints.
+
+## Installation
+
+<InstallBlock name="check-cycle" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="check-cycle" />
+
+## Usage
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { CheckCycle } from "@/components/snap-cn/check-cycle";
+
+const Hook = () => (
+  <CheckCycle
+    headline="Create your own"
+    words="Intros, Demos, Launches, Changelogs, Tutorials, And more"
+  />
+);
+
+export const RemotionRoot = () => (
+  <Composition
+    id="CheckCycle"
+    component={Hook}
+    durationInFrames={136}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+Each extra word adds one roll — 20 frames.
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "headline",
+      type: "string",
+      default: '"Create your own"',
+      description: "The part of the sentence that never changes",
+    },
+    {
+      name: "words",
+      type: "string",
+      default: '"Intros, Demos, Launches, Changelogs, Tutorials, And more"',
+      description:
+        "What finishes the sentence, comma separated, rolled through in order. The scene holds on the last one",
+    },
+    {
+      name: "fontFamily",
+      type: "string",
+      default: '"Default"',
+      description: "Inter 3 unless you name one of the loaded faces",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      description:
+        "Design-system token overrides. Anything you leave out falls back to the shadcn defaults",
+    },
+    {
+      name: "mode",
+      type: '"light" | "dark"',
+      description: "Which end of the design system to resolve tokens against",
+    },
+  ]}
+/>

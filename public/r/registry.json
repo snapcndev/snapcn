@@ -860,6 +860,27 @@
       "type": "registry:component"
     },
     {
+      "name": "check-cycle",
+      "title": "Check Cycle",
+      "description": "Rotating words beside a checkbox: a sentence that finishes itself several ways. \"Create your own\" sits left of a ticked shadcn-style checkbox and the word to its right rolls up out of a slot — Intros, Demos, Launches, Changelogs, Tutorials, And more — then the line steps back a little and rests. Every number came off a recording, frame by frame: the two words in the slot move as one strip on the in-out cubic over exactly half a second, a roll every twenty frames. The type moves by fractions of a pixel instead of the whole-pixel steps a browser snaps text to.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/check-cycle/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/check-cycle.tsx"
+        }
+      ],
+      "docs": "Docs and props: https://snapcn.dev/docs/text/check-cycle?ref=cli — headline is the part of the sentence that never changes; words is what finishes it, comma separated, rolled through in order beside a ticked checkbox, then the line steps back to 80% and rests. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette.",
+      "type": "registry:component"
+    },
+    {
       "name": "channel-thread",
       "title": "Channel Thread",
       "description": "Slack-style chat animation: team messages arrive with typing dots. A work chat filling itself in, the way the channel actually reads: an avatar, a name in bold, a quiet timestamp and the messages as plain lines under them. Messages land one at a time, a second message from the same person joins the group without repeating the name, and when somebody new starts typing three dots hold their line until the words arrive. The transcript never creeps — it sits perfectly still between arrivals and then scrolls, once, by exactly the room the new line needs, and only when the newest line would fall past the anchor. Every vertical number came off a recording and closes on it: carry the layout's arithmetic across the whole scene and it predicts the last frame's baselines to within a pixel.",

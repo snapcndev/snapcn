@@ -17,6 +17,6 @@
       "target": "components/snap-cn/moodboard-reveal.tsx"
     }
   ],
-  "docs": "Docs and props: https://snapcn.dev/docs/scenes/moodboard-reveal?ref=cli — this scene spans light and dark by design, so it takes no `mode` — pass `theme` to repaint it. — 50 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
+  "docs": "Docs and props: https://snapcn.dev/docs/scenes/moodboard-reveal?ref=cli — this scene spans light and dark by design, so it takes no `mode` — pass `theme` to repaint it. — 51 Pro components too — charts, launch scenes, device shots: https://snapcn.dev/docs/pricing?ref=cli-docs",
   "type": "registry:component"
 }
