@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { captureServer } from "@/lib/analytics-server";
-import { oneTimePlanFor, planForProduct } from "@/lib/plans";
+import { licenceForProduct, oneTimePlanFor, planForProduct } from "@/lib/plans";
 import { isDbConfigured } from "@/lib/server/db";
 import { type DodoEvent, verifyWebhookSignature } from "@/lib/server/dodo";
 import { proReadyEmail, sendEmail } from "@/lib/server/email";
-import { activatePlan, userIdForEmail } from "@/lib/server/entitlements";
+import {
+  activatePlan,
+  billingFor,
+  userIdForEmail,
+} from "@/lib/server/entitlements";
 
 // Node runtime: the signature check is an HMAC through `node:crypto` and a
 // `timingSafeEqual`, neither of which exists on the Edge runtime.
@@ -160,6 +164,45 @@ export async function POST(request: Request) {
     });
   };
 
+  /**
+   * Whether a subscription event may touch this account's row at all.
+   *
+   * There is one billing row per account, so an event writes over whatever is
+   * there. Two sequences took a paying customer's access away (reproduced on a
+   * local database, 2026-09-30):
+   *
+   *   - annual, then Lifetime, then the annual cancelled or expired: the old
+   *     subscription's lapse event overwrote the Lifetime grant, and the
+   *     buyer lost Pro — at once on `expired`, at the old period end on
+   *     `cancelled`.
+   *   - an event for a subscription the row no longer holds landing late.
+   *
+   * So a subscription event is ignored when the row is an outright grant
+   * (Lifetime or Commercial: active, no subscription, no period end — nothing
+   * a subscription could add to), and a lapse is ignored when it names a
+   * different subscription from the one on the row.
+   */
+  const subscriptionMayWrite = async (lapse: boolean): Promise<boolean> => {
+    const row = await billingFor(userId);
+    if (!row) return true;
+    const outright =
+      row.status === "active" &&
+      row.plan !== "free" &&
+      row.subscriptionId === null &&
+      row.currentPeriodEnd === null;
+    if (outright) return false;
+    const eventSub = str(data.subscription_id);
+    if (
+      lapse &&
+      row.subscriptionId &&
+      eventSub &&
+      row.subscriptionId !== eventSub
+    ) {
+      return false;
+    }
+    return true;
+  };
+
   try {
     switch (type) {
       // There is no `subscription.created` in Dodo's vocabulary, and there
@@ -180,6 +223,12 @@ export async function POST(request: Request) {
           );
           break;
         }
+        if (!(await subscriptionMayWrite(false))) {
+          console.info(
+            `[dodo] ${type} for ${userId} ignored: holds an outright grant`,
+          );
+          break;
+        }
         await activatePlan({
           userId,
           plan,
@@ -189,6 +238,7 @@ export async function POST(request: Request) {
               ?.customer_id,
           ),
           status: "active",
+          licence: licenceForProduct(metadata.product),
           // Dodo has no `current_period_end` — `next_billing_date` is the
           // renewal instant, and `expires_at` (null on an open-ended sub) is
           // the end of the whole term, which is a different question.
@@ -212,6 +262,12 @@ export async function POST(request: Request) {
         if (!plan) {
           console.warn(
             `[dodo] ${type} for product ${str(metadata.product) || "(untagged)"}, not ours — ignored`,
+          );
+          break;
+        }
+        if (!(await subscriptionMayWrite(true))) {
+          console.info(
+            `[dodo] ${type} for ${userId} ignored: not the subscription on the row`,
           );
           break;
         }
@@ -258,6 +314,9 @@ export async function POST(request: Request) {
             ),
             status: "active",
             currentPeriodEnd: null,
+            // Commercial is the licence, not a bigger catalogue: same plan, and
+            // the terms — client work, a team of five — recorded on the row.
+            licence: licenceForProduct(metadata.product),
           });
           await tellGuest();
           await reportSale("lifetime", outright);

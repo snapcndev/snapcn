@@ -9,8 +9,6 @@ import {
   CATALOGUE_PROMISE,
   EARLY_BIRD,
   earlyBirdDaysLeft,
-  SEPTEMBER_BONUS,
-  septemberBonusActive,
 } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +43,6 @@ export function ProBanner({
 
   const ready = owns === false;
   const early = ready && earlyBirdDaysLeft() > 0;
-  const bonus = ready && septemberBonusActive();
 
   return (
     <Link
@@ -67,11 +64,6 @@ export function ProBanner({
         templates — {CATALOGUE_PRICE.annual}/yr
         {early ? ` until ${EARLY_BIRD.endsOnShort}` : ""}
       </span>
-      {bonus ? (
-        <span className="text-muted-foreground">
-          · Free Commercial licence by {SEPTEMBER_BONUS.endsOnShort}
-        </span>
-      ) : null}
       <ArrowRight
         aria-hidden
         className="size-3.5 text-muted-foreground transition-transform duration-150 ease-out group-hover:translate-x-0.5"

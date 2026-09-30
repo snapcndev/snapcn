@@ -10,6 +10,7 @@ import {
   earlyBirdDaysLeft,
   FOUNDER_SEATS,
   PPP_PRICES,
+  PRICES_RISEN,
 } from "@/lib/plans";
 import {
   checkoutQuotes,
@@ -38,9 +39,15 @@ import { seatsTaken } from "@/lib/server/entitlements";
  * Starter and the $29 MCP tier are gone; neither sold, and the MCP only serves
  * the catalogue it would have been sold without.
  */
-/** "Save $50": what the early-bird price saves on the price it rises to. */
+/**
+ * "Save $50": what the early-bird price saves on the price it rises to. Nothing
+ * once the list price is the risen one — a build after the rise would
+ * otherwise say "Save $0".
+ */
 const saving = (product: "everything_annual" | "lifetime") =>
-  `Save $${(EARLY_BIRD.risesTo[product] - CHECKOUT_PRODUCTS[product].cents) / 100}`;
+  PRICES_RISEN
+    ? undefined
+    : `Save $${(EARLY_BIRD.risesTo[product] - CHECKOUT_PRODUCTS[product].cents) / 100}`;
 
 const TIERS = [
   {
@@ -99,7 +106,7 @@ const TIERS = [
     features: [
       "Everything in Lifetime",
       "Licensed for client and company work",
-      "Up to five people on one licence",
+      "You plus four teammates, invited from your account",
     ],
     product: "commercial" as const,
     cta: "Buy for your team",
@@ -237,6 +244,7 @@ export function pricingFor(
           ...(quote.tax > 0
             ? { caption: `${CADENCE[product]} · ${tail}` }
             : {}),
+          ...(daysLeft > 0 ? {} : { badge: undefined }),
           cta: cta(tier.price),
           note: listNote,
         };
@@ -265,7 +273,12 @@ export function pricingFor(
         note: localNote,
       };
     }
-    return { ...tier, cta: cta(tier.price), note: listNote };
+    return {
+      ...tier,
+      ...(daysLeft > 0 ? {} : { badge: undefined }),
+      cta: cta(tier.price),
+      note: listNote,
+    };
   });
 
   // India: Lifetime first, and it is the featured card. Indian cards are

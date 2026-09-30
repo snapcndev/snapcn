@@ -6,8 +6,6 @@ import {
   EARLY_BIRD,
   earlyBirdDaysLeft,
   PLANS,
-  SEPTEMBER_BONUS,
-  septemberBonusActive,
 } from "@/lib/plans";
 import { bearer, planForApiKey } from "@/lib/server/api-key";
 import { readProItem } from "@/lib/server/pro-registry";
@@ -95,7 +93,7 @@ export async function GET(
       earlyBirdDaysLeft() > 0
         ? `, early-bird until ${EARLY_BIRD.endsOnShort}`
         : ""
-    }.${septemberBonusActive() ? ` Buy by ${SEPTEMBER_BONUS.endsOnShort} and the Commercial licence is free.` : ""}`;
+    }.`;
 
     /**
      * The shadcn CLI never prints an error body. Every non-2xx renders as

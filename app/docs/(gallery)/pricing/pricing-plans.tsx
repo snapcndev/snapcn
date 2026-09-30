@@ -219,6 +219,21 @@ export function PricingPlans({
           {footnote}
         </p>
       )}
+      <p
+        className={cn(
+          "text-center text-muted-foreground text-xs",
+          footnote ? "mt-2" : "mt-10",
+        )}
+      >
+        What each plan lets you do:{" "}
+        <Link
+          href="/docs/getting-started/license"
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          license terms
+        </Link>
+        . All sales are final — no refunds.
+      </p>
     </div>
   );
 }

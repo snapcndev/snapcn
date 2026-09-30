@@ -12,7 +12,12 @@ import { DOCS_PAGE_META } from "@/config/site";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import { ITEM_BY_SLUG } from "@/lib/gallery-data";
 import { metaDescription, metaTitle } from "@/lib/meta";
-import { CATALOGUE_PRICE, CATALOGUE_PROMISE, EARLY_BIRD } from "@/lib/plans";
+import {
+  CATALOGUE_PRICE,
+  CATALOGUE_PROMISE,
+  EARLY_BIRD,
+  PRICES_RISEN,
+} from "@/lib/plans";
 import { RenderedDemo } from "@/lib/rendered-demos";
 import { cn } from "@/lib/utils";
 
@@ -86,7 +91,9 @@ const FAQ = [
     q: "Are templates included in Pro?",
     a: `Yes. Pro and Lifetime include every template at no extra cost — the ${CATALOGUE_PROMISE.templates} on ${EARLY_BIRD.endsOn} and every one after.`,
   },
-  {
+  // Only while there is a change to come: after the rise it would read
+  // "from $179 to $179".
+  !PRICES_RISEN && {
     q: `What changes on ${EARLY_BIRD.endsOn}?`,
     a: `The templates land and the early-bird prices end: Pro goes from ${CATALOGUE_PRICE.annual} to ${dollars(EARLY_BIRD.risesTo.everything_annual)} a year, Lifetime from ${CATALOGUE_PRICE.lifetime} to ${dollars(EARLY_BIRD.risesTo.lifetime)}.`,
   },
@@ -98,7 +105,7 @@ const FAQ = [
     q: "Can I use them for client work?",
     a: `Yes — that is the Commercial licence: ${CATALOGUE_PRICE.commercial} once, for up to five people.`,
   },
-];
+].filter((f) => f !== false);
 
 /**
  * `/docs/templates` — what lands on 20 October, and why today is the day to buy.
@@ -213,62 +220,65 @@ export default function TemplatesPage() {
           </ul>
         </section>
 
-        {/* Why today */}
-        <section className="mt-24">
-          <h2 className="text-center font-normal font-sans text-[clamp(1.75rem,3.4vw,2.5rem)] text-foreground leading-[1.1] tracking-[-0.03em]">
-            Buy before {EARLY_BIRD.endsOn}, pay less for good
-          </h2>
-          <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
-            {[
-              {
-                name: "Pro",
-                today: `${CATALOGUE_PRICE.annual}/yr`,
-                later: `${dollars(EARLY_BIRD.risesTo.everything_annual)}/yr`,
-                line: `Renews at ${CATALOGUE_PRICE.annual} for as long as you stay.`,
-              },
-              {
-                name: "Lifetime",
-                today: CATALOGUE_PRICE.lifetime,
-                later: dollars(EARLY_BIRD.risesTo.lifetime),
-                line: "One payment. Every template and component that ships.",
-              },
-            ].map((p) => (
-              <div
-                key={p.name}
-                className="rounded-2xl border border-border bg-card p-6"
-              >
-                <p className="text-muted-foreground">{p.name}</p>
-                <p className="mt-3 flex items-baseline gap-3">
-                  <span className="font-semibold text-4xl text-foreground tracking-tight">
-                    {p.today}
+        {/* Why today — gone once the prices it compares have risen. */}
+        {!PRICES_RISEN && (
+          <section className="mt-24">
+            <h2 className="text-center font-normal font-sans text-[clamp(1.75rem,3.4vw,2.5rem)] text-foreground leading-[1.1] tracking-[-0.03em]">
+              Buy before {EARLY_BIRD.endsOn}, pay less for good
+            </h2>
+            <div className="mx-auto mt-10 grid max-w-3xl gap-5 sm:grid-cols-2">
+              {[
+                {
+                  name: "Pro",
+                  today: `${CATALOGUE_PRICE.annual}/yr`,
+                  later: `${dollars(EARLY_BIRD.risesTo.everything_annual)}/yr`,
+                  line: `Renews at ${CATALOGUE_PRICE.annual} for as long as you stay.`,
+                },
+                {
+                  name: "Lifetime",
+                  today: CATALOGUE_PRICE.lifetime,
+                  later: dollars(EARLY_BIRD.risesTo.lifetime),
+                  line: "One payment. Every template and component that ships.",
+                },
+              ].map((p) => (
+                <div
+                  key={p.name}
+                  className="rounded-2xl border border-border bg-card p-6"
+                >
+                  <p className="text-muted-foreground">{p.name}</p>
+                  <p className="mt-3 flex items-baseline gap-3">
+                    <span className="font-semibold text-4xl text-foreground tracking-tight">
+                      {p.today}
+                    </span>
+                    <span className="text-muted-foreground text-sm">
+                      goes to {p.later} on {EARLY_BIRD.endsOnShort}
+                    </span>
+                  </p>
+                  <p className="mt-3 text-muted-foreground text-sm">{p.line}</p>
+                </div>
+              ))}
+            </div>
+            <ul className="mx-auto mt-8 grid max-w-3xl gap-3 text-sm sm:grid-cols-2">
+              {[
+                `All ${PRO_ITEMS.length} Pro components today, growing to ${CATALOGUE_PROMISE.components}`,
+                `${CATALOGUE_PROMISE.templates} video templates from ${EARLY_BIRD.endsOn}`,
+                "The snapcn MCP server for your coding agent",
+                "No watermark, 1080p exports in the editor",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <span className="mt-px flex size-[18px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                    <Check className="size-3.5" strokeWidth={2.5} />
                   </span>
-                  <span className="text-muted-foreground text-sm">
-                    goes to {p.later} on {EARLY_BIRD.endsOnShort}
-                  </span>
-                </p>
-                <p className="mt-3 text-muted-foreground text-sm">{p.line}</p>
-              </div>
-            ))}
-          </div>
-          <ul className="mx-auto mt-8 grid max-w-3xl gap-3 text-sm sm:grid-cols-2">
-            {[
-              `All ${PRO_ITEMS.length} Pro components today, growing to ${CATALOGUE_PROMISE.components}`,
-              `${CATALOGUE_PROMISE.templates} video templates from ${EARLY_BIRD.endsOn}`,
-              "The snapcn MCP server for your coding agent",
-              "No watermark, 1080p exports in the editor",
-            ].map((f) => (
-              <li key={f} className="flex items-start gap-2">
-                <span className="mt-px flex size-[18px] shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                  <Check className="size-3.5" strokeWidth={2.5} />
-                </span>
-                <span className="text-muted-foreground">{f}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 text-center text-muted-foreground text-xs">
-            Lower regional prices in six countries — shown on the pricing page.
-          </p>
-        </section>
+                  <span className="text-muted-foreground">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-6 text-center text-muted-foreground text-xs">
+              Lower regional prices in six countries — shown on the pricing
+              page.
+            </p>
+          </section>
+        )}
 
         <section className="mt-20 flex justify-center">
           <FeaturedQuote />

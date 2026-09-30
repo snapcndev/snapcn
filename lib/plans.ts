@@ -121,7 +121,68 @@ export function limitsFor(plan: PlanName | null): PlanLimits {
   return plan ? PLANS[plan] : PLANS.free;
 }
 
+/**
+ * What a billing row entitles, now: its plan, or `"free"`.
+ *
+ * One rule for every reader. The site (`planFor`) and the CLI's API key
+ * (`planForApiKey`) each had their own, and they disagreed: a subscriber who
+ * cancelled on day 3 kept Pro on the site for the year they had paid for and
+ * lost `shadcn add` the same minute, because the key only accepted `active`.
+ *
+ * `cancelled` is not `revoked` — it keeps the paid period. Every other
+ * non-active status means the money did not arrive and drops at once. A row
+ * whose period has passed entitles nothing, whatever its status says, so no
+ * cron is needed for a subscription whose last event never came.
+ */
+export function entitledPlan(
+  row: { plan: PlanName; status: string; currentPeriodEnd: Date | null },
+  now: number = Date.now(),
+): PlanName {
+  const lapsed =
+    row.currentPeriodEnd !== null && row.currentPeriodEnd.getTime() <= now;
+  const paying =
+    row.status === "active" || (row.status === "cancelled" && !lapsed);
+  return paying && !lapsed ? row.plan : "free";
+}
+
 /* ── Checkout products ──────────────────────────────────────────────────── */
+
+/**
+ * The early-bird window: today's prices end the day the templates land.
+ *
+ * Announced on the pricing and templates pages, so it is a promise with a date
+ * on it — on that day `PRICES_RISEN` flips the list prices to `risesTo`. A subscriber keeps what they signed up at: Dodo never reprices an
+ * existing subscription ("each keeps the price it was created with"), which is
+ * what makes "lock in" true rather than a slogan.
+ */
+export const EARLY_BIRD = {
+  endsAt: "2026-10-20T00:00:00Z",
+  endsOn: "20 October",
+  endsOnShort: "20 Oct",
+  risesTo: { everything_annual: 17900, lifetime: 29900 },
+} as const;
+
+/**
+ * Whether the rise has happened, read once when the process starts.
+ *
+ * So the list prices below switch without an edit: a build made after
+ * `endsAt` quotes the risen prices everywhere, and `dodo-products.mts` run
+ * after it writes them to Dodo. Before `endsAt` both keep today's prices, so
+ * running the script early cannot charge anyone the new price by mistake.
+ *
+ * On the day, in this order: run `dodo-products.mts live` (Dodo now charges
+ * the new price, and the pricing page already shows Dodo's own quote), then
+ * redeploy (every other page and the client bundle pick it up).
+ */
+export const PRICES_RISEN = Date.now() >= Date.parse(EARLY_BIRD.endsAt);
+
+/** Whole days left at early-bird prices; 0 once the window has closed. */
+export function earlyBirdDaysLeft(now: number = Date.now()): number {
+  return Math.max(
+    0,
+    Math.ceil((Date.parse(EARLY_BIRD.endsAt) - now) / 86_400_000),
+  );
+}
 
 /**
  * The `product` tag our checkout writes into Dodo metadata, and what each tag
@@ -154,14 +215,14 @@ export const CHECKOUT_PRODUCTS = {
     env: "DODO_PRODUCT_EVERYTHING_ANNUAL",
     plan: "pro",
     kind: "subscription",
-    cents: 12900,
+    cents: PRICES_RISEN ? EARLY_BIRD.risesTo.everything_annual : 12900,
   },
   // The same, bought outright, and everything that ships later.
   lifetime: {
     env: "DODO_PRODUCT_LIFETIME",
     plan: "pro",
     kind: "once",
-    cents: 24900,
+    cents: PRICES_RISEN ? EARLY_BIRD.risesTo.lifetime : 24900,
   },
   // Company use, five seats. The same plan — what it buys is the licence, not
   // a bigger catalogue — so it needs no gate of its own.
@@ -183,6 +244,20 @@ export const CHECKOUT_PRODUCTS = {
 >;
 
 export type CheckoutProduct = keyof typeof CHECKOUT_PRODUCTS;
+
+/**
+ * The terms a plan is held on. `personal` is Pro and Lifetime — one person,
+ * their own work. `commercial` is client and company work, and a team.
+ */
+export type Licence = "personal" | "commercial";
+
+/** People on one Commercial licence, the owner included. */
+export const COMMERCIAL_SEATS = 5;
+
+/** The licence a checkout product is bought on. */
+export function licenceForProduct(value: unknown): Licence {
+  return value === "commercial" ? "commercial" : "personal";
+}
 
 /**
  * `Object.hasOwn`, not `in`: `in` walks the prototype, so `"toString"` would
@@ -259,50 +334,6 @@ export const CATALOGUE_PRICE = {
   lifetime: usd(CHECKOUT_PRODUCTS.lifetime.cents),
   commercial: usd(CHECKOUT_PRODUCTS.commercial.cents),
 } as const;
-
-/**
- * The early-bird window: today's prices end the day the templates land.
- *
- * Announced on the pricing and templates pages, so it is a promise with a date
- * on it — on that day run `scripts/dodo-products.mts` with `cents` raised to
- * `risesTo`. A subscriber keeps what they signed up at: Dodo never reprices an
- * existing subscription ("each keeps the price it was created with"), which is
- * what makes "lock in" true rather than a slogan.
- */
-export const EARLY_BIRD = {
-  endsAt: "2026-10-20T00:00:00Z",
-  endsOn: "20 October",
-  endsOnShort: "20 Oct",
-  risesTo: { everything_annual: 17900, lifetime: 29900 },
-} as const;
-
-/** Whole days left at early-bird prices; 0 once the window has closed. */
-export function earlyBirdDaysLeft(now: number = Date.now()): number {
-  return Math.max(
-    0,
-    Math.ceil((Date.parse(EARLY_BIRD.endsAt) - now) / 86_400_000),
-  );
-}
-
-/**
- * A September-only reason to buy now rather than on 20 October: Pro or Lifetime
- * bought by 30 Sep carries the Commercial terms — client work, up to five
- * people — at no extra cost. The price does not change.
- *
- * ponytail: no flag is stored. The bonus is honoured from the Dodo payment
- * date, which is already the record; add a column only if support ever needs
- * to answer it without opening Dodo.
- */
-export const SEPTEMBER_BONUS = {
-  /** 23:59 on 30 Sep anywhere on Earth, so no buyer's evening is cut short. */
-  endsAt: "2026-10-01T12:00:00Z",
-  endsOnShort: "30 Sep",
-  line: "Buy Pro or Lifetime by 30 Sep and the Commercial licence is free — client work, up to five people.",
-} as const;
-
-export function septemberBonusActive(now: number = Date.now()): boolean {
-  return now < Date.parse(SEPTEMBER_BONUS.endsAt);
-}
 
 /**
  * What the catalogue grows into. A promise, so it is written once: the pricing
