@@ -10,7 +10,12 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { Item } from "@/lib/snap-cn-ui";
+import {
+  Item,
+  mixOklch,
+  type SnapCnTheme,
+  useSnapCnTheme,
+} from "@/lib/snap-cn-ui";
 
 /**
  * A grid of cards that rushes in, settles on a small count, then fills the
@@ -111,9 +116,6 @@ export const LABEL = {
   padX: 15,
   height: 41,
   radius: 9,
-  from: "#1F4470",
-  to: "#2B84E0",
-  border: "#DCE6EE",
 };
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -262,10 +264,18 @@ export interface CountGridProps {
   noun?: string;
   /** Card images, cycled across the grid. Anything `<Img>` can load. */
   cards?: string[];
+  /** Defaults to the theme's `background`. */
   background?: string;
-  /** The label's ink, left end and right end of its gradient. */
+  /**
+   * The label's ink, left end and right end of its gradient. Default to
+   * `primary` walked halfway toward `foreground`, then `primary` — the navy →
+   * blue the reference had, but one that turns pale in dark mode instead of
+   * vanishing into it.
+   */
   inkFrom?: string;
   inkTo?: string;
+  theme?: Partial<SnapCnTheme>;
+  mode?: "light" | "dark";
   /** 1 is the measured speed. */
   speed?: number;
 }
@@ -363,11 +373,20 @@ export function CountGrid({
   to = "500",
   noun = "clips",
   cards = OWN_CARDS,
-  background = "#FDFDFD",
-  inkFrom = LABEL.from,
-  inkTo = LABEL.to,
+  background,
+  inkFrom,
+  inkTo,
   speed = 1,
+  theme,
+  mode,
 }: CountGridProps) {
+  const t = useSnapCnTheme(theme, mode);
+  const page = background ?? t.background;
+  const ink0 = inkFrom ?? mixOklch(t.primary, t.foreground, 0.5);
+  const ink1 = inkTo ?? t.primary;
+  // The card edge is half a hairline: forty full-strength borders read as a
+  // grid of boxes, not a wall of frames.
+  const cardEdge = mixOklch(t.card, t.border, 0.5);
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const now = frame / fps / (speed || 1);
@@ -461,7 +480,7 @@ export function CountGrid({
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: background,
+        backgroundColor: page,
         fontFamily: SANS,
         overflow: "hidden",
       }}
@@ -516,10 +535,10 @@ export function CountGrid({
                 height: cardH,
                 borderRadius: CARD.radius * g * k,
                 overflow: "hidden",
-                background: "#FFFFFF",
+                background: t.card,
                 // A hairline, not a shadow: a drop shadow under forty white
                 // tiles on a white page is forty grey smears.
-                boxShadow: `inset 0 0 0 ${Math.max(0.5, 0.9 * g * k)}px #ECEFF2`,
+                boxShadow: `inset 0 0 0 ${Math.max(0.5, 0.9 * g * k)}px ${cardEdge}`,
                 display: "flex",
                 alignItems: "center",
                 opacity: c.o,
@@ -569,8 +588,8 @@ export function CountGrid({
             height: pillH,
             padding: `0 ${LABEL.padX * s * k}px`,
             borderRadius: LABEL.radius * s * k,
-            background: "#FFFFFF",
-            border: `1px solid ${LABEL.border}`,
+            background: t.card,
+            border: `1px solid ${t.border}`,
             // Not a drop shadow: on a white page under a white pill it reads as
             // a grey smear, and the reference has a hairline and nothing else.
             boxShadow: "none",
@@ -578,13 +597,13 @@ export function CountGrid({
             fontWeight: 400,
             lineHeight: 1,
             whiteSpace: "nowrap",
-            color: inkFrom,
+            color: ink0,
             textRendering: "geometricPrecision",
           }}
         >
           <span
             style={{
-              backgroundImage: `linear-gradient(90deg, ${inkFrom} 0%, ${inkTo} 100%)`,
+              backgroundImage: `linear-gradient(90deg, ${ink0} 0%, ${ink1} 100%)`,
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",

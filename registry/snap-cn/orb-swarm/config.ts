@@ -16,9 +16,13 @@ export const orbSwarmConfig: ComponentConfig = {
         "one command | what if | every launch | you shipped | got a video | in seconds",
       label: "Script (| card)",
     },
-    background: { type: "color", default: "#fcf9ff", label: "Background" },
-    ink: { type: "color", default: "#000000", label: "Ink" },
     orbColor: { type: "color", default: "#3577e0", label: "Orb colour" },
+    mode: {
+      type: "select",
+      default: "light",
+      options: ["light", "dark"],
+      label: "Mode",
+    },
     softness: {
       type: "number",
       default: 0.7,

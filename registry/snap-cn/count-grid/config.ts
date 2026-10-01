@@ -7,9 +7,12 @@ export const countGridConfig: ComponentConfig = {
     from: { type: "text", default: "5", label: "Count before" },
     to: { type: "text", default: "500", label: "Count after" },
     noun: { type: "text", default: "clips", label: "Noun" },
-    inkFrom: { type: "color", default: "#1F4470", label: "Label ink (left)" },
-    inkTo: { type: "color", default: "#2B84E0", label: "Label ink (right)" },
-    background: { type: "color", default: "#FDFDFD", label: "Background" },
+    mode: {
+      type: "select",
+      default: "light",
+      options: ["light", "dark"],
+      label: "Mode",
+    },
     speed: {
       type: "number",
       default: 1,

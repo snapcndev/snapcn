@@ -106,8 +106,11 @@ still at zero on the frame the count changes arrives visibly late.
   put your strongest images there. Defaults to snapcn's own showcase frames and
   one still per component in the registry.
 - `inkFrom` / `inkTo` — the label's ink, left end and right end of a horizontal
-  gradient across the line.
-- `background` — the page.
+  gradient across the line. Default to the theme's `primary`, darkened toward
+  `foreground` on the left.
+- `background` — the page. Defaults to the theme's `background`.
+- `theme` / `mode` — a partial `SnapCnTheme` and `"light"` or `"dark"`. Cards
+  and the label pill paint from `card` and `border`.
 - `speed` — `1` is the measured speed; `0.5` plays it half as fast.
 
 ## Notes

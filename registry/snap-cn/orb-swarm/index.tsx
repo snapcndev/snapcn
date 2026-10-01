@@ -14,6 +14,8 @@ import {
   parseColor,
   resolveFont,
   rgbToOklch,
+  type SnapCnTheme,
+  useSnapCnTheme,
 } from "@/lib/snap-cn-ui";
 
 /**
@@ -205,6 +207,17 @@ function recolourHex(hex: string, f: Recolour): string {
       .toString(16)
       .padStart(2, "0");
   return `#${h(r)}${h(g)}${h(b)}`;
+}
+
+/**
+ * A measured word tint, turned over for a dark page. The tints are dark
+ * violets that read against the reference's white; on a dark page the same
+ * lightness disappears, so it is mirrored and hue and chroma are kept.
+ */
+function onDark(hex: string): string {
+  const o = rgbToOklch(parseColor(hex));
+  const c = oklchToRgb(1 - o.l, o.c, o.h ?? 0);
+  return recolourHex(hex, () => [c.r * 255, c.g * 255, c.b * 255]);
 }
 
 function texel(tex: Table, s: number, out: Float32Array) {
@@ -1293,16 +1306,19 @@ export interface OrbSwarmProps {
    * reference's beats; the first, second and last arrive whole.
    */
   script?: string;
-  /** The page. */
+  /** The page. Defaults to the theme's `background`. */
   background?: string;
-  /** The type, once a word has settled. */
+  /** The type, once a word has settled. Defaults to the theme's `foreground`. */
   ink?: string;
   /**
    * The orbs' colour. The whole glass — its bands, its rim, and the tints the
    * newest words wear — is turned to this hue and chroma; every lightness
-   * stays as measured. `#9f77f8` is the reference's own violet.
+   * stays as measured. `#9f77f8` is the reference's own violet. Defaults to
+   * the theme's `primary`.
    */
   orbColor?: string;
+  theme?: Partial<SnapCnTheme>;
+  mode?: "light" | "dark";
   fontFamily?: string;
   /**
    * How soft the type is, in card pixels of blur. The reference is a screen
@@ -1316,35 +1332,34 @@ export interface OrbSwarmProps {
 const DEFAULT_SCRIPT =
   "one command | what if | every launch | you shipped | got a video | in seconds";
 
-function hexRgb(hex: string): readonly [number, number, number] {
-  const h = hex.replace("#", "");
-  const v =
-    h.length === 3
-      ? h
-          .split("")
-          .map((c) => c + c)
-          .join("")
-      : h;
-  const n = Number.parseInt(v.slice(0, 6), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
 export function OrbSwarm({
   script = DEFAULT_SCRIPT,
-  background = "#fcf9ff",
-  ink = "#000000",
-  orbColor = "#3577e0",
+  background: backgroundProp,
+  ink: inkProp,
+  orbColor: orbProp,
   fontFamily,
   softness = 0.7,
   speed = 1,
   className,
+  theme,
+  mode,
 }: OrbSwarmProps) {
+  const t = useSnapCnTheme(theme, mode);
+  const background = backgroundProp ?? t.background;
+  const ink = inkProp ?? t.foreground;
+  const orbColor = orbProp ?? t.primary;
+  // Read off the page, not the prop: a provider or a dark `background` alone
+  // must flip the tints too.
+  const dark = rgbToOklch(parseColor(background)).l < 0.5;
   const frame = useCurrentFrame();
   const { width, height, fps } = useVideoConfig();
   const beat = (frame / fps) * BEATS_PER_SECOND * speed;
   const custom = resolveFont(fontFamily);
   const font = `${WEIGHT} ${FONT_SIZE}px ${custom ?? `"${FACE}"`}`;
-  const bg = useMemo(() => hexRgb(background), [background]);
+  const bg = useMemo((): readonly [number, number, number] => {
+    const c = parseColor(background);
+    return [c.r * 255, c.g * 255, c.b * 255];
+  }, [background]);
   const tex = useMemo(
     () => recolourTable(TEX, recolourer(orbColor)),
     [orbColor],
@@ -1383,8 +1398,8 @@ export function OrbSwarm({
   }, [layouts, handle]);
 
   const { glyphs, alpha, blur } = useMemo(
-    () => typeAt(beat, layouts, ink, orbColor),
-    [beat, layouts, ink, orbColor],
+    () => typeAt(beat, layouts, ink, orbColor, dark),
+    [beat, layouts, ink, orbColor, dark],
   );
 
   return (
@@ -1416,8 +1431,11 @@ export function typeAt(
   layouts: readonly LineLayout[] | null,
   ink: string,
   orbColor: string = MEASURED_ORB,
+  dark = false,
 ): { glyphs: Glyph[]; alpha: number; blur: number } {
   const f = recolourer(orbColor);
+  const paint = (hex: string) =>
+    dark ? onDark(recolourHex(hex, f)) : recolourHex(hex, f);
   const none = { glyphs: [], alpha: 1, blur: 0 };
   let segment: Segment | null = null;
   for (const seg of SEGMENTS) if (beat >= seg.at) segment = seg;
@@ -1454,14 +1472,14 @@ export function typeAt(
           ? -amp
           : amp;
     let colour = ink;
-    if (wash) colour = recolourHex(wash, f);
+    if (wash) colour = paint(wash);
     else if (segment.tint && l.word >= before) {
       const j = fresh.indexOf(l);
       const m = segment.tint.length;
       const at =
         fresh.length > 1 ? Math.round((j * (m - 1)) / (fresh.length - 1)) : 0;
       const tint = segment.tint[at];
-      colour = tint ? recolourHex(tint, f) : ink;
+      colour = tint ? paint(tint) : ink;
     }
     return {
       ch: l.ch,

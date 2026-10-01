@@ -71,8 +71,9 @@ soft edge either way — it is part of how they are shaded.
 `background` and `ink` are the page and the settled type. `orbColor` turns the
 whole glass — its bands, its rim, and the tints the newest words wear — to one
 hue in OKLCH, keeping every lightness as measured, so any colour still reads as
-the same glass. It defaults to snapcn's blue; `#9f77f8` is the reference's own
-violet.
+the same glass. All three default to the theme — `background`, `foreground`,
+`primary` — and on a dark page the word tints mirror their lightness so the
+newest words stay legible. `#9f77f8` is the reference's own violet.
 
 The card is the reference's own 714 × 392 pixels, scaled to cover whatever
 composition it is placed in, so a 16:9 frame crops a sliver off the top and
@@ -126,19 +127,19 @@ export const RemotionRoot = () => (
     {
       name: "background",
       type: "string",
-      default: '"#fcf9ff"',
+      default: "theme.background",
       description: "The page",
     },
     {
       name: "ink",
       type: "string",
-      default: '"#000000"',
+      default: "theme.foreground",
       description: "The type once a word has settled",
     },
     {
       name: "orbColor",
       type: "string",
-      default: '"#3577e0"',
+      default: "theme.primary",
       description:
         "The orbs' colour. Bands, rim and word tints turn to its hue; lightness stays as measured",
     },
@@ -160,6 +161,18 @@ export const RemotionRoot = () => (
       type: "number",
       default: "1",
       description: "Playback rate. 2 plays the whole scene in half the frames",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      default: "—",
+      description: "Token overrides; page, ink and orbs read from it",
+    },
+    {
+      name: "mode",
+      type: '"light" | "dark"',
+      default: '"light"',
+      description: "Which token set to resolve",
     },
   ]}
 />

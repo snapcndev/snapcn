@@ -633,7 +633,7 @@ const ELEMENTS: Record<string, Studio> = {
   "count-grid": {
     box: [1280, 720],
     clip: true,
-    controls: ["start", "to", "noun", "inkFrom", "inkTo", "speed"],
+    controls: ["start", "to", "noun", "mode", "speed"],
     // The number it counts from; the Sequence owns `from`.
     alias: { start: "from" },
     // Its own cards are this site's files through staticFile(): a 404 in
