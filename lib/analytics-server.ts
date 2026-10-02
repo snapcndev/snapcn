@@ -257,7 +257,7 @@ export function classifyClient(userAgent: string | null): ClientKind {
   const ua = userAgent.toLowerCase();
 
   if (
-    /claude|anthropic|chatgpt|openai|gptbot|perplexity|cursor|copilot|codeium|gemini|google-extended|cohere|you\.com|phind/.test(
+    /snapcn-mcp|claude|anthropic|chatgpt|openai|gptbot|perplexity|cursor|copilot|codeium|gemini|google-extended|cohere|you\.com|phind/.test(
       ua,
     )
   ) {

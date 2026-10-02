@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "measuredAt": "2026-09-24T10:31:08.563Z",
+  "measuredAt": "2026-10-01T09:52:27.170Z",
   "components": {
     "agent-steps": {
       "sourceHash": "2ad029e1e05f",
@@ -435,7 +435,7 @@
       "detailCoverage": 0.2074
     },
     "screen-recording": {
-      "sourceHash": "dc8fa7d6fba4",
+      "sourceHash": "7c262fe7809d",
       "width": 1280,
       "height": 720,
       "fps": 30,

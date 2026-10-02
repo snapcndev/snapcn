@@ -1,0 +1,261 @@
+---
+title: Why AI motion graphics all look the same
+seoTitle: "Why Claude Code motion graphics all look the same (and the fix)"
+description: Ask Claude Code, Codex or Cursor for a Remotion video and you get a centred headline on a gradient that fades in. Why agents converge on that look, and five changes — shots, cuts, scale, real footage, components — that break it.
+date: 2026-10-01
+tags:
+  - remotion
+  - ai
+  - claude-code
+faq:
+  - question: Why do AI-generated Remotion videos all look the same?
+    answer: An agent writes the most likely code for the prompt it was given. For "make a launch video", the most likely Remotion code is a centred headline on a gradient with an opacity and translateY fade-in, because that is the median of the tutorials and examples it learned from. Without a shot list, real assets or components, it has nothing to deviate towards.
+  - question: How do I make Claude Code produce better motion graphics?
+    answer: Give it a shot list instead of adjectives, ask for hard cuts between shots instead of crossfades, specify scale and placement for the type, hand it real screenshots or recordings instead of letting it invent a background, and give it components to compose so it is not improvising motion from scratch.
+  - question: Is a better prompt enough?
+    answer: It is most of it. The other part is feedback — an agent cannot see its own video. Have it render stills at a few frames with npx remotion still and look at them before it calls the video done.
+  - question: Does this apply to Codex and Cursor too?
+    answer: Yes. The default look comes from what is most common in Remotion code generally, not from one model. Every coding agent drifts to it for the same reason, and the same five changes move every one of them off it.
+---
+
+Ask a coding agent for a launch video in Remotion and you get the same video
+everyone gets: **a centred headline on a purple-to-blue gradient, fading up 20
+pixels over two-thirds of a second.** It compiles, it renders, and it looks like
+every other AI video. The fix is not a better model. It is giving the model
+something to deviate towards — shots, cuts, scale, real footage and components.
+
+## The default video
+
+This is, near enough, what "make a launch video for Acme" produces:
+
+```tsx
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+
+export const Before = () => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 20], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+  const y = interpolate(frame, [0, 20], [20, 0], {
+    extrapolateRight: "clamp",
+  });
+  return (
+    <AbsoluteFill
+      style={{
+        background: "linear-gradient(135deg, #667eea, #764ba2)",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <h1
+        style={{
+          color: "white",
+          fontSize: 80,
+          fontFamily: "Inter, sans-serif",
+          opacity,
+          transform: `translateY(${y}px)`,
+        }}
+      >
+        Introducing Acme
+      </h1>
+    </AbsoluteFill>
+  );
+};
+```
+
+Nothing in it is a bug. Every line is the most reasonable choice in isolation:
+centre the text, give the page some colour, fade it in so it does not pop. That is
+exactly the problem.
+
+## Why every agent lands here
+
+An agent writes the most likely code for the prompt it was handed. For a vague
+brief, the most likely Remotion code is the median of every tutorial and example
+it learned from — and that median is an `interpolate()` from 0 to 1 on opacity,
+a small `translateY`, `justifyContent: "center"` and a `linear-gradient`.
+
+Three things keep it there:
+
+1. **"Make it modern and sleek" is not a direction.** Adjectives do not name a
+   single decision, so the agent fills every decision with the default.
+2. **It animates properties, not shots.** Left alone, an agent builds one scene
+   and tweens things inside it. Editing — the cut from one idea to the next — is
+   where motion graphics get their rhythm, and a single scene has none.
+3. **It cannot see the video.** It never watches the render, so nothing tells it
+   the result is generic.
+
+The bugs agents add on top — flicker, stacked crossfades, bouncing springs — are a
+separate problem, covered in [why AI agents write bad Remotion code](/why-ai-writes-bad-remotion-code).
+This post is about the look.
+
+## Five changes that break the look
+
+### 1. Write a shot list, not adjectives
+
+Replace the brief with the shots, in order, each with a length and one job:
+
+```text
+Shot 1 (0.8s): the problem in one word, huge, left-aligned, cropped by the frame.
+Shot 2 (1.5s): the product screenshot at public/screenshot.png, slow push in.
+Shot 3 (1.2s): "Acme ships it in one." small, bottom-left, on black.
+Hard cuts between shots. No fades. No gradient.
+```
+
+Every line answers a decision the agent would otherwise default.
+
+### 2. Cut, don't fade
+
+A cut is a frame where one shot ends and the next begins. In Remotion that is
+`<Series>`: each shot gets its own `<Series.Sequence>`, and the cut is free. The
+entrance inside a shot can be short and decisive — most of the move in the first
+few frames — instead of a long fade.
+
+### 3. Use scale and placement
+
+The default puts one line of 80px type in the middle. Pick one word and make it
+the frame: hundreds of pixels tall, left-aligned, allowed to run off the edge.
+Then make the next type small and confident in a corner. Contrast in size is
+what reads as design; everything-medium-and-centred reads as a template.
+
+### 4. Show the real thing
+
+A gradient is what an agent draws when it has nothing to show. Give it a
+screenshot or a screen recording in `public/` and name the file in the shot
+list. One real frame of the product carries more than any background effect.
+
+### 5. Give it components to compose
+
+An agent improvising every animation from `interpolate()` will always produce
+the average animation. A library of finished scenes — a terminal that types, a
+phone frame that rises, a headline that hard-cuts word by word — moves it from
+writing motion to choosing it. That is what [snapcn](/docs/components) is for:
+install a component with `npx shadcn add @snapcn/<name>`, and point the agent at
+[snapcn.dev/llms.txt](/llms.txt) or the [MCP server](/docs/mcp) so it knows
+what exists and what each prop does.
+
+## The same brief, directed
+
+Here is the shot list above, written out — three shots, hard cuts, one word at
+420px, the real screenshot, the name small in a corner:
+
+```tsx
+import {
+  AbsoluteFill,
+  Easing,
+  Img,
+  interpolate,
+  Series,
+  staticFile,
+  useCurrentFrame,
+} from "remotion";
+
+/** Lands fast and settles: most of the move in the first few frames. */
+const settle = (frame: number, from: number) =>
+  interpolate(frame, [0, 8], [from, 1], {
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+/** Shot 1: one word, huge, off-centre, cropped by the frame. */
+const Problem = () => {
+  const scale = settle(useCurrentFrame(), 1.12);
+  return (
+    <AbsoluteFill style={{ background: "#f4f1ea", justifyContent: "center" }}>
+      <div
+        style={{
+          marginLeft: -40,
+          fontSize: 420,
+          fontWeight: 800,
+          letterSpacing: "-0.06em",
+          lineHeight: 0.8,
+          color: "#111",
+          fontFamily: "Inter, sans-serif",
+          transform: `scale(${scale})`,
+          transformOrigin: "left center",
+        }}
+      >
+        Slow.
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/** Shot 2: the actual product, not a gradient. */
+const Product = () => {
+  const frame = useCurrentFrame();
+  const scale = interpolate(frame, [0, 45], [1.18, 1.04], {
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.quad),
+  });
+  return (
+    <AbsoluteFill style={{ background: "#111", overflow: "hidden" }}>
+      <Img
+        src={staticFile("screenshot.png")}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          transform: `scale(${scale})`,
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+/** Shot 3: the name, small and certain, bottom-left. */
+const Name = () => {
+  const y = settle(useCurrentFrame(), 0);
+  return (
+    <AbsoluteFill style={{ background: "#111", padding: 80 }}>
+      <div
+        style={{
+          marginTop: "auto",
+          fontSize: 64,
+          fontWeight: 700,
+          color: "#f4f1ea",
+          fontFamily: "Inter, sans-serif",
+          transform: `translateY(${(1 - y) * 24}px)`,
+        }}
+      >
+        Acme ships it in one.
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const After = () => (
+  <Series>
+    <Series.Sequence durationInFrames={24}>
+      <Problem />
+    </Series.Sequence>
+    <Series.Sequence durationInFrames={45}>
+      <Product />
+    </Series.Sequence>
+    <Series.Sequence durationInFrames={36}>
+      <Name />
+    </Series.Sequence>
+  </Series>
+);
+```
+
+It is barely longer than the default. Every difference is a decision the shot
+list made instead of the agent.
+
+## Give the agent eyes
+
+Last, close the loop. Ask the agent to render stills before it calls the video
+finished, and to look at them:
+
+```bash
+npx remotion still src/index.ts Launch out/f12.png --frame=12
+npx remotion still src/index.ts Launch out/f40.png --frame=40
+```
+
+An agent that can read images, as Claude Code can, opens the PNGs it just
+rendered. One that has seen its own frame 12 will tell you the headline is too
+small before you do.
+
+For the setup end to end — skills, components and a brief written as a shot
+list — see [Claude Code + Remotion](/claude-code-remotion-videos).
+
+Next: [kinetic typography in Remotion](/remotion-kinetic-typography).

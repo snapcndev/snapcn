@@ -40,7 +40,7 @@
     "@remotion/google-fonts": "4.0.473",
     "@remotion/player": "4.0.473",
     "@remotion/renderer": "4.0.473",
-    "@remotion/studio-protocol": "4.0.526",
+    "@remotion/studio-protocol": "4.0.531",
     "@remotion/transitions": "4.0.473",
     "@shadcn/react": "^0.1.0",
     "@uidotdev/usehooks": "^2.4.1",

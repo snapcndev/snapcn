@@ -36,8 +36,8 @@ importers:
         specifier: 4.0.473
         version: 4.0.473(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@remotion/studio-protocol':
-        specifier: 4.0.526
-        version: 4.0.526
+        specifier: 4.0.531
+        version: 4.0.531
       '@remotion/transitions':
         specifier: 4.0.473
         version: 4.0.473(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1967,8 +1967,8 @@ packages:
   '@remotion/streaming@4.0.473':
     resolution: {integrity: sha512-JRXgqnzHbcaZU+LH3VK9KRNBHd7rhNnf34C3uUeFYFChRQhnmHWTSo7p/SDUhCpVh+hIHsS52xJz9JPwwy5gUw==}
 
-  '@remotion/studio-protocol@4.0.526':
-    resolution: {integrity: sha512-arpuFdWtweGm1sHRomncgH8m/rFw9wdXF/aQoTWFT2OyDb6rXBpt9YV8zeTkx0dXnmO3HATrj9m5ucoDwt/cxA==}
+  '@remotion/studio-protocol@4.0.531':
+    resolution: {integrity: sha512-8UewGkNOSRVNwgzKiAYZpHJo6QOdzuHpaP7pR503fIlPn5ZpDb771T8ZqJ91oWzoih6B4V6aHu6/Ny+jUkJoEw==}
 
   '@remotion/studio-shared@4.0.473':
     resolution: {integrity: sha512-nOONVvgEMw0lL7oPobmXAguvKVgVnV6MAwOfB5ZvjJrkLorFFePZ8ryhoftpRVrn3hGU3ZgQM2Zbb2eiaQPycg==}
@@ -7267,7 +7267,7 @@ snapshots:
 
   '@remotion/streaming@4.0.473': {}
 
-  '@remotion/studio-protocol@4.0.526':
+  '@remotion/studio-protocol@4.0.531':
     dependencies:
       zod: 4.5.4
 

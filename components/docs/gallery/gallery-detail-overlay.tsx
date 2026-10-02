@@ -472,37 +472,14 @@ function OverlayBody({
 
           <Description text={item.description} />
 
-          {/* The facts, as a spec sheet rather than a ledger: label over value,
-              two to a row, between hairlines. */}
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-border border-y py-5">
-            <Spec label="Type">{typeLabel(item.href)}</Spec>
-            {meta ? (
-              <Spec label="Duration">
-                {(meta.durationInFrames / meta.fps).toFixed(1)}s
-              </Spec>
-            ) : null}
-            <Spec label="Category">{category}</Spec>
-            <Spec label="Source">snapcn</Spec>
-          </dl>
-
-          {locked ? (
-            // The price, spelled both ways, because the two products are the
-            // decision: a year of everything, or the same catalogue outright.
-            <div className={CARD}>
-              <p className={CARD_LABEL}>Price</p>
-              <p className="mt-1.5 text-foreground text-sm tabular-nums">
-                {CATALOGUE_PRICE.annual} a year · {CATALOGUE_PRICE.lifetime}{" "}
-                outright
-              </p>
-            </div>
-          ) : (
-            <InstallCard command={installCommand} slug={slug} />
-          )}
-
           {/* The actions, as one group: the editor first — the gallery's
               measurable exit, where 64% of visitors put a clip on the timeline,
               and `?clip=` carries this one straight onto it — then Studio for
-              someone already in a Remotion project. */}
+              someone already in a Remotion project.
+              They sit straight under the description, above the spec grid and
+              the install card: when the 22 Sep redesign put both above them,
+              "Make a video" clicks fell from ~5/day to ~1/day on the same
+              gallery traffic, and exports fell with them. */}
           <div className="flex flex-col gap-2.5">
             {item.pro && owns ? (
               <Link href="/account" className={PRIMARY_BTN}>
@@ -550,6 +527,33 @@ function OverlayBody({
               <StudioInstall name={slug} surface="gallery" block />
             )}
           </div>
+
+          {/* The facts, as a spec sheet rather than a ledger: label over value,
+              two to a row, between hairlines. */}
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-border border-y py-5">
+            <Spec label="Type">{typeLabel(item.href)}</Spec>
+            {meta ? (
+              <Spec label="Duration">
+                {(meta.durationInFrames / meta.fps).toFixed(1)}s
+              </Spec>
+            ) : null}
+            <Spec label="Category">{category}</Spec>
+            <Spec label="Source">snapcn</Spec>
+          </dl>
+
+          {locked ? (
+            // The price, spelled both ways, because the two products are the
+            // decision: a year of everything, or the same catalogue outright.
+            <div className={CARD}>
+              <p className={CARD_LABEL}>Price</p>
+              <p className="mt-1.5 text-foreground text-sm tabular-nums">
+                {CATALOGUE_PRICE.annual} a year · {CATALOGUE_PRICE.lifetime}{" "}
+                outright
+              </p>
+            </div>
+          ) : (
+            <InstallCard command={installCommand} slug={slug} />
+          )}
         </div>
       </div>
 

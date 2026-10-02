@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 import {
   createElementPayload,
   type ElementDependency,
+  staticFileRef,
 } from "@remotion/studio-protocol";
 import { loadConfigs } from "./lib/configs.mts";
 import {
@@ -17,8 +18,12 @@ import {
   adoptDefaults,
   elementDefaults,
   hideLayers,
+  isStatic,
+  itemStarter,
+  type StaticAsset,
   type Studio,
   slotKeys,
+  staticAssets,
   studioItemsWrapper,
   studioWrapper,
   TAIL,
@@ -45,10 +50,17 @@ const SITE = "https://snapcn.dev";
 /**
  * Neutral starter content. An Element is copied into somebody else's project,
  * so it may not arrive wearing snapcn: the guidelines ask for no project
- * branding or footage. A placeholder mark and generic photos, all on this site.
+ * branding or footage. A placeholder mark and generic photos — declared as the
+ * payload's `assets`, so Studio copies them into the project's `public/` at
+ * install and the Element plays them from there, under a folder named for it,
+ * instead of reaching back to this site.
  */
-const MARK = `${SITE}/logo/dummy-logo.png`;
-const PHOTOS = [
+const asset = (slug: string, file: string, from: string): StaticAsset => ({
+  staticFile: `${slug}/${file}`,
+  url: `${SITE}${from}`,
+});
+const MARK = (slug: string) => asset(slug, "logo.png", "/logo/dummy-logo.png");
+const PHOTO_FILES = [
   "438b9e6b50654a44d404fbf358c26e9f.webp",
   "5e5305b05bd405a0d89570725434099e.webp",
   "767d99bb371a54d0d36751e8cecae43c.jpg",
@@ -57,9 +69,25 @@ const PHOTOS = [
   "98f89cb9994f5c382ab964062c4039db.jpg",
   "b25b82db2892efff9be3204e860d30ee.jpg",
   "c9ebc6337aa2268ac4b357f9cb1ac547.jpg",
-].map((f) => `${SITE}/showcase-assets/${f}`);
+];
+/** The eight photos, as `<slug>/photo-1.webp` … in the project. */
+const PHOTOS = (slug: string) =>
+  PHOTO_FILES.map((f, i) =>
+    asset(slug, `photo-${i + 1}${path.extname(f)}`, `/showcase-assets/${f}`),
+  );
+/** A face from the site's avatars, as `<slug>/avatar-NN.jpg` in the project. */
+const AVATAR = (slug: string, n: number) => {
+  const nn = String(n).padStart(2, "0");
+  return asset(slug, `avatar-${nn}.jpg`, `/avatars/${nn}.jpg`);
+};
 /**
- * follower-rush's own crowd, with its photos as URLs. The component points at
+ * A recording to start a screen with. Remotion's own test footage on
+ * remotion.media, left remote: at 2 MB it is a download per install for a clip
+ * the user replaces first thing.
+ */
+const FOOTAGE = "https://remotion.media/video.mp4";
+/**
+ * follower-rush's own crowd, with its photos as assets. The component points at
  * `/avatars/NN.jpg`, which exists on this site and 404s everywhere else — it
  * falls back to monograms, so it never breaks, it just loses every face.
  */
@@ -68,7 +96,7 @@ const FOLLOWERS =
     .split(" ")
     .map((name, i) => ({
       name,
-      avatar: `${SITE}/avatars/${String((i % 24) + 1).padStart(2, "0")}.jpg`,
+      avatar: AVATAR("follower-rush", (i % 24) + 1),
     }));
 /** logo-drift's measured field — positions, sizes, drifts, entries, paint — renamed. */
 const DRIFT_TILES = [
@@ -97,6 +125,49 @@ const DRIFT_TILES = [
 const CLEAR = { background: "transparent" };
 /** Every Remotion project already has these; Studio refuses them as dependencies. */
 const PROVIDED = new Set(["react", "react-dom", "remotion"]);
+
+/**
+ * This site's name, anywhere in an Element: a stamp, a type name, a log prefix,
+ * a URL. The build fails on one rather than ship it into someone's project.
+ */
+const BRAND = /snap-?cn|snapCn|SNAPCN/i;
+
+/** An Element's `patch`, applied to its inlined source. */
+function patched(source: string, studio: Studio): string {
+  let out = source;
+  for (const [from, to] of studio.patch ?? []) {
+    const next = out.replace(from, to);
+    if (next === out) throw new Error(`patch found nothing: ${String(from)}`);
+    out = next;
+  }
+  return out;
+}
+
+/**
+ * The inlined source without this site's name on it. The registry files carry
+ * it in their stamps, in their shared theme's type names and log prefix, and
+ * in comments that explain a choice by pointing at this site; none of it means
+ * anything in someone else's project. Renamed, not deleted: the code is the same
+ * code, and every comment still says what it said about the code.
+ */
+function neutral(source: string): string {
+  return (
+    source
+      // The file stamps: `// Card Rail · snapcn — https://snapcn.dev/…`.
+      .replace(/^\/\/[^\n]*snapcn[^\n]*\n/gim, "")
+      .replace(/\[snap-cn-ui\] ?/g, "")
+      .replace(/SNAPCN_/g, "DEFAULT_")
+      .replace(/\bSnapCn/g, "Kit")
+      .replace(/\buseSnapCn/g, "useKit")
+      .replace(/\bsnapCn/g, "kit")
+      .replace(/\bSnapMark\b/g, "DefaultMark")
+      // What is left is prose in comments. A URL is never rewritten: one in
+      // code is a real reference, and the build stops on it instead.
+      .replace(/\bsnap-cn-ui\b/g, "the shared theme")
+      .replace(/\bsnapcn's\b(?!\.dev)/gi, "the library's")
+      .replace(/\bsnapcn\b(?!\.dev)/gi, "the library")
+  );
+}
 
 type Item = {
   name: string;
@@ -177,7 +248,10 @@ const ELEMENTS: Record<string, Studio> = {
       "speed",
     ],
     // The zoom-to-screen finale leaves any box; it is a scene's ending.
-    props: { finale: "none", notchLabel: "Recording" },
+    props: { finale: "none", notchLabel: "Recording", screenSrc: FOOTAGE },
+    // Studio's picker takes one kind of file, and this one is a recording.
+    assets: { screenSrc: "video" },
+    labels: { screenSrc: "Screen recording" },
   },
   "phone-frame": {
     box: [380, 760],
@@ -194,6 +268,7 @@ const ELEMENTS: Record<string, Studio> = {
     // A phone's screen is a recording more often than a still; the scene
     // plays either, and the picker is Studio's only way to replace it.
     assets: { screenSrc: "video" },
+    labels: { screenSrc: "Screen recording" },
     // `showcase` is a crane move across the frame; "" is the built-in screen.
     props: { variant: "tilt", screenSrc: "" },
   },
@@ -259,7 +334,7 @@ const ELEMENTS: Record<string, Studio> = {
       cutBottom: "cropBottom",
       cutLeft: "cropLeft",
     },
-    props: { backdropColor: "transparent" },
+    props: { backdropColor: "transparent", src: FOOTAGE },
     // The Sequence's trim, not the recording's.
     drop: ["trimBefore"],
   },
@@ -293,6 +368,18 @@ const ELEMENTS: Record<string, Studio> = {
     ],
     // `logo-wipe` ends on a full-frame flood of colour.
     props: { preset: "marker" },
+    // logo-wipe's default mark, which this Element never draws but still
+    // carries, is this site's logo: a plain rounded square instead.
+    patch: [
+      [
+        /<g transform="translate\(0,409\) scale\(0\.1,-0\.1\)">[\s\S]*?<\/g>/,
+        '<rect x="27.5" y="0" width="409" height="409" rx="96" fill={color} />',
+      ],
+      [
+        /Default mark: the snapcn mark, the same path `public\/logo\.svg` draws\./,
+        "Default mark: a rounded square.",
+      ],
+    ],
   },
   "text-reveal": {
     box: [820, 240],
@@ -317,6 +404,8 @@ const ELEMENTS: Record<string, Studio> = {
       "append",
       "accentColor",
       "mode",
+      "fontSize",
+      "fontWeight",
       "fontFamily",
       "speed",
     ],
@@ -334,11 +423,29 @@ const ELEMENTS: Record<string, Studio> = {
     at: [0, 302],
     // Scales a 16:9 stage to fit: laid out at it, cropped to the line.
     stage: [1280, 720],
-    controls: ["headline", "accentColor", "mode", "fontFamily", "speed"],
+    controls: [
+      "headline",
+      "accentColor",
+      "shineColor",
+      "mode",
+      "fontSize",
+      "fontWeight",
+      "fontFamily",
+      "speed",
+    ],
     props: { glow: false, theme: { background: "transparent" } },
   },
   "text-swap": {
     box: [900, 160],
+    // Remotion's lint rule reads a prop named `transition` as a CSS transition:
+    // the scene's own default stands, marked, and the wrapper does not repeat it.
+    drop: ["transition"],
+    patch: [
+      [
+        /\n(\s*)transition = "fly-through",/,
+        '\n$1// eslint-disable-next-line @remotion/non-pure-animation -- the prop that picks the swap, not a CSS transition\n$1transition = "fly-through",',
+      ],
+    ],
     // The fly-through carries the old line past the camera, across the whole
     // frame; an Element keeps it inside its box.
     clip: true,
@@ -380,8 +487,6 @@ const ELEMENTS: Record<string, Studio> = {
     // The default "boxed" look paints neither the accent nor the font; the
     // YouTube look is the plainest one that does.
     props: { fontSize: 45, preset: "youtube" },
-    // Pages cut out on their last word, like speech does.
-    exit: false,
     // The whole transcript: 16 words at 14 frames, and a beat.
     durationInFrames: 16 * 14 + 10,
   },
@@ -566,7 +671,7 @@ const ELEMENTS: Record<string, Studio> = {
         ["Reports", 6],
         ["Inbox", 4],
       ].map(([title, screens], i) => ({
-        image: PHOTOS[i],
+        image: PHOTOS("card-rail")[i],
         title,
         note: `Template · ${screens} screens`,
         tag: `@acme/${String(title).toLowerCase()}`,
@@ -575,10 +680,11 @@ const ELEMENTS: Record<string, Studio> = {
     },
   },
   "channel-thread": {
-    // The thread, which scrolls up out of the top of its stage.
-    box: [1280, 560],
+    // The thread, which scrolls up out of the top of its stage: cropped to the
+    // column it draws in over its whole run, measured, 24px clear.
+    box: [950, 560],
     stage: [1280, 720],
-    at: [0, 0],
+    at: [210, 0],
     clip: true,
     // The shared speed knob, which this component never read.
     drop: ["speed"],
@@ -624,7 +730,7 @@ const ELEMENTS: Record<string, Studio> = {
       ].map(([author, time, face, text]) => ({
         author,
         time,
-        avatar: `${SITE}/avatars/${face}.jpg`,
+        avatar: AVATAR("channel-thread", Number(face)),
         text,
       })),
       theme: CLEAR,
@@ -644,7 +750,7 @@ const ELEMENTS: Record<string, Studio> = {
         image: { label: "Image", type: "image", from: "cards" },
       },
     },
-    props: { background: "transparent", cards: PHOTOS },
+    props: { background: "transparent", cards: PHOTOS("count-grid") },
   },
   "follower-rush": {
     // Cropped to the ink it draws over its whole run, measured, 16px clear.
@@ -695,14 +801,17 @@ const ELEMENTS: Record<string, Studio> = {
     props: {
       // Lit for a dark page by default; on a transparent one, its ink is dark.
       mode: "light",
-      image1: PHOTOS[3],
-      image2: PHOTOS[7],
+      image1: PHOTOS("hero-launch")[3],
+      image2: PHOTOS("hero-launch")[7],
       heading: "Launching today",
       theme: CLEAR,
     },
   },
   "logo-assemble": {
-    box: [1280, 720],
+    // Cropped to the column the ring and the lockup draw in, measured, 24px clear.
+    box: [720, 720],
+    stage: [1280, 720],
+    at: [280, 0],
     clip: true,
     controls: ["brandName", "middleText", "logoSrc", "fontFamily", "speed"],
     props: {
@@ -710,9 +819,9 @@ const ELEMENTS: Record<string, Studio> = {
       mode: "light",
       brandName: "Acme",
       middleText: "Everything your team ships",
-      logoSrc: MARK,
+      logoSrc: MARK("logo-assemble"),
       background: "transparent",
-      images: PHOTOS,
+      images: PHOTOS("logo-assemble"),
     },
     items: {
       noun: "Image",
@@ -724,10 +833,11 @@ const ELEMENTS: Record<string, Studio> = {
     },
   },
   "logo-collapse": {
-    // The row the pictures collapse into the mark on.
-    box: [1280, 360],
+    // The row the pictures collapse into the mark on, cropped to the shots'
+    // widest card, measured, 24px clear.
+    box: [640, 360],
     stage: [1280, 720],
-    at: [0, 180],
+    at: [316, 180],
     clip: true,
     // The shared speed knob, which this component never read.
     drop: ["speed"],
@@ -745,12 +855,21 @@ const ELEMENTS: Record<string, Studio> = {
           node: "src",
         },
       },
-      // A shot past the sixth has no hold of its own and would never show.
-      build: `(o) => ({ images: o.map((x) => x.image ?? "").join("|"), holds: o.map((_, i) => [1, 5, 5, 4, 2, 5][i] ?? 5).join(",") })`,
+      // Each shot's hold and size by its place in the collapse; a shot past the
+      // sixth holds and sits like the sixth, so it still shows.
+      build: `(o) => ({
+        images: o.map((x) => x.image ?? "").join("|"),
+        holds: o.map((_, i) => [1, 5, 5, 4, 2, 5][i] ?? 5).join(","),
+        sizes: o.map((_, i) => ["0.82x0.461", "0.72x0.405", "0.63x0.354", "0.55x0.309", "0.46x0.259", "0.36x0.203"][Math.min(i, 5)]).join(","),
+      })`,
+      starter: PHOTOS("logo-collapse")
+        .slice(0, 6)
+        .map((image) => ({ image })),
     },
     props: {
-      images: PHOTOS.slice(0, 6).join("|"),
-      mark: MARK,
+      // The shots are the items'; the stage always passes the list they build.
+      images: "",
+      mark: MARK("logo-collapse"),
       wordmark: "acme",
       theme: CLEAR,
     },
@@ -783,7 +902,8 @@ const ELEMENTS: Record<string, Studio> = {
           label: t.label ?? "",
         })),
     },
-    props: { theme: CLEAR, tiles: DRIFT_TILES },
+    // The wash is an accent glow over the page; on someone's footage it is a tint.
+    props: { theme: CLEAR, tiles: DRIFT_TILES, glow: false },
   },
   "logo-flicker": {
     box: [1280, 720],
@@ -793,16 +913,27 @@ const ELEMENTS: Record<string, Studio> = {
       // Lit for a dark page by default; on a transparent one, its ink is dark.
       mode: "light",
       brandName: "Acme",
-      logoSrc: MARK,
+      logoSrc: MARK("logo-flicker"),
       background: "transparent",
-      images: PHOTOS,
+      images: PHOTOS("logo-flicker"),
     },
+    // Its fallback pictures are this site's posters. The Element always passes
+    // its own, from the picture fields, so the fallback is empty.
+    patch: [
+      [
+        /\/\*\* Sample images\.[\s\S]*?const DEFAULT_IMAGES = \[[\s\S]*?\];/,
+        "/** No pictures: the Element passes its own. */\nconst DEFAULT_IMAGES: string[] = [];",
+      ],
+    ],
     // The pictures flash two frames each: not objects to select, so numbered
     // picture fields rather than one per call site.
     slots: { prop: "images", key: "image", count: 8, label: "Image" },
   },
   "moodboard-reveal": {
-    box: [1280, 720],
+    // Cropped to the band the photos and the line draw in, measured, 24px clear.
+    box: [990, 720],
+    stage: [1280, 720],
+    at: [104, 0],
     clip: true,
     controls: [
       "leadIn",
@@ -819,7 +950,8 @@ const ELEMENTS: Record<string, Studio> = {
       // ink; set either and that page comes back.
       darkColor: "transparent",
       lightColor: "transparent",
-      images: PHOTOS,
+      heroImage: PHOTOS("moodboard-reveal")[3],
+      images: PHOTOS("moodboard-reveal"),
     },
     // Eight slots swap through the photos, one object each; the hero stays
     // its own control.
@@ -847,7 +979,7 @@ const ELEMENTS: Record<string, Studio> = {
       textColor: "#141414",
       // Its own default is a set of picsum.photos URLs: another site's, and
       // random. The neutral photos every other Element starts with.
-      images: PHOTOS,
+      images: PHOTOS("orbit-gallery"),
     },
     // The spiral repeats its photos to fill its slots; each photo outlines its
     // largest copy in frame.
@@ -918,6 +1050,8 @@ const ELEMENTS: Record<string, Studio> = {
       "pillColor",
       "pillLabelColor",
       "prefixColor",
+      "chipTextColor",
+      "chipBorderColor",
       "fontFamily",
       "speed",
     ],
@@ -981,7 +1115,7 @@ const ELEMENTS: Record<string, Studio> = {
         }),
       })`,
       starter: [
-        { text: "{labels: ['bug']})", type: "log" },
+        { text: "gh issue edit 42 --add-label bug", type: "command" },
         { text: "→   label added", type: "success" },
         { text: "$", type: "log" },
         { text: "One task", type: "command" },
@@ -1126,7 +1260,9 @@ const ELEMENTS: Record<string, Studio> = {
     clip: true,
     // `speed` and `accent`: two knobs this component never read.
     drop: ["speed", "accent"],
-    controls: ["lead", "emphasis", "morphTo", "finally_", "ink", "fontFamily"],
+    controls: ["lead", "emphasis", "morphTo", "closing", "ink", "fontFamily"],
+    // The component's `finally_` (`finally` is a keyword), under a plain name.
+    alias: { closing: "finally_" },
     props: { background: "transparent" },
   },
 };
@@ -1186,6 +1322,14 @@ const PRO_ELEMENTS: Record<string, Studio> = {
           image: String(d[`image${i + 1}`]),
         })),
     },
+    // Its fallback pile is this site's posters. The Element always passes its
+    // nine pictures, so the fallback is empty.
+    patch: [
+      [
+        /\/\*\*\n \* snapcn's own scene posters[\s\S]*?(?:export )?const IMAGES = \[[\s\S]*?\]\.map\([^\n]*\);/,
+        "/** No fallback pictures: the Element passes its own. */\nconst IMAGES: string[] = [];",
+      ],
+    ],
     // Starter content that is not ours: a neutral prompt and generic photos
     // instead of snapcn's own posters (the Element guidelines).
     props: {
@@ -1193,7 +1337,7 @@ const PRO_ELEMENTS: Record<string, Studio> = {
       ...Object.fromEntries(
         Array.from({ length: 9 }, (_, i) => [
           `image${i + 1}`,
-          PHOTOS[i % PHOTOS.length],
+          PHOTOS("glass-prompt")[i % PHOTO_FILES.length],
         ]),
       ),
     },
@@ -1292,10 +1436,18 @@ async function buildPayload(
     {
       // A stock Remotion template compiles with \`lib: ["es2015"]\`: without
       // these the DOM types the scene uses do not exist there.
-      input: `/// <reference lib="dom" />\n/// <reference lib="dom.iterable" />\n${hideLayers(element.sourceCode)}`,
+      input: `/// <reference lib="dom" />\n/// <reference lib="dom.iterable" />\n${hideLayers(neutral(patched(element.sourceCode, studio)))}`,
       encoding: "utf8",
     },
   );
+  // Nothing of this site may survive into somebody else's project.
+  const branded = sourceCode.match(BRAND);
+  if (branded) {
+    const line = sourceCode.slice(0, branded.index).split("\n").length;
+    throw new Error(
+      `${name}: "${branded[0]}" left in the Element, line ${line}`,
+    );
+  }
 
   const imported = [...new Set(element.modules.map(packageName))].filter(
     (pkg) => !PROVIDED.has(pkg),
@@ -1311,6 +1463,16 @@ async function buildPayload(
   ].filter((t) => imported.includes(t.replace(/^@types\//, "")));
   const packages = [...imported, ...types];
   const [width, height] = studio.box;
+  // Every file the Element starts with, copied into the project at install:
+  // the stage's and each object's, by their path under `public/`.
+  const assets = [
+    ...new Map(
+      staticAssets([
+        defaults,
+        studio.items ? itemStarter(studio.items, defaults) : [],
+      ]).map((a) => [a.staticFile, a]),
+    ).values(),
+  ];
   const payload = createElementPayload({
     displayName: item.title ?? name,
     slug: name,
@@ -1325,6 +1487,11 @@ async function buildPayload(
     ),
     dimensions: { width, height },
     durationInFrames: studio.durationInFrames ?? config.durationInFrames + TAIL,
+    assets: assets.map((a) => ({
+      path: a.staticFile,
+      type: "url" as const,
+      url: a.url,
+    })),
     ...(studio.items
       ? // Its objects are call sites in the file, one outline each; Studio
         // puts the Sequence around it.
@@ -1336,7 +1503,15 @@ async function buildPayload(
           initialProps: Object.fromEntries(
             [...studio.controls, ...slotKeys(studio)].flatMap((key) =>
               key in defaults
-                ? [[key, defaults[key] as string | number | boolean]]
+                ? [
+                    [
+                      key,
+                      // Studio writes `staticFile(path)` on the invocation.
+                      isStatic(defaults[key])
+                        ? staticFileRef(defaults[key].staticFile)
+                        : (defaults[key] as string | number | boolean),
+                    ],
+                  ]
                 : [],
             ),
           ),

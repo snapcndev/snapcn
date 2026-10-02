@@ -107,6 +107,17 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // A Studio Element's starter pictures are downloaded by Remotion Studio, in
+  // the browser, from these folders at install (the payload's `assets`), and a
+  // browser Studio may only fetch them cross-origin.
+  async headers() {
+    return ["/showcase-assets/:path*", "/avatars/:path*", "/logo/:path*"].map(
+      (source) => ({
+        source,
+        headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+      }),
+    );
+  },
   async rewrites() {
     return [
       // The SDK bundle + recorder script. Separate host from ingestion.
