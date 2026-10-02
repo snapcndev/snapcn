@@ -1,0 +1,209 @@
+---
+title: Confetti in Remotion
+seoTitle: "Remotion confetti — a deterministic burst in React, no library"
+description: Build a confetti burst in Remotion without a particle library — seeded random() for each piece, closed-form gravity and air drag so any frame renders on its own, a paper tumble in CSS, and when to fire it.
+date: 2026-10-01
+tags:
+  - remotion
+  - effects
+  - particles
+faq:
+  - question: How do you make confetti in Remotion?
+    answer: Give every piece a launch angle, speed, spin, size and colour from random() seeded by the piece's index, then compute its position from the time since the burst with a closed-form formula for gravity and air drag. Render each piece as a small absolutely positioned div and squash it with scaleY(cos) so it tumbles like paper.
+  - question: Can I use canvas-confetti or react-confetti in Remotion?
+    answer: Not reliably. Those libraries step a simulation on requestAnimationFrame and keep state between frames. Remotion renders frames out of order and in parallel, so a stateful simulation renders a different burst on every worker. Compute each frame from the frame number instead.
+  - question: Why must the confetti be computed in closed form?
+    answer: Because Remotion can render frame 90 without ever rendering frames 0 to 89. If a piece's position is accumulated frame by frame, there is nothing to accumulate from. A formula of time since launch gives the same position whichever frame is rendered first.
+  - question: How many confetti pieces can Remotion render?
+    answer: A hundred or two divs render comfortably. Past a few hundred, draw the pieces on a canvas instead of as DOM nodes; the physics stays exactly the same.
+  - question: Does snapcn have a confetti component?
+    answer: No. snapcn does not ship confetti. The component in this post is complete and self-contained; paste it into any Remotion project.
+---
+
+Confetti in Remotion is a few dozen absolutely positioned rectangles whose
+positions are a **formula of the time since the burst** — gravity plus air drag,
+solved in closed form — with every piece's launch decided by `random()` seeded by
+its index. No particle library, no state: any frame renders on its own and comes
+out identical on every render worker.
+
+snapcn does not ship a confetti component, so this post is the whole thing.
+
+## Why not canvas-confetti
+
+`canvas-confetti`, `react-confetti` and friends step a simulation on
+`requestAnimationFrame`, carrying each particle's position from one frame to the
+next. Remotion does not play frames in order. It renders them in parallel, often
+out of order, and a render worker may start at frame 90 having never seen frame
+89. A stateful simulation gives every worker a different burst, and the video
+flickers between them.
+
+So two rules:
+
+1. **Every random number comes from `random(seed)`**, never `Math.random()`. The
+   same seed returns the same number in every worker.
+2. **Position is a function of time**, not an accumulation. Frame 90 has to be
+   computable without frames 0–89.
+
+## The physics, in closed form
+
+A piece launched with velocity `v` and slowed by air drag `k` under gravity `g`
+obeys `dv/dt = g − k·v`. That has an exact solution, so there is nothing to
+step:
+
+```ts
+const slow = (1 - Math.exp(-drag * t)) / drag;
+const x = x0 + vx * slow;
+const y = y0 + (vy - gravity / drag) * slow + (gravity / drag) * t;
+```
+
+Early on, the `slow` term dominates and the piece flies out along its launch
+angle. Drag bleeds that off, and the piece settles into falling at
+`gravity / drag` — its terminal velocity. That slow, drifting fall is what makes
+confetti read as paper rather than shrapnel. Raise `drag` for a floatier fall;
+raise `gravity` for a heavier one.
+
+## The component
+
+Two cannons in the bottom corners, aimed up and inwards, 120 pieces:
+
+```tsx
+import React from "react";
+import {
+  AbsoluteFill,
+  random,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+const COLORS = ["#ff5d5d", "#ffb020", "#3ecf8e", "#3d8bfd", "#b26cff"];
+
+type Piece = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  spin: number;
+  flip: number;
+  size: number;
+  color: string;
+};
+
+/** Every piece's launch, decided once from a seed: the same on every frame and every render worker. */
+function pieces(count: number, width: number, height: number): Piece[] {
+  return Array.from({ length: count }, (_, i) => {
+    const left = i % 2 === 0;
+    const r = (k: string) => random(`confetti-${i}-${k}`);
+    // Two cannons in the bottom corners, aimed up and inwards.
+    const angle = (left ? -60 : -120) + (r("angle") - 0.5) * 40;
+    const speed = height * (2.2 + r("speed") * 1.4);
+    const rad = (angle * Math.PI) / 180;
+    return {
+      x: left ? 0 : width,
+      y: height,
+      vx: Math.cos(rad) * speed,
+      vy: Math.sin(rad) * speed,
+      spin: (r("spin") - 0.5) * 720,
+      flip: 2 + r("flip") * 6,
+      size: 10 + r("size") * 10,
+      color: COLORS[Math.floor(r("color") * COLORS.length)],
+    };
+  });
+}
+
+/**
+ * Where a piece is `t` seconds after launch, in closed form: gravity, plus
+ * air drag that slows it exponentially. Nothing is accumulated frame by frame,
+ * so any frame can be rendered on its own.
+ */
+function position(p: Piece, t: number, gravity: number, drag: number) {
+  const slow = (1 - Math.exp(-drag * t)) / drag;
+  return {
+    x: p.x + p.vx * slow,
+    y: p.y + (p.vy - gravity / drag) * slow + (gravity / drag) * t,
+  };
+}
+
+export const Confetti: React.FC<{
+  startAt?: number;
+  count?: number;
+}> = ({ startAt = 0, count = 120 }) => {
+  const frame = useCurrentFrame();
+  const { fps, width, height } = useVideoConfig();
+  const t = (frame - startAt) / fps;
+  if (t < 0) return null;
+
+  return (
+    <AbsoluteFill style={{ overflow: "hidden" }}>
+      {pieces(count, width, height).map((p, i) => {
+        const { x, y } = position(p, t, height * 0.9, 3);
+        // A flat paper rectangle tumbling: squash it on one axis.
+        const tumble = Math.cos(t * p.flip * Math.PI);
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: x,
+              top: y,
+              width: p.size,
+              height: p.size * 0.6,
+              background: p.color,
+              transform: `translate(-50%, -50%) rotate(${p.spin * t}deg) scaleY(${tumble})`,
+            }}
+          />
+        );
+      })}
+    </AbsoluteFill>
+  );
+};
+```
+
+Use it like any other layer, firing on the frame you choose:
+
+```tsx
+<AbsoluteFill>
+  <YourScene />
+  <Confetti startAt=45 count=120 />
+</AbsoluteFill>
+```
+
+## What each part is doing
+
+- **The seed includes the piece and the property** — `confetti-12-speed`,
+  `confetti-12-angle`. Seeding every property from the same number would tie a
+  piece's speed to its angle, and the burst comes out as visible stripes.
+- **The tumble is `scaleY(cos)`.** A flat rectangle spinning end over end, seen
+  from the front, looks like one that squashes to a line and opens again. A
+  `rotate()` for the in-plane spin plus a squash for the flip is cheaper than a
+  real 3D transform and reads the same at this size.
+- **Pieces leave the frame and stay gone.** The fall is unbounded, so nothing
+  needs cleaning up; `overflow: hidden` on the layer keeps them off the canvas
+  edges.
+- **Nothing renders before `startAt`.** The early `return null` keeps 120 nodes
+  out of every frame before the burst.
+
+## Make it land
+
+Confetti is punctuation. Fire it **on** a beat — the moment the number hits its
+target, the "Shipped" stamp lands, the logo resolves — never as a background.
+Two or three frames of anticipation before the burst (a scale-down on the thing
+being celebrated) make it feel caused rather than pasted on.
+
+If the video has sound, put the pop in a `<Sequence from={startAt}>` so the
+audio and the burst share one frame number and cannot drift.
+
+## Where it goes wrong
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Burst changes every render | `Math.random()` | `random()` with a stable seed |
+| Pieces jump when scrubbing backwards | Position accumulated in state | Compute it from `t` |
+| Confetti flies off the top and never falls | Gravity term with the wrong sign | `y` must grow with `+(g/k)·t` |
+| Pieces fall like stones | Drag too low | Raise `drag`; terminal speed is `g / drag` |
+| Render slows past ~400 pieces | DOM nodes | Draw on a `<canvas>`, keep the same physics |
+
+For counting up to the moment you celebrate, see the
+[counter animation](/remotion-counter-animation); for the moment itself, a
+[follower count-up](/docs/social/follower-rush) is the classic place to fire it.
+
+Next: [glitch effect in Remotion](/remotion-glitch-effect).

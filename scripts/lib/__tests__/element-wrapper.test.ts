@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hideLayers } from "../element-wrapper.mts";
+import { code, hideLayers, staticAssets } from "../element-wrapper.mts";
 
 /**
  * A component-owned-sequence Element is one timeline layer. In Studio 4.0.52x
@@ -26,5 +26,26 @@ export const X = ({ showInTimeline }: { showInTimeline?: boolean }) => (
     );
     expect(code).toContain('<Picture showInTimeline={false} src="a.png" />');
     expect(code).toContain("<Card />");
+  });
+});
+
+/**
+ * An Element's starter files are copied into the project at install and read
+ * with `staticFile()`, so a value holding one is written as that call, and the
+ * payload declares every one it finds, however deep.
+ */
+describe("assets", () => {
+  const photo = {
+    staticFile: "card-rail/photo-1.webp",
+    url: "https://x/1.webp",
+  };
+  it("writes an asset as staticFile() and anything else as JSON", () => {
+    expect(code({ title: "A", image: photo, tags: [1, photo] })).toBe(
+      '{ "title": "A", "image": staticFile("card-rail/photo-1.webp"), "tags": [1, staticFile("card-rail/photo-1.webp")] }',
+    );
+    expect(code(undefined)).toBe("undefined");
+  });
+  it("finds every asset, nested ones included", () => {
+    expect(staticAssets([{ a: photo }, [photo], "x"])).toEqual([photo, photo]);
   });
 });

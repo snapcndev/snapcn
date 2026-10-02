@@ -65,6 +65,13 @@ export interface Studio {
   slots?: { prop: string; key: string; count: number; label: string };
   /** Frames, when the preview's length is not the Element's. */
   durationInFrames?: number;
+  /** An Inspector label that differs from the site customizer's, by control. */
+  labels?: Record<string, string>;
+  /**
+   * Text replaced in the Element's source after inlining, `[from, to]` — for a
+   * branch the Element never takes but still carries, such as a default mark.
+   */
+  patch?: readonly (readonly [string | RegExp, string])[];
   /**
    * A control whose picture may be a video, and which picker Studio should
    * open for it. An Inspector asset field takes one type; a frame built for a
@@ -100,8 +107,8 @@ export interface Items {
    * Default: the `from` props split.
    */
   starter?:
-    | readonly Record<string, string>[]
-    | ((defaults: Record<string, unknown>) => Record<string, string>[]);
+    | readonly Record<string, unknown>[]
+    | ((defaults: Record<string, unknown>) => Record<string, unknown>[]);
   /**
    * What Studio outlines, chosen every frame. "node" (the default) is the
    * element the scene wraps in \`Item\`, transforms and all, while all of it
@@ -199,6 +206,70 @@ const RESERVED = new Set([
   "layout",
 ]);
 
+/**
+ * What `Interactive.withSchema({ wrapInSequence: true })` and Studio own on
+ * every layer: a component it wraps may not take a prop of the same name.
+ */
+const MANAGED = [
+  "from",
+  "durationInFrames",
+  "trimBefore",
+  "playbackRate",
+  "loop",
+  "freeze",
+  "hidden",
+  "name",
+  "showInTimeline",
+  "cropLeft",
+  "cropRight",
+  "cropTop",
+  "cropBottom",
+  "premountFor",
+  "postmountFor",
+  "styleWhilePremounted",
+  "styleWhilePostmounted",
+  "controls",
+] as const;
+
+/**
+ * A file Studio copies into the project's `public/` folder at install, by its
+ * path there. The Element declares it in the payload's `assets` and refers to
+ * it as `staticFile(path)`, so an installed Element plays from the user's own
+ * project, not from this site.
+ */
+export type StaticAsset = { readonly staticFile: string; readonly url: string };
+
+export const isStatic = (v: unknown): v is StaticAsset =>
+  typeof v === "object" && v !== null && "staticFile" in v;
+
+/** A value as TypeScript source: JSON, except an asset is `staticFile("…")`. */
+export function code(v: unknown): string {
+  if (isStatic(v)) return `staticFile(${JSON.stringify(v.staticFile)})`;
+  if (Array.isArray(v)) return `[${v.map(code).join(", ")}]`;
+  if (v !== null && typeof v === "object") {
+    return `{ ${Object.entries(v)
+      .map(([k, x]) => `${JSON.stringify(k)}: ${code(x)}`)
+      .join(", ")} }`;
+  }
+  return v === undefined ? "undefined" : JSON.stringify(v);
+}
+
+/** Every asset a value refers to, nested ones included. */
+export function staticAssets(v: unknown): StaticAsset[] {
+  if (isStatic(v)) return [v];
+  if (Array.isArray(v)) return v.flatMap(staticAssets);
+  if (v !== null && typeof v === "object") {
+    return Object.values(v).flatMap(staticAssets);
+  }
+  return [];
+}
+
+/** "Card" → "cards", "Entry" → "entries". */
+const plural = (noun: string) => {
+  const n = noun.toLowerCase();
+  return /[^aeiou]y$/.test(n) ? `${n.slice(0, -1)}ies` : `${n}s`;
+};
+
 const lit = (v: unknown) => JSON.stringify(v);
 const VIDEO = /\.(mp4|webm|mov|m4v)(\?|$)/i;
 
@@ -210,7 +281,31 @@ function assetFor(
 ): "image" | "video" | "audio" {
   const said = studio.assets?.[key];
   if (said) return said;
-  return typeof value === "string" && VIDEO.test(value) ? "video" : "image";
+  const path = isStatic(value) ? value.staticFile : value;
+  return typeof path === "string" && VIDEO.test(path) ? "video" : "image";
+}
+
+/** One stage control's schema field: the customizer's control, as the Element labels it. */
+function controlField(
+  name: string,
+  studio: Studio,
+  controls: Record<string, ControlType>,
+  defaults: Record<string, unknown>,
+  key: string,
+): string {
+  const list = studio.list ?? [];
+  const alias = studio.alias ?? {};
+  // A list is a prop the customizer never had a control for.
+  const c: ControlType | undefined = list.includes(key)
+    ? {
+        type: "text",
+        default: "",
+        label: `${key[0].toUpperCase()}${key.slice(1)} (comma separated)`,
+      }
+    : controls[alias[key] ?? key];
+  if (!c) throw new Error(`${name}: no control ${key}`);
+  const label = studio.labels?.[key];
+  return `  ${key}: ${field(label ? { ...c, label } : c, defaults[key], assetFor(studio, key, defaults[key]))},`;
 }
 
 /** The numbered keys of an Element's \`slots\`, in order. */
@@ -247,7 +342,7 @@ function field(
     case "boolean":
       return `{ type: "boolean", default: ${lit(value)}, ${label}, keyframable: false }`;
     case "image":
-      return `{ type: "asset", assetType: ${lit(asset)}, default: ${value ? lit(value) : "undefined"}, ${label} }`;
+      return `{ type: "asset", assetType: ${lit(asset)}, default: ${value ? code(value) : "undefined"}, ${label} }`;
     case "select": {
       // Studio's own font picker: any Google font, and it writes the
       // \`loadFont()\` into the project itself. \`resolveFont\` passes a name it
@@ -329,7 +424,6 @@ export function elementDefaults(
 export function studioWrapper({
   name,
   scene,
-  title,
   studio,
   controls,
   defaults,
@@ -347,28 +441,23 @@ export function studioWrapper({
   const list = studio.list ?? [];
   const alias = studio.alias ?? {};
   const aliased = Object.keys(alias);
-  const schema = studio.controls.map((key) => {
-    // A list is a prop the customizer never had a control for.
-    const c: ControlType | undefined = list.includes(key)
-      ? {
-          type: "text",
-          default: "",
-          label: `${key[0].toUpperCase()}${key.slice(1)} (comma separated)`,
-        }
-      : controls[alias[key] ?? key];
-    if (!c) throw new Error(`${name}: no control ${key}`);
-    return `  ${key}: ${field(c, defaults[key], assetFor(studio, key, defaults[key]))},`;
-  });
+  const schema = studio.controls.map((key) =>
+    controlField(name, studio, controls, defaults, key),
+  );
   const slots = slotKeys(studio);
   for (const [i, k] of slots.entries()) {
     schema.push(
-      `  ${k}: { type: "asset", assetType: "image", default: ${defaults[k] ? lit(defaults[k]) : "undefined"}, description: ${lit(`${studio.slots?.label} ${i + 1}`)} },`,
+      `  ${k}: { type: "asset", assetType: "image", default: ${defaults[k] ? code(defaults[k]) : "undefined"}, description: ${lit(`${studio.slots?.label} ${i + 1}`)} },`,
     );
   }
+  // Studio's own on every layer, and the scene's under the Element's name.
   const omitted = [
-    ...list,
-    ...aliased.map((k) => alias[k]),
-    ...(studio.slots ? [studio.slots.prop] : []),
+    ...new Set([
+      ...MANAGED,
+      ...list,
+      ...aliased.map((k) => alias[k]),
+      ...(studio.slots ? [studio.slots.prop] : []),
+    ]),
   ];
   const added = [
     ...list.map((k) => `    readonly ${k}?: string;`),
@@ -377,10 +466,9 @@ export function studioWrapper({
       (k) =>
         `    readonly ${k}?: ComponentProps<typeof ${scene}>[${lit(alias[k])}];`,
     ),
+    "    readonly style?: CSSProperties;",
   ];
-  const props = omitted.length
-    ? `Omit<ComponentProps<typeof ${scene}>, ${omitted.map(lit).join(" | ")}> & {\n${added.join("\n")}\n  }`
-    : `ComponentProps<typeof ${scene}>`;
+  const props = `Omit<ComponentProps<typeof ${scene}>, ${omitted.map(lit).join(" | ")}> & {\n${added.join("\n")}\n  }`;
   const split = [
     ...list.map(
       (k) => ` ${k}={${k}?.split(",").map((w) => w.trim()).filter(Boolean)}`,
@@ -398,15 +486,12 @@ export function studioWrapper({
     : `const rest = { ...${name}Defaults, ...props };`;
 
   return `
-import { type ComponentProps, forwardRef, type ReactNode, useImperativeHandle, useRef } from "react";
+import { type ComponentProps, type CSSProperties, forwardRef, type ReactNode } from "react";
 import {
   AbsoluteFill,
   Interactive,
-  type InteractiveBaseProps,
-  type InteractiveTransformProps,
   type InteractivitySchema,
-  Sequence,
-  type SequenceControls,
+  Sequence,${staticAssets(defaults).length ? "\n  staticFile," : ""}
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -415,17 +500,14 @@ import {
    Remotion Studio
    ───────────────────────────────────────────────────────────────────────── */
 
-type ${name}ElementProps = InteractiveBaseProps &
-  InteractiveTransformProps &
-  ${props};
+type ${name}ElementProps = ${props};
 
 /** What a prop falls back to when Studio does not pass it, reset included. */
-const ${name}Defaults = ${lit(defaults)} satisfies Partial<${name}ElementProps>;
+const ${name}Defaults = ${code(defaults)} satisfies Partial<${name}ElementProps>;
 
+/** The Inspector's controls. Timing, transform, crop and premount come with \`wrapInSequence\`. */
 const ${name}Schema = {
-  ...Interactive.baseSchema,
 ${schema.join("\n")}
-  ...Interactive.transformSchema,
 } as const satisfies InteractivitySchema;
 
 /**
@@ -445,51 +527,28 @@ function ${name}Fade({ children }: { children: ReactNode }) {
   return <AbsoluteFill style={{ opacity: enter * leave }}>{children}</AbsoluteFill>;
 }
 
-const ${name}Inner = forwardRef<
-  HTMLDivElement,
-  ${name}ElementProps & { readonly controls: SequenceControls | undefined }
->(
-  (
-    {
-      controls,
-      name,
-      style,
-      from,
-      durationInFrames,
-      trimBefore,
-      freeze,
-      hidden,
-      showInTimeline,
-      ...props
-    },
-    ref,
-  ) => {
-    const outlineRef = useRef<HTMLDivElement>(null);
-    useImperativeHandle(ref, () => outlineRef.current as HTMLDivElement, []);
+const ${name}Inner = forwardRef<HTMLDivElement, ${name}ElementProps>(
+  ({ style, ...props }, ref) => {
+    // The layer's length, from the Sequence \`wrapInSequence\` puts around this.
+    const { durationInFrames } = useVideoConfig();
     ${spread}
     // The scene measures its copy once, on mount. An Inspector edit changes the
     // props without remounting it, so the key does.
     const key = JSON.stringify(props, (k, v) => (k === "children" ? undefined : v));
 
-    // width/height are what useVideoConfig() reports inside the Sequence, so
+    // width/height are what useVideoConfig() reports inside this Sequence, so
     // the scene lays itself out in its stage rather than the whole composition.
+    // It is not a layer of its own: the one Studio shows is the wrapper's.
     return (
       <Sequence
         layout="none"
-        from={from}
+        showInTimeline={false}
         durationInFrames={durationInFrames}
-        trimBefore={trimBefore}
-        freeze={freeze}
-        hidden={hidden}
-        showInTimeline={showInTimeline}
-        name={name ?? ${lit(title)}}
-        controls={controls}
-        outlineRef={outlineRef}
         width={${sw}}
         height={${sh}}
       >
         <div
-          ref={outlineRef}
+          ref={ref}
           style={{ position: "relative", width: ${w}, height: ${h},${studio.clip ? ' overflow: "hidden",' : ""} ${INHERITED} ...style }}
         >
           ${
@@ -513,7 +572,7 @@ export const ${name} = Interactive.withSchema({
   Component: ${name}Inner,
   componentName: "<${name}>",
   schema: ${name}Schema,
-  supportsEffects: false,
+  wrapInSequence: true,
 });
 `;
 }
@@ -627,9 +686,9 @@ export function adoptDefaults(
     if (!el.initializer || own === undefined) continue;
     const value = defaults[own];
     const text =
-      value !== null && typeof value === "object"
+      value !== null && typeof value === "object" && !isStatic(value)
         ? `${name}Defaults.${own}`
-        : JSON.stringify(value);
+        : code(value);
     edits.push([el.initializer.getStart(), el.initializer.end, text]);
   }
   let out = source;
@@ -643,13 +702,13 @@ export function adoptDefaults(
 export function itemStarter(
   items: Items,
   defaults: Record<string, unknown>,
-): Record<string, string>[] {
+): Record<string, unknown>[] {
   if (typeof items.starter === "function") return items.starter(defaults);
   if (items.starter) return items.starter.map((o) => ({ ...o }));
   const columns = Object.entries(items.fields).map(([key, f]) => {
     const v = f.from ? defaults[f.from] : undefined;
-    const list = Array.isArray(v)
-      ? v.map(String)
+    const list: unknown[] = Array.isArray(v)
+      ? v.map((x) => (isStatic(x) ? x : String(x)))
       : typeof v === "string" && f.sep
         ? v
             .split(f.sep)
@@ -665,10 +724,13 @@ export function itemStarter(
 }
 
 /** Where a field's list goes in the scene's props — omitted from the stage's own. */
-const itemProps = (items: Items) =>
-  Object.values(items.fields)
-    .map((f) => f.from)
-    .filter((f): f is string => Boolean(f));
+const itemProps = (items: Items) => [
+  ...new Set(
+    Object.values(items.fields)
+      .map((f) => f.from)
+      .filter((f): f is string => Boolean(f)),
+  ),
+];
 
 /**
  * The code appended to the inlined scene for a `wrapped` Element: the objects,
@@ -737,18 +799,12 @@ export function studioItemsWrapper({
 
   // ── The stage ───────────────────────────────────────────────────────────
   const stageControls = studio.controls.filter((k) => !fromKeys.includes(k));
-  const schema = stageControls.map((key) => {
-    const c: ControlType | undefined = list.includes(key)
-      ? {
-          type: "text",
-          default: "",
-          label: `${key[0].toUpperCase()}${key.slice(1)} (comma separated)`,
-        }
-      : controls[alias[key] ?? key];
-    if (!c) throw new Error(`${name}: no control ${key}`);
-    return `  ${key}: ${field(c, defaults[key], assetFor(studio, key, defaults[key]))},`;
-  });
-  const omitted = [...list, ...aliased.map((k) => alias[k]), ...fromKeys];
+  const schema = stageControls.map((key) =>
+    controlField(name, studio, controls, defaults, key),
+  );
+  const omitted = [
+    ...new Set([...list, ...aliased.map((k) => alias[k]), ...fromKeys]),
+  ];
   const added = [
     ...list.map((k) => `    readonly ${k}?: string;`),
     ...aliased.map(
@@ -808,7 +864,7 @@ export function studioItemsWrapper({
   const attr = (k: string, v: unknown) =>
     typeof v === "string" && !/["{}<>\n]/.test(v)
       ? `${k}="${v}"`
-      : `${k}={${lit(v)}}`;
+      : `${k}={${code(v)}}`;
   const stageAttrs = stageControls
     .filter((k) => k in stageDefaults)
     .map((k) => `      ${attr(k, stageDefaults[k])}`)
@@ -837,7 +893,7 @@ import {
   type InteractiveTransformProps,
   type InteractivitySchema,
   Sequence,
-  type SequenceControls,
+  type SequenceControls,${staticAssets([defaults, starter]).length ? "\n  staticFile," : ""}
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -952,6 +1008,8 @@ const ${obj}Inner = forwardRef<
       from,
       durationInFrames,
       trimBefore,
+      playbackRate,
+      loop,
       freeze,
       hidden,
       showInTimeline,
@@ -1023,6 +1081,8 @@ const ${obj}Inner = forwardRef<
         from={from}
         durationInFrames={durationInFrames}
         trimBefore={trimBefore}
+        playbackRate={playbackRate}
+        loop={loop}
         freeze={freeze}
         hidden={hidden}
         showInTimeline={showInTimeline}
@@ -1045,10 +1105,10 @@ type ${stage}Props = InteractiveBaseProps & ${sceneProps};
 
 /**
  * What a scene prop falls back to when Studio does not pass it, reset included.
- * The ${items.noun.toLowerCase()}s' own lists are here only for the scene's parameter defaults;
+ * The ${plural(items.noun)}' own lists are here only for the scene's parameter defaults;
  * the stage always passes the ones its children build.
  */
-const ${name}Defaults = ${lit(defaults)} satisfies Partial<${stage}Props>${
+const ${name}Defaults = ${code(defaults)} satisfies Partial<${stage}Props>${
     fromKeys.length
       ? ` &
   Partial<Pick<ComponentProps<typeof ${scene}>, ${fromKeys.map(lit).join(" | ")}>>`
@@ -1072,7 +1132,7 @@ function ${name}Clean(v: string | undefined, seps: string): string {
   return out;
 }
 
-/** The scene's props, from its ${items.noun.toLowerCase()}s' values in order. */
+/** The scene's props, from its ${plural(items.noun)}' values in order. */
 const ${name}FromItems = ${build.replace(/^\(o\)/, `(o: readonly ${obj}Values[])`).replace(/\bclean\(/g, `${name}Clean(`)};
 
 /**
@@ -1098,7 +1158,7 @@ function ${name}Hosted({ host, children }: { host: (frame: number) => ItemHost; 
 }
 
 /**
- * The scene, with its ${items.noun.toLowerCase()}s as children. It reads their values to lay
+ * The scene, with its ${plural(items.noun)} as children. It reads their values to lay
  * the scene out, and hands each one back the node the scene draws it as.
  */
 const ${stage}Inner = forwardRef<
@@ -1112,6 +1172,8 @@ const ${stage}Inner = forwardRef<
       from,
       durationInFrames,
       trimBefore,
+      playbackRate,
+      loop,
       freeze,
       hidden,
       showInTimeline,
@@ -1174,8 +1236,7 @@ ${pushed}
       ...rest,
       ...${name}FromItems(
         all
-          .filter((o) => ${items.keep ? `(${items.keep.replace(/^\(x\)/, `(x: ${obj}Values)`)})(o.props)` : "true"})
-          .map((o) => o.props),
+${items.keep ? `          .filter((o) => (${items.keep.replace(/^\(x\)/, `(x: ${obj}Values)`)})(o.props))\n` : ""}          .map((o) => o.props),
       ),
     });
     return (
@@ -1184,6 +1245,8 @@ ${pushed}
         from={from}
         durationInFrames={durationInFrames}
         trimBefore={trimBefore}
+        playbackRate={playbackRate}
+        loop={loop}
         freeze={freeze}
         hidden={hidden}
         showInTimeline={showInTimeline}

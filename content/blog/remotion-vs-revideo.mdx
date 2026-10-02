@@ -1,0 +1,168 @@
+---
+title: Remotion vs Revideo
+seoTitle: "Remotion vs Revideo — React components or TypeScript generators (2026)"
+description: Remotion renders React components frame by frame; Revideo describes scenes as TypeScript generator functions on a canvas. Authoring, rendering, licence and ecosystem compared, with the same animation written in both.
+date: 2026-10-01
+tags:
+  - remotion
+  - comparison
+faq:
+  - question: What is the difference between Remotion and Revideo?
+    answer: Remotion is React. A video is a component, and each frame is that component rendered at a frame number, using the DOM and CSS. Revideo describes a scene as a TypeScript generator function that adds nodes to a canvas and yields animations in sequence. Both render to video files from code.
+  - question: Is Revideo a fork of Motion Canvas?
+    answer: It grew out of Motion Canvas. Revideo's MIT licence still carries the Motion Canvas copyright from 2022, and it keeps Motion Canvas's generator-function scenes, while adding a headless rendering API, parallel rendering and a React player.
+  - question: Is Revideo free?
+    answer: Yes. Revideo is MIT licensed. Remotion uses its own licence, free for individuals, for-profit companies with up to three employees and non-profits, with a paid company licence for larger for-profit teams.
+  - question: Which is better for a product demo video?
+    answer: Remotion, in most cases. A product demo is mostly UI, text, screenshots and screen recordings, which are native to React and CSS, and Remotion has the larger ecosystem of components, templates and renderers. Revideo suits canvas-drawn animation where a sequential, step-by-step script reads more naturally.
+  - question: Can AI agents write Revideo and Remotion code?
+    answer: Both are plain TypeScript, so any coding agent can write them. Remotion has far more public code, official agent skills and third-party component libraries to draw on, so agents tend to need less correction with it.
+---
+
+**Short answer:** use **Remotion** if your video is UI, text, screenshots and
+recordings, or if you want the larger ecosystem — it is React and CSS, rendered
+frame by frame. Use **Revideo** if you prefer to script animation as a sequence
+of steps on a canvas and want an MIT licence. Both render real video files from
+code, headlessly, on a server.
+
+Facts below were checked on GitHub and npm on 1 October 2026.
+
+## Side by side
+
+| | Remotion | Revideo |
+| --- | --- | --- |
+| Authoring | React components, `useCurrentFrame()` | TypeScript generator functions, `yield*` |
+| Draws with | DOM and CSS — anything a browser renders | A canvas, with JSX scene nodes |
+| Mental model | Every frame is a pure function of its number | A script that plays forward step by step |
+| Preview | Remotion Studio, `<Player>` | Editor, React `<Player>` |
+| Headless rendering | CLI, Node API, AWS Lambda, Cloud Run | `renderVideo()`, a render endpoint, Cloud Run |
+| Parallel rendering | Yes | Yes, across workers |
+| Licence | Remotion licence (free for individuals and small companies) | MIT |
+| Latest release | 4.0.532 (1 Oct 2026) | 0.11.0 (10 Jul 2026) |
+| GitHub stars | ~61k | ~4.1k |
+| npm, last 30 days | ~6.9M (`remotion`) | ~57k (`@revideo/core`) |
+
+Revideo grew out of Motion Canvas — its MIT licence still carries the Motion
+Canvas copyright — and today is the engine behind Midrender. If you are choosing
+between Remotion and Motion Canvas itself, see
+[Remotion vs Motion Canvas](/remotion-vs-motion-canvas).
+
+## The same animation in both
+
+A title that fades in and rises 40px over 0.4 seconds.
+
+**Remotion** — the frame number goes in, the style comes out:
+
+```tsx
+import {
+  AbsoluteFill,
+  Easing,
+  interpolate,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
+
+export const Intro = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const p = interpolate(frame, [0, 0.4 * fps], [0, 1], {
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+  return (
+    <AbsoluteFill
+      style={{ justifyContent: "center", alignItems: "center" }}
+    >
+      <div
+        style={{
+          fontSize: 140,
+          color: "#111",
+          opacity: p,
+          transform: `translateY(${(1 - p) * 40}px)`,
+        }}
+      >
+        Acme 2.0
+      </div>
+    </AbsoluteFill>
+  );
+};
+```
+
+**Revideo** — add a node, then yield the tweens:
+
+```tsx
+import {makeScene2D, Txt} from '@revideo/2d';
+import {all, createRef, easeOutCubic, waitFor} from '@revideo/core';
+
+export default makeScene2D('intro', function* (view) {
+  const title = createRef<Txt>();
+  view.add(
+    <Txt ref={title} text="Acme 2.0" fontSize={140} fill="#111" opacity={0} y={40} />,
+  );
+
+  yield* all(
+    title().opacity(1, 0.4, easeOutCubic),
+    title().y(0, 0.4, easeOutCubic),
+  );
+  yield* waitFor(1);
+});
+```
+
+The difference is the whole decision. In Remotion nothing happens "next": frame
+12 is computed from 12, which is why any frame renders on its own, scrubbing is
+exact, and the work splits cleanly across machines. In Revideo the scene reads
+top to bottom like a script — this, then this, wait, then this — which is more
+natural for long, sequenced explanations and is how Motion Canvas users already
+think.
+
+## When Remotion wins
+
+- **The video is made of interface.** Buttons, cards, code, screenshots and
+  screen recordings are React and CSS already. Rebuilding them as canvas nodes is
+  work Remotion never asks for.
+- **You want components, not primitives.** Remotion's ecosystem — official
+  templates, `@remotion/*` packages for captions, transitions, Lottie and media,
+  and third-party libraries such as [snapcn](/docs/components) — is many times
+  larger, so most scenes are installed rather than written.
+- **Agents will write it.** There is vastly more Remotion code in the wild and
+  official agent skills, so Claude Code, Cursor and Codex get it right with less
+  correction. See [Claude Code + Remotion](/claude-code-remotion-videos).
+- **Rendering at scale.** Lambda and Cloud Run renderers are maintained by the
+  Remotion team.
+
+## When Revideo wins
+
+- **The licence matters.** MIT, with no company tier. If your company has more
+  than three employees and cannot buy a Remotion company licence, this alone
+  decides it.
+- **The animation is a script.** Diagrams, explainers and step-by-step builds
+  read naturally as generators.
+- **You draw rather than lay out.** Shapes, paths and custom canvas drawing are
+  first-class, as Revideo's own Rubik's cube example shows.
+
+## Rendering, side by side
+
+Remotion renders from the CLI or Node:
+
+```bash
+npx remotion render src/index.ts Intro out/intro.mp4
+```
+
+Revideo renders from Node with `renderVideo()`:
+
+```ts
+import {renderVideo} from '@revideo/renderer';
+
+const file = await renderVideo({projectFile: './src/project.ts'});
+```
+
+Both run on a server with a headless browser, and both can split one render
+across workers.
+
+## For a product video
+
+Pick Remotion. A product video is UI, type and footage, and that is the DOM's
+home ground. Start from a [product demo video in React](/product-demo-video-react)
+and install the scenes instead of animating them by hand.
+
+Next: [Remotion vs After Effects](/remotion-vs-after-effects).

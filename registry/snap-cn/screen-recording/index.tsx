@@ -557,6 +557,9 @@ export function ScreenRecording({
               src={resolved}
               muted={!audio}
               trimBefore={trimBefore}
+              // The camera runs on `frame * speed`; the footage has to as well,
+              // or a faster take zooms to a moment the video has not reached.
+              playbackRate={speed}
               style={mediaStyle}
             />
           ) : (
