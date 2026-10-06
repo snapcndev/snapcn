@@ -881,6 +881,27 @@
       "type": "registry:component"
     },
     {
+      "name": "capture-reveal",
+      "title": "Capture Reveal",
+      "description": "Screenshot capture animation: a toast counts \"Capturing selection…\" up to 100% over a browser window, the window drops away and shrinks, the toast pops to \"Copied to clipboard.\" and a two-line headline rises out from behind the window while the cursor glides up. Every curve was measured off a recording frame by frame: the window's drop and shrink share one cubic-bezier, the toast pops on another, the headline rises without scaling or blurring, and type moves by fractions of a pixel.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/capture-reveal/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/capture-reveal.tsx"
+        }
+      ],
+      "docs": "Docs and props: https://snapcn.dev/docs/screens/capture-reveal?ref=cli — src is the screenshot in the window (laid in at full width, top first); headline breaks lines on |; capturing and copied are the two toast messages. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette.",
+      "type": "registry:component"
+    },
+    {
       "name": "channel-thread",
       "title": "Channel Thread",
       "description": "Slack-style chat animation: team messages arrive with typing dots. A work chat filling itself in, the way the channel actually reads: an avatar, a name in bold, a quiet timestamp and the messages as plain lines under them. Messages land one at a time, a second message from the same person joins the group without repeating the name, and when somebody new starts typing three dots hold their line until the words arrive. The transcript never creeps — it sits perfectly still between arrivals and then scrolls, once, by exactly the room the new line needs, and only when the newest line would fall past the anchor. Every vertical number came off a recording and closes on it: carry the layout's arithmetic across the whole scene and it predicts the last frame's baselines to within a pixel.",

@@ -4,6 +4,7 @@ import { announceTitleConfig } from "@/registry/snap-cn/announce-title/config";
 import { answerHighlightConfig } from "@/registry/snap-cn/answer-highlight/config";
 import { answerStreamConfig } from "@/registry/snap-cn/answer-stream/config";
 import { blockWordmarkConfig } from "@/registry/snap-cn/block-wordmark/config";
+import { captureRevealConfig } from "@/registry/snap-cn/capture-reveal/config";
 import { cardRailConfig } from "@/registry/snap-cn/card-rail/config";
 import { channelThreadConfig } from "@/registry/snap-cn/channel-thread/config";
 import { checkCycleConfig } from "@/registry/snap-cn/check-cycle/config";
@@ -91,6 +92,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "word-gather": wordGatherConfig,
   "orb-swarm": orbSwarmConfig,
   "word-wheel": wordWheelConfig,
+  "capture-reveal": captureRevealConfig,
   "check-cycle": checkCycleConfig,
   "text-highlight": textHighlightConfig,
   "text-reveal": textRevealConfig,

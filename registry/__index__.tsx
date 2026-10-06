@@ -6,6 +6,7 @@ import { AnnounceTitle } from "@/registry/snap-cn/announce-title";
 import { AnswerHighlight } from "@/registry/snap-cn/answer-highlight";
 import { AnswerStream } from "@/registry/snap-cn/answer-stream";
 import { BlockWordmark } from "@/registry/snap-cn/block-wordmark";
+import { CaptureReveal } from "@/registry/snap-cn/capture-reveal";
 import { CardRail } from "@/registry/snap-cn/card-rail";
 import { ChannelThread } from "@/registry/snap-cn/channel-thread";
 import { CheckCycle } from "@/registry/snap-cn/check-cycle";
@@ -142,6 +143,10 @@ const registry: Record<string, RegistryEntry> = {
   "word-gather": { Component: WordGather, config: CONFIGS["word-gather"] },
   "orb-swarm": { Component: OrbSwarm, config: CONFIGS["orb-swarm"] },
   "word-wheel": { Component: WordWheel, config: CONFIGS["word-wheel"] },
+  "capture-reveal": {
+    Component: CaptureReveal,
+    config: CONFIGS["capture-reveal"],
+  },
   "check-cycle": { Component: CheckCycle, config: CONFIGS["check-cycle"] },
   "text-highlight": {
     Component: TextHighlight,
