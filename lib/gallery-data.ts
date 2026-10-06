@@ -331,6 +331,14 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     added: "2026-08-29",
   },
   {
+    name: "Capture Reveal",
+    description:
+      'A toast counts a screenshot up to 100% over a browser window, the window drops away, "Copied to clipboard." pops and a headline rises out from behind it',
+    category: "screens",
+    href: "/docs/screens/capture-reveal",
+    added: "2026-10-06",
+  },
+  {
     name: "Follower Rush",
     description:
       "An X-style follower notification that piles up — avatars stack in and the count explodes, then the row bends into an undulating wave of faces",

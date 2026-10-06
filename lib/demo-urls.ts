@@ -231,6 +231,10 @@ export const RENDERED_DEMOS: readonly string[] = [
   //                   render's pixel grid. The Player scales the scene with CSS
   //                   and breaks that assumption; the file does not.
   "check-cycle",
+  //   capture-reveal  the same two-copy sub-pixel type as check-cycle, on a
+  //                   headline that crawls the last pixel of its rise and a
+  //                   toast that scales — the Player's CSS scaling breaks both.
+  "capture-reveal",
 ];
 
 /**

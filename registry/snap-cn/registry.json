@@ -717,6 +717,27 @@
       ]
     },
     {
+      "name": "capture-reveal",
+      "type": "registry:component",
+      "docs": "Docs and props: https://snapcn.dev/docs/screens/capture-reveal?ref=cli \u2014 src is the screenshot in the window (laid in at full width, top first); headline breaks lines on |; capturing and copied are the two toast messages. Pass mode=\"dark\" if you are rendering onto a dark frame \u2014 these default to shadcn's light palette.",
+      "title": "Capture Reveal",
+      "description": "Screenshot capture animation: a toast counts \"Capturing selection\u2026\" up to 100% over a browser window, the window drops away and shrinks, the toast pops to \"Copied to clipboard.\" and a two-line headline rises out from behind the window while the cursor glides up. Every curve was measured off a recording frame by frame: the window's drop and shrink share one cubic-bezier, the toast pops on another, the headline rises without scaling or blurring, and type moves by fractions of a pixel.",
+      "dependencies": [
+        "remotion",
+        "@remotion/google-fonts"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "capture-reveal/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/capture-reveal.tsx"
+        }
+      ]
+    },
+    {
       "name": "channel-thread",
       "type": "registry:component",
       "docs": "Docs and props: https://snapcn.dev/docs/text/channel-thread?ref=cli — script is the conversation, groups split by `;` and a group's messages by `|`; people is one `name time` per group; beats is the frame each message lands on and opens is the frame its row appears, so a pause before someone answers is a number rather than a gap you have to guess at. avatars takes one image per group, split by `|` (not by comma — a data: URL has one of its own). Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette.",
