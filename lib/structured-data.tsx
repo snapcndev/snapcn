@@ -93,6 +93,7 @@ const COMPONENT_QUERY: Record<string, string> = {
   "laptop-frame": "Remotion MacBook mockup",
   "terminal-simulator": "Remotion terminal animation",
   "cursor-track": "Remotion cursor click animation",
+  "capture-reveal": "Remotion screenshot capture animation",
   "screen-recording": "Remotion screen recording zoom",
   "follower-rush": "Remotion follower count animation",
   "scatter-bloom": "Remotion scatter plot animation",
