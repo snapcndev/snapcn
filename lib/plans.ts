@@ -159,7 +159,7 @@ export const EARLY_BIRD = {
   endsAt: "2026-10-20T00:00:00Z",
   endsOn: "20 October",
   endsOnShort: "20 Oct",
-  risesTo: { everything_annual: 17900, lifetime: 29900 },
+  risesTo: { everything_annual: 17900, lifetime: 27900 },
 } as const;
 
 /**

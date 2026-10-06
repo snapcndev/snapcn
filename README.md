@@ -149,6 +149,18 @@ never a sponsored one.
 
 If snapcn saved you an afternoon, a ⭐ is how other people find it.
 
+## Sponsors
+
+snapcn is MIT and stays that way. Sponsorship keeps the free components coming.
+
+| Tier | Per month | You get |
+|---|---|---|
+| Supporter | $5 / $25 | Your name in this README |
+| Bronze | $99 | Your logo in this README |
+| Gold (3 spots) | $249 | Your logo on the snapcn.dev homepage and docs sidebar |
+
+[Sponsor snapcn on GitHub](https://github.com/sponsors/snapcndev)
+
 ## Author
 
 Built by **Sri Nath** — [x.com/SriNath693](https://x.com/SriNath693)

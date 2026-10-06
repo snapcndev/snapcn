@@ -177,7 +177,7 @@ describe("the catalogue ladder", () => {
     expect(risen.PRICES_RISEN).toBe(true);
     expect(risen.CATALOGUE_PRICE).toEqual({
       annual: "$179",
-      lifetime: "$299",
+      lifetime: "$279",
       commercial: "$499",
     });
     expect(risen.CHECKOUT_PRODUCTS.everything_annual.cents).toBe(17900);

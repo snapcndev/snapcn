@@ -47,7 +47,7 @@ describe("pricingFor", () => {
       expect(card(country, "Pro")?.note).toBe("Goes to $179/yr on 20 Oct");
       expect(card(country, "Pro")?.cta).toBe("Lock in $129/yr");
       expect(card(country, "Lifetime")?.price).toBe("$249");
-      expect(card(country, "Lifetime")?.note).toBe("Goes to $299 on 20 Oct");
+      expect(card(country, "Lifetime")?.note).toBe("Goes to $279 on 20 Oct");
       expect(card(country, "Lifetime")?.cta).toBe("Own it for $249");
     }
     expect(pricingFor("US", 50).footnote).toMatch(
