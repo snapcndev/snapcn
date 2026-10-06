@@ -34,6 +34,13 @@ import {
  * URL and referrer) the moment it runs, and every event fired before then is
  * queued and sent after it.
  *
+ * Not earlier, and this was measured (Oct 2026): starting it at the first idle
+ * callback after hydration makes the 75KB download part of `load` — desktop
+ * `load` went 0.2s → 1.2s, and the showcase carousel and rendered demos wait for
+ * `load` — while on slow 4G hydration lands on `load` anyway, so PostHog started
+ * no sooner. Starting the download at module evaluation was worse: 4G `load`
+ * 2.7s → 5.1s.
+ *
  * No React context provider: nothing reads PostHog through `usePostHog`, and
  * `posthog-js/react` was a second static import of the whole SDK.
  */
@@ -42,7 +49,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
     // No key (a fork, a local checkout, a preview build) → no tracker, and every
     // `trackEvent` call downstream turns into a no-op rather than a crash.
-    if (!key) {
+    if (!key || looksLikeBot()) {
       disablePostHog();
       return;
     }
@@ -141,6 +148,27 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return children;
+}
+
+/**
+ * Browsers that are not people, kept out of the numbers entirely — no SDK
+ * download, no pageview, no bounce.
+ *
+ * From 30 Sep 2026 a crawler drove a quarter of all sessions: one deep
+ * component page per visit, 0s, ordinary Chrome 148–150 user agents through
+ * proxies (so nothing server-side tells it apart), zh-CN, and a randomised
+ * desktop screen that is nearly square (1271×1105, 1313×1190). Real desktop
+ * monitors are 16:9, 16:10, 4:3 or 5:4; in six weeks of sessions not one
+ * screen under 1.2:1 clicked anything or opened a second page.
+ * `navigator.webdriver` and 800×600 are headless defaults.
+ */
+function looksLikeBot(): boolean {
+  if (navigator.webdriver) return true;
+  const { width, height } = window.screen;
+  if (width === 800 && height === 600) return true;
+  const desktop = window.matchMedia("(pointer: fine)").matches;
+  const ratio = width / height;
+  return desktop && width >= 1000 && ratio >= 1 && ratio < 1.2;
 }
 
 /**
