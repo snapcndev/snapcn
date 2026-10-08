@@ -219,7 +219,7 @@ export function GalleryExplorer({
       <div className="not-prose">
         {/* No border-b. The bar is sticky and already separates itself when it
           overlaps the grid — the blurred background is the affordance. */}
-        <div className="sticky top-0 z-30 -mx-6 bg-background/90 px-6 py-3 backdrop-blur lg:-mx-8 lg:px-8">
+        <div className="sticky top-[var(--fd-banner-height,0px)] z-30 -mx-6 bg-background/90 px-6 py-3 backdrop-blur lg:-mx-8 lg:px-8">
           <div className="flex items-center gap-2">
             <div
               className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden"

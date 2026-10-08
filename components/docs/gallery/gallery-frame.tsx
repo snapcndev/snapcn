@@ -66,7 +66,7 @@ export function GalleryFrame({
           //
           // Keep `4 + width + 4 = 32` if either number changes, or it either
           // collides again or stops looking centred in the gutter.
-          className="fixed top-5 left-1 z-40 hidden size-6 items-center justify-center bg-background text-muted-foreground transition-colors hover:text-foreground lg:flex"
+          className="fixed top-[calc(var(--fd-banner-height,0px)+1.25rem)] left-1 z-40 hidden size-6 items-center justify-center bg-background text-muted-foreground transition-colors hover:text-foreground lg:flex"
         >
           <PanelToggleIcon className="size-[18px]" />
         </button>
@@ -75,7 +75,9 @@ export function GalleryFrame({
       <div
         className={cn(
           "transition-[padding] duration-300 ease-out lg:pl-[var(--gallery-sidebar-w)]",
-          fill ? "h-dvh overflow-hidden" : "min-h-screen",
+          fill
+            ? "h-[calc(100dvh-var(--fd-banner-height,0px))] overflow-hidden"
+            : "min-h-screen",
         )}
       >
         {/* The 32px left gutter exists to house the reopen button above, and
