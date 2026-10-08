@@ -2,7 +2,6 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { ProBanner } from "@/components/pro-banner";
 import { Button } from "@/components/ui/button";
 import { useTrackEvent } from "@/lib/analytics";
 import { FeaturedQuote } from "./featured-quote";
@@ -17,7 +16,7 @@ import { FeaturedQuote } from "./featured-quote";
 const RISE =
   "animate-in fade-in slide-in-from-bottom-6 blur-in-8 duration-200 ease-[cubic-bezier(0,0,0.58,1)] fill-mode-backwards motion-reduce:animate-none";
 
-export function Hero({ proCount }: { proCount: number }) {
+export function Hero() {
   const trackEvent = useTrackEvent();
 
   return (
@@ -127,13 +126,6 @@ export function Hero({ proCount }: { proCount: number }) {
                 Browse components
               </Button>
             </div>
-          </div>
-
-          <div className={`${RISE} delay-[240ms]`}>
-            <ProBanner
-              count={proCount}
-              className="mt-6 rounded-2xl sm:rounded-full"
-            />
           </div>
         </div>
       </div>

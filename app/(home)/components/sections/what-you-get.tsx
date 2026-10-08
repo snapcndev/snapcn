@@ -60,10 +60,10 @@ export function WhatYouGet() {
     <section id="what-you-get" className="relative pb-20 sm:pb-28">
       <div className="section">
         <FadeUp>
-          <h2 className="mx-auto max-w-[18ch] text-pretty text-center font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
+          <h2 className="max-w-[18ch] text-pretty font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
             A shadcn registry, for video
           </h2>
-          <div className="mx-auto mt-5 max-w-2xl space-y-4 text-pretty text-center text-body-lg text-current/70">
+          <div className="mt-5 max-w-2xl space-y-4 text-pretty text-body-lg text-current/70">
             <p>
               snapcn is a registry of {GALLERY_COUNT} Remotion components for
               React video. You run{" "}
@@ -101,17 +101,19 @@ export function WhatYouGet() {
         </FadeUp>
 
         <FadeUp delay={0.08}>
-          <ul className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FREE_CATEGORIES.map(({ id, label }) => {
               const Icon = CATEGORY_ICONS[id];
               return (
-                <li key={id} className="bg-background">
+                <li key={id}>
                   <Link
                     href={`/docs/${id}`}
-                    className="flex h-full flex-col gap-2 p-6 transition-colors hover:bg-muted/60"
+                    className="flex h-full flex-col gap-3 rounded-[1.25rem] border border-border/60 bg-card p-6 transition-colors hover:bg-muted/60"
                   >
-                    <span className="flex items-center gap-2">
-                      <Icon className="size-4 text-current/50" aria-hidden />
+                    <span className="flex items-center gap-2.5">
+                      <span className="grid size-8 place-items-center rounded-lg border border-border/60 bg-background">
+                        <Icon className="size-4 text-current/60" aria-hidden />
+                      </span>
                       <h3 className="text-base font-medium text-foreground">
                         {label}
                       </h3>
@@ -126,15 +128,23 @@ export function WhatYouGet() {
                 </li>
               );
             })}
-            <li className="bg-background">
+            {/* Spans what is left of the last row, so the grid ends flush
+                instead of on an empty cell. */}
+            <li
+              className={
+                ["lg:col-span-3", "lg:col-span-2", ""][
+                  FREE_CATEGORIES.length % 3
+                ]
+              }
+            >
               <Link
                 href="/docs/components"
-                className="flex h-full flex-col gap-2 p-6 transition-colors hover:bg-muted/60"
+                className="flex h-full flex-col justify-center gap-3 rounded-[1.25rem] bg-primary p-6 text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                <h3 className="text-base font-medium text-foreground">
+                <h3 className="text-base font-medium">
                   All {GALLERY_COUNT} components →
                 </h3>
-                <p className="text-sm leading-relaxed text-pretty text-current/70">
+                <p className="text-sm leading-relaxed text-pretty text-current/80">
                   The whole registry in one filterable grid, every card playing
                   its own scene in a real Remotion player.
                 </p>

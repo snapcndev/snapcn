@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { INSTALL_COMMAND } from "@/config/site";
+import { GITHUB_URL, INSTALL_COMMAND } from "@/config/site";
 import { GALLERY_COUNT } from "@/lib/gallery-data";
 import { FadeUp } from "../fade-up";
 
@@ -62,36 +62,55 @@ export const FAQ_ITEMS: { q: string; a: string }[] = [
   },
 ];
 
+/**
+ * Two columns, after ruixen.com's FAQ: the heading, a line of context and the
+ * way out (an issue) on the left; the questions on the right. A single centred
+ * column of nine closed rows read as a wall of lines with nothing to anchor it.
+ */
 export function Faq() {
   return (
     <section id="faq" className="relative pb-20 sm:pb-28">
       <div className="section">
         <FadeUp>
-          <h2 className="mx-auto max-w-[14ch] text-pretty text-center font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
-            Before you install
-          </h2>
-        </FadeUp>
+          <div className="grid gap-10 md:grid-cols-5 md:gap-16">
+            <div className="md:sticky md:top-24 md:col-span-2 md:self-start">
+              <h2 className="text-pretty font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
+                Before you install
+              </h2>
+              <p className="mt-5 max-w-sm text-pretty leading-relaxed text-current/70">
+                The questions people ask before they run the CLI — what it
+                needs, what it costs, and what you own afterwards.
+              </p>
+              <p className="mt-4 max-w-sm text-pretty text-sm text-current/60">
+                Something not here?{" "}
+                <a
+                  href={`${GITHUB_URL}/issues`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Open an issue on GitHub
+                </a>
+                .
+              </p>
+            </div>
 
-        <FadeUp delay={0.08}>
-          {/* The column is centred on the page; the rows inside it are not. A
-              question and its chevron sit on a shared baseline at opposite ends
-              of the row — centre the text and the two stop lining up with
-              anything. */}
-          <div className="mx-auto mt-8 max-w-2xl border-t border-border">
-            {FAQ_ITEMS.map(({ q, a }) => (
-              <details key={q} className="group border-b border-border">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-body-lg text-foreground [&::-webkit-details-marker]:hidden">
-                  <h3 className="font-normal">{q}</h3>
-                  <ChevronDown
-                    className="size-4 shrink-0 text-current/40 transition-transform group-open:rotate-180"
-                    aria-hidden
-                  />
-                </summary>
-                <p className="pb-5 pr-8 text-pretty leading-relaxed text-current/70">
-                  {a}
-                </p>
-              </details>
-            ))}
+            <div className="border-t border-border md:col-span-3">
+              {FAQ_ITEMS.map(({ q, a }) => (
+                <details key={q} className="group border-b border-border">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left text-base font-medium text-foreground [&::-webkit-details-marker]:hidden">
+                    <h3 className="font-medium">{q}</h3>
+                    <ChevronDown
+                      className="size-4 shrink-0 text-current/40 transition-transform group-open:rotate-180"
+                      aria-hidden
+                    />
+                  </summary>
+                  <p className="pb-5 pr-8 text-pretty leading-relaxed text-current/70">
+                    {a}
+                  </p>
+                </details>
+              ))}
+            </div>
           </div>
         </FadeUp>
       </div>

@@ -16,7 +16,7 @@ export function FeaturedQuote({ className }: { className?: string }) {
       target="_blank"
       rel="noreferrer"
       className={cn(
-        "inline-flex max-w-full items-center gap-3 rounded-xl border border-border bg-card/70 py-2 pr-4 pl-2 text-left transition-colors duration-150 hover:bg-muted/60",
+        "inline-flex max-w-full items-center gap-3 text-left transition-opacity duration-150 hover:opacity-80",
         className,
       )}
     >
