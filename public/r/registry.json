@@ -881,6 +881,26 @@
       "type": "registry:component"
     },
     {
+      "name": "font-shuffle",
+      "title": "Font Shuffle",
+      "description": "Launch title animation: the line decodes out of scrambled glyphs set in the wrong typeface, flashes the accent, settles to ink, then the product name cycles through eleven typefaces (mono, light, humanist, pixel, script, slab, condensed, italic, blackletter, wide, bold grotesk) while the line zooms a step closer on each swap. Every beat is a held state measured off a recording frame by frame — timing, masks, layout, zoom and colour.",
+      "dependencies": [
+        "remotion"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "registry/snap-cn/font-shuffle/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/font-shuffle.tsx"
+        }
+      ],
+      "docs": "Docs and props: https://snapcn.dev/docs/text/font-shuffle?ref=cli — lead stays serif, subject tries on eleven typefaces; accent is the colour the line flashes before it settles. Pass mode=\"dark\" if you are rendering onto a dark frame — these default to shadcn's light palette.",
+      "type": "registry:component"
+    },
+    {
       "name": "capture-reveal",
       "title": "Capture Reveal",
       "description": "Screenshot capture animation: a toast counts \"Capturing selection…\" up to 100% over a browser window, the window drops away and shrinks, the toast pops to \"Copied to clipboard.\" and a two-line headline rises out from behind the window while the cursor glides up. Every curve was measured off a recording frame by frame: the window's drop and shrink share one cubic-bezier, the toast pops on another, the headline rises without scaling or blurring, and type moves by fractions of a pixel.",

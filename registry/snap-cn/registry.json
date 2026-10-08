@@ -717,6 +717,26 @@
       ]
     },
     {
+      "name": "font-shuffle",
+      "type": "registry:component",
+      "docs": "Docs and props: https://snapcn.dev/docs/text/font-shuffle?ref=cli \u2014 lead stays serif, subject tries on eleven typefaces; accent is the colour the line flashes before it settles. Pass mode=\"dark\" if you are rendering onto a dark frame \u2014 these default to shadcn's light palette.",
+      "title": "Font Shuffle",
+      "description": "Launch title animation: the line decodes out of scrambled glyphs set in the wrong typeface, flashes the accent, settles to ink, then the product name cycles through eleven typefaces (mono, light, humanist, pixel, script, slab, condensed, italic, blackletter, wide, bold grotesk) while the line zooms a step closer on each swap. Every beat is a held state measured off a recording frame by frame \u2014 timing, masks, layout, zoom and colour.",
+      "dependencies": [
+        "remotion"
+      ],
+      "registryDependencies": [
+        "https://snapcn.dev/r/snap-cn-ui.json"
+      ],
+      "files": [
+        {
+          "path": "font-shuffle/index.tsx",
+          "type": "registry:component",
+          "target": "components/snap-cn/font-shuffle.tsx"
+        }
+      ]
+    },
+    {
       "name": "capture-reveal",
       "type": "registry:component",
       "docs": "Docs and props: https://snapcn.dev/docs/screens/capture-reveal?ref=cli \u2014 src is the screenshot in the window (laid in at full width, top first); headline breaks lines on |; capturing and copied are the two toast messages. Pass mode=\"dark\" if you are rendering onto a dark frame \u2014 these default to shadcn's light palette.",

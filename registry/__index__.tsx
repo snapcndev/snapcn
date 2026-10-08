@@ -13,6 +13,7 @@ import { CheckCycle } from "@/registry/snap-cn/check-cycle";
 import { CountGrid } from "@/registry/snap-cn/count-grid";
 import { CursorTrack } from "@/registry/snap-cn/cursor-track";
 import { FollowerRush } from "@/registry/snap-cn/follower-rush";
+import { FontShuffle } from "@/registry/snap-cn/font-shuffle";
 import { HeroLaunch } from "@/registry/snap-cn/hero-launch";
 import { KaraokeCaptions } from "@/registry/snap-cn/karaoke-captions";
 import { LaptopFrame } from "@/registry/snap-cn/laptop-frame";
@@ -147,6 +148,7 @@ const registry: Record<string, RegistryEntry> = {
     Component: CaptureReveal,
     config: CONFIGS["capture-reveal"],
   },
+  "font-shuffle": { Component: FontShuffle, config: CONFIGS["font-shuffle"] },
   "check-cycle": { Component: CheckCycle, config: CONFIGS["check-cycle"] },
   "text-highlight": {
     Component: TextHighlight,
