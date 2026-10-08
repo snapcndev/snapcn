@@ -12,6 +12,7 @@ import { DOCS_PAGE_META } from "@/config/site";
 import { renderedDemoPoster, renderedDemoSrc } from "@/lib/demo-urls";
 import { ITEM_BY_SLUG } from "@/lib/gallery-data";
 import { metaDescription, metaTitle } from "@/lib/meta";
+import { PageJsonLd } from "@/lib/page-json-ld";
 import {
   CATALOGUE_PRICE,
   CATALOGUE_PROMISE,
@@ -19,6 +20,7 @@ import {
   PRICES_RISEN,
 } from "@/lib/plans";
 import { RenderedDemo } from "@/lib/rendered-demos";
+import { docsBreadcrumb } from "@/lib/structured-data";
 import { cn } from "@/lib/utils";
 
 const { title: TITLE, description: DESCRIPTION } = DOCS_PAGE_META.templates;
@@ -119,6 +121,11 @@ const FAQ = [
 export default function TemplatesPage() {
   return (
     <GalleryFrame>
+      {/* It was the one route with no schema at all. */}
+      <PageJsonLd
+        path="/docs/templates"
+        graph={[docsBreadcrumb(TITLE, "/docs/templates")]}
+      />
       <DocsTopBar />
 
       <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:py-16">

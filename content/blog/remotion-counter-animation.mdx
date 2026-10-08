@@ -19,7 +19,7 @@ faq:
 ---
 
 **Short answer:** interpolate from the start value to the end value over the
-frames you want, `Math.round()` it, and format it with `Intl.NumberFormat`. Set
+frames you want, `Math.round()` it, and format it with [`Intl.NumberFormat`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat). Set
 `font-variant-numeric: tabular-nums` so the digits do not change width as they
 count. For huge ranges, interpolate the logarithm so every order of magnitude
 gets equal time.

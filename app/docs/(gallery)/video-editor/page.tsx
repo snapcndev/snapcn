@@ -6,13 +6,9 @@ import { VideoEditor } from "@/components/video-editor/video-editor";
 import { PRO_ITEMS } from "@/config/catalogue";
 import { DOCS_PAGE_META } from "@/config/site";
 import { metaDescription, metaTitle } from "@/lib/meta";
+import { PageJsonLd } from "@/lib/page-json-ld";
 import { planFor } from "@/lib/server/entitlements";
-import {
-  docsBreadcrumb,
-  JsonLd,
-  PUBLISHER,
-  SITE_URL,
-} from "@/lib/structured-data";
+import { docsBreadcrumb, PUBLISHER, SITE_URL } from "@/lib/structured-data";
 import { CANVAS, MAX_CLIPS, MAX_TOTAL_FRAMES } from "@/lib/video-editor/types";
 
 const { title: TITLE, description: DESCRIPTION } =
@@ -102,7 +98,7 @@ export default async function VideoEditorPage({
 
   return (
     <GalleryFrame fill>
-      <JsonLd graph={jsonLd} />
+      <PageJsonLd graph={jsonLd} path="/docs/video-editor" />
       {/* The editor is all controls and no heading; the page still needs one
           to be named by — for a screen reader's heading list and for search. */}
       <h1 className="sr-only">snapcn {TITLE}</h1>

@@ -6,7 +6,8 @@ import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
 import { ITEM_BY_SLUG } from "@/lib/gallery-data";
 import { metaDescription, metaTitle } from "@/lib/meta";
-import { docsBreadcrumb, JsonLd } from "@/lib/structured-data";
+import { PageJsonLd } from "@/lib/page-json-ld";
+import { docsBreadcrumb } from "@/lib/structured-data";
 import STUDIO_ELEMENTS from "@/lib/studio-elements.json";
 
 /**
@@ -87,7 +88,7 @@ const jsonLd = [docsBreadcrumb(TITLE, PATH)];
 export default function RemotionStudioPage() {
   return (
     <GalleryFrame>
-      <JsonLd graph={jsonLd} />
+      <PageJsonLd graph={jsonLd} path="/docs/remotion-studio" />
       <DocsTopBar />
 
       <div className="mx-auto w-full max-w-3xl py-12 sm:py-16">

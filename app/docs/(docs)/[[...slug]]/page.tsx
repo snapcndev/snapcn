@@ -18,6 +18,7 @@ import {
 } from "@/lib/gallery-data";
 import { collectDocsPages } from "@/lib/llms";
 import { metaDescription, metaTitle } from "@/lib/meta";
+import { PageJsonLd } from "@/lib/page-json-ld";
 import { proDemoSrc } from "@/lib/pro-demos";
 import {
   categoryItemList,
@@ -28,7 +29,6 @@ import {
   firstSentence,
   isCategoryIndex,
   itemList,
-  JsonLd,
   PUBLISHER,
   searchMeta,
 } from "@/lib/structured-data";
@@ -188,7 +188,7 @@ export default async function Page(props: {
   if (item) {
     return (
       <>
-        <JsonLd graph={jsonLd["@graph"]} />
+        <PageJsonLd graph={jsonLd["@graph"]} path={page.url} />
         <ComponentsGallery open={slug} />
       </>
     );
@@ -200,11 +200,7 @@ export default async function Page(props: {
     <>
       <DocsTopBar />
       <article className="mx-auto w-full max-w-4xl pt-4 pb-16 md:pt-6 md:pb-20">
-        <script
-          type="application/ld+json"
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD built from page frontmatter
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <PageJsonLd graph={jsonLd["@graph"]} path={page.url} />
         <DocsTitle
           style={{ fontFamily: "var(--font-display)" }}
           className="text-4xl font-semibold tracking-tight text-balance md:text-5xl lg:text-6xl"
@@ -373,7 +369,7 @@ function ProComponent({ item }: { item: GalleryItem }) {
 
   return (
     <>
-      <JsonLd graph={graph} />
+      <PageJsonLd graph={graph} path={item.href} />
       <ComponentsGallery open={slug} />
     </>
   );

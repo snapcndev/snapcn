@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ComponentsGallery } from "@/components/docs/gallery/components-gallery";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { GALLERY_ITEMS } from "@/lib/gallery-data";
+import { PageJsonLd } from "@/lib/page-json-ld";
 
 const SITE_URL = "https://snapcn.dev";
 const TITLE = "Components";
@@ -81,11 +82,7 @@ const jsonLd = {
 export default function ComponentsGalleryPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD built from gallery data
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <PageJsonLd graph={jsonLd["@graph"]} path="/docs/components" />
       <GalleryFrame>
         <ComponentsGallery />
       </GalleryFrame>

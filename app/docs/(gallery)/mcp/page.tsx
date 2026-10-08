@@ -5,12 +5,8 @@ import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
 import { JOBS, SERVER } from "@/lib/mcp-clients";
 import { metaDescription, metaTitle } from "@/lib/meta";
-import {
-  docsBreadcrumb,
-  JsonLd,
-  PUBLISHER,
-  SITE_URL,
-} from "@/lib/structured-data";
+import { PageJsonLd } from "@/lib/page-json-ld";
+import { docsBreadcrumb, PUBLISHER, SITE_URL } from "@/lib/structured-data";
 import { McpClients, McpJobs } from "./mcp-install";
 
 /**
@@ -69,7 +65,7 @@ const jsonLd = [
 export default function McpPage() {
   return (
     <GalleryFrame>
-      <JsonLd graph={jsonLd} />
+      <PageJsonLd graph={jsonLd} path="/docs/mcp" />
       <DocsTopBar />
 
       <div className="mx-auto w-full max-w-3xl py-12 sm:py-16">

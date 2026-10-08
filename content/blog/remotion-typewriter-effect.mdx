@@ -18,7 +18,7 @@ faq:
     answer: No. A Remotion render does not run on wall-clock time, so a CSS blink will not line up with the frames. Compute the blink from the frame number.
 ---
 
-A typewriter effect in Remotion is `text.slice(0, count)`, where `count` comes
+A typewriter effect in [Remotion](https://www.remotion.dev/docs) is `text.slice(0, count)`, where `count` comes
 from the frame number through `interpolate()`. Ease the count instead of typing
 at a constant rate, keep the caret solid while it types, and blink it only once
 the line is done.
