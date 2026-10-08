@@ -21,7 +21,7 @@ export function StickyHeaderShell({ children }: { children: ReactNode }) {
   return (
     <header
       className={cn(
-        "sticky inset-x-0 top-0 z-40 transition-colors duration-200 ease-out",
+        "sticky inset-x-0 top-[var(--fd-banner-height,0px)] z-40 transition-colors duration-200 ease-out",
         scrolled && "bg-background/80 backdrop-blur-xl",
       )}
     >

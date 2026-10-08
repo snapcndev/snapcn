@@ -65,7 +65,7 @@ export function GallerySidebar({
         // No border-r: the rail and the grid share one background, and the
         // whitespace between them is the separation. A rule down the full height
         // only chops the page in two.
-        "fixed top-0 left-0 z-30 hidden h-screen w-[var(--gallery-sidebar-w-open)] flex-col overflow-y-auto bg-background px-5 py-5 transition-transform duration-300 ease-out lg:flex",
+        "fixed top-[var(--fd-banner-height,0px)] left-0 z-30 hidden h-[calc(100vh-var(--fd-banner-height,0px))] w-[var(--gallery-sidebar-w-open)] flex-col overflow-y-auto bg-background px-5 py-5 transition-transform duration-300 ease-out lg:flex",
         collapsed && "-translate-x-full",
       )}
     >

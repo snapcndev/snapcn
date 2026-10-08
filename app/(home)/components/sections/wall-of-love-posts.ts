@@ -166,4 +166,14 @@ export const WALL_POSTS: readonly WallPost[] = [
     quote:
       "Not bad, with more time, I think result can be very good. Made with @snapcndev + Fable 5",
   },
+  {
+    handle: "cky011",
+    name: "ck y",
+    lang: "en",
+    date: "2026-09-26",
+    url: "https://x.com/cky011/status/2103762154604400919",
+    quote:
+      "Claude Opus 5.5 made the launch film for my app. Still stunned. 🎬\n\nEvery frame is code, built with @Remotion and @snapcndev.\n\nThe app is MemoBerry 🫐, a multi-agent AI study companion…",
+    verified: true,
+  },
 ] as const;

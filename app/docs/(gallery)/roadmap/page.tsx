@@ -4,13 +4,9 @@ import { DocsTopBar } from "@/components/docs/gallery/docs-top-bar";
 import { GalleryFrame } from "@/components/docs/gallery/gallery-frame";
 import { DOCS_PAGE_META } from "@/config/site";
 import { metaDescription, metaTitle } from "@/lib/meta";
+import { PageJsonLd } from "@/lib/page-json-ld";
 import { ROADMAP, STAGE_LABEL, type Stage } from "@/lib/roadmap-data";
-import {
-  docsBreadcrumb,
-  JsonLd,
-  PUBLISHER,
-  SITE_URL,
-} from "@/lib/structured-data";
+import { docsBreadcrumb, PUBLISHER, SITE_URL } from "@/lib/structured-data";
 
 const { title: TITLE, description: DESCRIPTION } = DOCS_PAGE_META["roadmap"];
 /** Per-page card. `/og` alone is the generic site card. */
@@ -86,7 +82,7 @@ function formatDue(iso: string): string {
 export default function RoadmapPage() {
   return (
     <GalleryFrame>
-      <JsonLd graph={jsonLd} />
+      <PageJsonLd graph={jsonLd} path="/docs/roadmap" />
       <DocsTopBar />
 
       <div className="mx-auto w-full max-w-3xl py-12 sm:py-16">

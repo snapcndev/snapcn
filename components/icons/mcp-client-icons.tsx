@@ -100,7 +100,64 @@ const GeminiCli: Icon = (props) => {
 
 const Other: Icon = (props) => <Plug aria-hidden {...props} />;
 
-/** Keyed by `McpClient.id`. */
+// The app builders on a component's "Copy prompt" menu. Replit, Lovable and v0
+// from @lobehub/icons (MIT); Bolt is the StackBlitz bolt, from simple-icons
+// (CC0) — Bolt is StackBlitz's product and has no mark of its own in either set.
+const Replit: Icon = (props) => (
+  <svg {...svg(props)}>
+    <path
+      fill="#FD5402"
+      d="M11.878 7.761H3.482A1.469 1.469 0 012 6.304V1.457C2 .644 2.67 0 3.482 0h6.913c.827 0 1.483.658 1.483 1.457v6.304zM20.882 16.215h-8.995V7.75h8.995c.87 0 1.588.717 1.588 1.586v5.294c0 .885-.717 1.586-1.588 1.586zM10.395 24H3.482C2.67 24 2 23.343 2 22.546v-4.853c0-.797.67-1.454 1.482-1.454h8.396v6.307c0 .797-.67 1.454-1.483 1.454z"
+    />
+  </svg>
+);
+
+const Lovable: Icon = (props) => {
+  const gradient = useId();
+  return (
+    <svg {...svg(props)}>
+      <path
+        fill={`url(#${gradient})`}
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M7.082 0c3.91 0 7.081 3.179 7.081 7.1v2.7h2.357c3.91 0 7.082 3.178 7.082 7.1 0 3.923-3.17 7.1-7.082 7.1H0V7.1C0 3.18 3.17 0 7.082 0z"
+      />
+      <defs>
+        <radialGradient
+          id={gradient}
+          cx="0"
+          cy="0"
+          r="1"
+          gradientTransform="matrix(-1 22.49999 -30.45394 -1.3535 14 3)"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset=".25" stopColor="#FE7B02" />
+          <stop offset=".433" stopColor="#FE4230" />
+          <stop offset=".548" stopColor="#FE529A" />
+          <stop offset=".654" stopColor="#DD67EE" />
+          <stop offset=".95" stopColor="#4B73FF" />
+        </radialGradient>
+      </defs>
+    </svg>
+  );
+};
+
+const Bolt: Icon = (props) => (
+  <svg {...svg(props)} fill="currentColor">
+    <path d="M10.797 14.182H3.635L16.728 0l-3.525 9.818h7.162L7.272 24l3.524-9.818Z" />
+  </svg>
+);
+
+const V0: Icon = (props) => (
+  <svg {...svg(props)} fill="currentColor" fillRule="evenodd">
+    <path
+      clipRule="evenodd"
+      d="M14.252 8.25h5.624c.088 0 .176.006.26.018l-5.87 5.87a1.889 1.889 0 01-.019-.265V8.25h-2.25v5.623a4.124 4.124 0 004.125 4.125h5.624v-2.25h-5.624c-.09 0-.179-.006-.265-.018l5.874-5.875a1.9 1.9 0 01.02.27v5.623H24v-5.624A4.124 4.124 0 0019.876 6h-5.624v2.25zM0 7.5v.006l7.686 9.788c.924 1.176 2.813.523 2.813-.973V7.5H8.25v6.87L2.856 7.5H0z"
+    />
+  </svg>
+);
+
+/** Keyed by `McpClient.id`, and by `AgentTarget.id` in `prompt-menu.tsx`. */
 export const MCP_CLIENT_ICONS: Record<string, Icon> = {
   "claude-code": ClaudeCode,
   cursor: Cursor,
@@ -109,4 +166,8 @@ export const MCP_CLIENT_ICONS: Record<string, Icon> = {
   windsurf: Windsurf,
   gemini: GeminiCli,
   other: Other,
+  replit: Replit,
+  lovable: Lovable,
+  bolt: Bolt,
+  v0: V0,
 };

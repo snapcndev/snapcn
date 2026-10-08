@@ -18,7 +18,7 @@ faq:
     answer: Yes. npx remotion render runs headless, so a GitHub Action or any CI job can render the video on every tag and attach the MP4 to the release.
 ---
 
-To make a changelog video in React, build **one** Remotion composition that
+To make a changelog video in React, build **one** [Remotion](https://www.remotion.dev/docs) composition that
 takes the release as props — a version and a list of changes — and render it
 per release with `npx remotion render --props=release.json`. Let
 `calculateMetadata` size the video to the number of changes, and every release

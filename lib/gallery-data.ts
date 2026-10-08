@@ -155,6 +155,14 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     added: "2026-09-11",
   },
   {
+    name: "Font Shuffle",
+    description:
+      "A launch title that decodes out of scrambled glyphs, flashes the accent, then the product name tries on eleven typefaces while the line steps closer",
+    category: "text",
+    href: "/docs/text/font-shuffle",
+    added: "2026-10-08",
+  },
+  {
     name: "Type Morph",
     description:
       "A headline that types itself under a glowing caret, sheds its lead, morphs letter by letter, and ends under a colour flood",

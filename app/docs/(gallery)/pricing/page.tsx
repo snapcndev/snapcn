@@ -9,11 +9,12 @@ import { NewsletterForm } from "@/components/newsletter-form";
 import { DOCS_PAGE_META } from "@/config/site";
 import { GALLERY_COUNT, PRO_GALLERY_ITEMS } from "@/lib/gallery-data";
 import { metaDescription, metaTitle } from "@/lib/meta";
+import { PageJsonLd } from "@/lib/page-json-ld";
 import { PRO_SAMPLE } from "@/lib/plans";
 import { proDemoPoster, proDemoSrc } from "@/lib/pro-demos";
 import { RenderedDemo } from "@/lib/rendered-demos";
 import { planFor } from "@/lib/server/entitlements";
-import { docsBreadcrumb, JsonLd } from "@/lib/structured-data";
+import { docsBreadcrumb } from "@/lib/structured-data";
 import { PricingPlans } from "./pricing-plans";
 import { PRICING_INTRO, pricing } from "./tiers";
 
@@ -55,7 +56,7 @@ export default async function PricingPage({
 
   return (
     <GalleryFrame>
-      <JsonLd graph={jsonLd} />
+      <PageJsonLd graph={jsonLd} path="/docs/pricing" />
       {/* The account menu, like every other gallery page. Without it the one
           page that says "Your plan" had no way to sign in or out. */}
       <DocsTopBar />

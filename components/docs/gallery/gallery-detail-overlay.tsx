@@ -43,6 +43,7 @@ import STUDIO_ELEMENTS from "@/lib/studio-elements.json";
 import STUDIO_ELEMENTS_PRO from "@/lib/studio-elements-pro.json";
 import { cn } from "@/lib/utils";
 import { loadDocBody } from "./doc-body-action";
+import { PromptMenu } from "./prompt-menu";
 import { morphToCard, SHARED_MEDIA } from "./shared-media-transition";
 
 /** Remotion, only for a component with no rendered demo — see `live-preview.tsx`. */
@@ -55,7 +56,7 @@ const CATEGORY_LABEL = new Map(GALLERY_CATEGORIES.map((c) => [c.id, c.label]));
  * surface to press, and it presses: a touch smaller, 150ms, out.
  */
 const PRIMARY_BTN =
-  "inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 font-medium text-primary-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(0_0_0/0.25)] transition-[filter,transform] duration-150 ease-out hover:brightness-110 active:scale-[0.97] motion-reduce:transition-none";
+  "inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 font-medium text-primary-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(0_0_0/0.25)] transition-[filter,transform] duration-150 ease-out hover:brightness-110 active:scale-[0.97] motion-reduce:transition-none";
 
 /** A card on the panel: a hairline, a whisper of fill. */
 const CARD = "rounded-xl border border-border bg-muted/30 px-3.5 py-3";
@@ -71,15 +72,17 @@ const CARD_LABEL =
  * Offset by the sidebar width on lg so the overlay opens BESIDE the fixed
  * sidebar, never over it (the detail panel sits at the sidebar's right edge).
  * On mobile the sidebar is hidden, so it's full-width.
+ * Starts below the sale banner (`--fd-banner-height`), as the sidebar does, so
+ * the banner is never half covered and half dimmed.
  *
  * Below `xl` the popup is one opaque, scrolling sheet — see `OverlayBody` for
  * why. From `xl` it is transparent and click-through around its two columns,
  * so the backdrop still closes it.
  */
 const BACKDROP =
-  "fixed inset-0 z-50 bg-background/70 backdrop-blur-md duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)]";
+  "fixed inset-x-0 top-[var(--fd-banner-height,0px)] bottom-0 z-50 bg-background/70 backdrop-blur-md duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)]";
 const POPUP =
-  "group/ov fixed inset-0 z-50 flex flex-col overflow-y-auto overscroll-contain bg-background outline-none duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)] xl:pointer-events-none xl:flex-row xl:overflow-hidden xl:bg-transparent";
+  "group/ov fixed inset-x-0 top-[var(--fd-banner-height,0px)] bottom-0 z-50 flex flex-col overflow-y-auto overscroll-contain bg-background outline-none duration-200 data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0 lg:left-[var(--gallery-sidebar-w)] xl:pointer-events-none xl:flex-row xl:overflow-hidden xl:bg-transparent";
 /** The panel was already on screen (see `OpenPanel`): no entrance, again. */
 const QUIET = "data-open:animate-none!";
 
@@ -417,7 +420,10 @@ function OverlayBody({
    * so their children order as one list without rendering anything twice.
    */
   return (
-    <>
+    // `article` with `display: contents`: no box, so both layouts are
+    // untouched, but the panel is marked as the page's article — what reader
+    // modes and answer-engine extractors take as the content, not the grid.
+    <article className="contents">
       <div
         className={cn(
           "contents xl:pointer-events-auto xl:relative xl:z-10 xl:flex xl:h-full xl:w-[360px] xl:shrink-0 xl:flex-col xl:gap-6 xl:overflow-y-auto xl:border-border xl:border-r xl:bg-background xl:px-8 xl:py-6 xl:duration-300 xl:ease-out",
@@ -465,7 +471,11 @@ function OverlayBody({
             <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.12em]">
               {category}
             </p>
-            <Dialog.Title className="mt-2 font-semibold text-[1.75rem] text-foreground leading-[1.1] tracking-[-0.025em]">
+            {/* The page's h1: a component URL is this panel. */}
+            <Dialog.Title
+              render={(props) => <h1 {...props} />}
+              className="mt-2 font-semibold text-[1.75rem] text-foreground leading-[1.1] tracking-[-0.025em]"
+            >
               {item.name}
             </Dialog.Title>
           </header>
@@ -481,44 +491,51 @@ function OverlayBody({
               "Make a video" clicks fell from ~5/day to ~1/day on the same
               gallery traffic, and exports fell with them. */}
           <div className="flex flex-col gap-2.5">
-            {item.pro && owns ? (
-              <Link href="/account" className={PRIMARY_BTN}>
-                <KeyRound className="size-4" aria-hidden="true" />
-                Your API key and setup
-              </Link>
-            ) : (
-              <Link
-                href={
-                  item.pro
-                    ? "/docs/pricing#plans"
-                    : `/docs/video-editor?clip=${slug}`
-                }
-                onClick={() =>
-                  trackEvent("cta_clicked", {
-                    cta: item.pro ? "gallery_pro" : "gallery_make_video",
-                    destination: item.pro
+            {/* Side by side in the 296px column, so the labels are the short
+                forms: at text-sm "Make a video with this" alone is ~220px. */}
+            <div className="flex gap-2">
+              {item.pro && owns ? (
+                <Link href="/account" className={PRIMARY_BTN}>
+                  <KeyRound className="size-4" aria-hidden="true" />
+                  Your API key
+                </Link>
+              ) : (
+                <Link
+                  href={
+                    item.pro
                       ? "/docs/pricing#plans"
-                      : `/docs/video-editor?clip=${slug}`,
-                  })
-                }
-                className={cn(
-                  PRIMARY_BTN,
-                  item.pro && owns === null && "invisible",
-                )}
-              >
-                {item.pro ? (
-                  <>
-                    <Lock className="size-4" aria-hidden="true" />
-                    Get the pro catalogue
-                  </>
-                ) : (
-                  <>
-                    <Clapperboard className="size-4" aria-hidden="true" />
-                    Make a video with this
-                  </>
-                )}
-              </Link>
-            )}
+                      : `/docs/video-editor?clip=${slug}`
+                  }
+                  onClick={() =>
+                    trackEvent("cta_clicked", {
+                      cta: item.pro ? "gallery_pro" : "gallery_make_video",
+                      destination: item.pro
+                        ? "/docs/pricing#plans"
+                        : `/docs/video-editor?clip=${slug}`,
+                    })
+                  }
+                  className={cn(
+                    PRIMARY_BTN,
+                    item.pro && owns === null && "invisible",
+                  )}
+                >
+                  {item.pro ? (
+                    <>
+                      <Lock className="size-4" aria-hidden="true" />
+                      Get the pro catalogue
+                    </>
+                  ) : (
+                    <>
+                      <Clapperboard className="size-4" aria-hidden="true" />
+                      Make a video
+                    </>
+                  )}
+                </Link>
+              )}
+              {locked ? null : (
+                <PromptMenu item={item} slug={slug} poster={demoPoster} />
+              )}
+            </div>
             {/* A free Element for anyone; a Pro one for its owners, whose
                 session is what `/elements/<name>.json` checks. */}
             {(item.pro
@@ -609,7 +626,7 @@ function OverlayBody({
           </div>
         ) : null}
       </div>
-    </>
+    </article>
   );
 }
 

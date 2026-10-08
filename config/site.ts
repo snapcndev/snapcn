@@ -74,6 +74,7 @@ export const NAV_LINKS: NavLink[] = [
   // announcement. **Take it off once the editor stops being news** — a "New"
   // that outlives its release teaches people to stop reading flags.
   { href: "/docs/video-editor", label: "Video Editor", badge: "New" },
+  { href: "/docs/mcp", label: "MCP" },
   { href: "/docs/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
 ];

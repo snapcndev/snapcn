@@ -20,6 +20,15 @@ import { CATALOGUE_PRICE } from "@/lib/plans";
 
 export const SITE_URL = "https://snapcn.dev";
 
+/**
+ * The sources an answer leans on, linked where the answer already names them.
+ * Markdown-style `[text](url)`: `FaqSection` renders it as a link, `faqPage`
+ * strips it back to the text, so the schema and the page say the same words.
+ */
+const REMOTION = "[Remotion](https://www.remotion.dev/docs)";
+const SHADCN_CLI = "[shadcn CLI](https://ui.shadcn.com/docs/cli)";
+const MIT = "[MIT](https://opensource.org/license/mit)";
+
 export const PUBLISHER = {
   "@type": "Organization",
   name: "snapcn",
@@ -85,6 +94,7 @@ export const CATEGORY_QUERY: Record<CategoryId, string> = {
 const COMPONENT_QUERY: Record<string, string> = {
   "text-reveal": "Remotion word-by-word text reveal",
   "type-morph": "Remotion typewriter effect",
+  "font-shuffle": "Remotion font switching title animation",
   "word-wheel": "Remotion rotating words animation",
   "check-cycle": "Remotion checkbox rotating text animation",
   "karaoke-captions": "Remotion karaoke captions",
@@ -246,12 +256,12 @@ export function collectionQuestions(
     {
       question: `How do I add a ${query} to a Remotion project?`,
       answer: leadSlug
-        ? `Every ${query} here installs with the shadcn CLI — \`${installCommand(leadSlug)}\` copies ${lead.name} into your project as a file you own, written against the plain Remotion API. There is no runtime package to keep installed.`
-        : `Each one installs with the shadcn CLI, which copies the component into your project as a file you own.`,
+        ? `Every ${query} here installs with the ${SHADCN_CLI} — \`${installCommand(leadSlug)}\` copies ${lead.name} into your project as a file you own, written against the plain Remotion API. There is no runtime package to keep installed.`
+        : `Each one installs with the ${SHADCN_CLI}, which copies the component into your project as a file you own.`,
     },
     {
       question: `Are snapcn's ${query}s free?`,
-      answer: `${free.length} of them are MIT-licensed and free to use commercially${
+      answer: `${free.length} of them are ${MIT}-licensed and free to use commercially${
         items.length > free.length
           ? `; the other ${items.length - free.length} are part of snapcn Pro — ${CATALOGUE_PRICE.annual} a year for the whole catalogue, or ${CATALOGUE_PRICE.lifetime} once to own it outright`
           : ""
@@ -349,12 +359,12 @@ export function componentQuestions(slug: string, item: GalleryItem) {
     return [
       {
         question: `How do I add ${item.name} to a Remotion project?`,
-        answer: `${item.name} is part of snapcn Pro, and installs with the same shadcn CLI as every free component: \`${installCommand(slug)}\`. The source is copied into your project and is yours to edit — there is no runtime package to keep installed.`,
+        answer: `${item.name} is part of snapcn Pro, and installs with the same ${SHADCN_CLI} as every free component: \`${installCommand(slug)}\`. The source is copied into your project and is yours to edit — there is no runtime package to keep installed.`,
       },
       what,
       {
         question: `Is ${item.name} free?`,
-        answer: `No. It is one of ${PRO_GALLERY_ITEMS.length} Pro components, sold together: ${CATALOGUE_PRICE.annual} a year for the whole catalogue and everything that ships while your year runs, or ${CATALOGUE_PRICE.lifetime} once to own it outright. The other ${GALLERY_COUNT} snapcn components are free and MIT.`,
+        answer: `No. It is one of ${PRO_GALLERY_ITEMS.length} Pro components, sold together: ${CATALOGUE_PRICE.annual} a year for the whole catalogue and everything that ships while your year runs, or ${CATALOGUE_PRICE.lifetime} once to own it outright. The other ${GALLERY_COUNT} snapcn components are free and ${MIT}.`,
       },
     ];
   }
@@ -367,8 +377,7 @@ export function componentQuestions(slug: string, item: GalleryItem) {
     what,
     {
       question: `What do I need before using ${item.name}?`,
-      answer:
-        "An existing Remotion project (`npx create-video@latest`) with a `components.json`. `shadcn init` does not recognise Remotion, so the installation guide has you write that file by hand — it takes two minutes. The component is MIT licensed and free.",
+      answer: `An existing ${REMOTION} project (\`npx create-video@latest\`) with a \`components.json\`. \`shadcn init\` does not recognise Remotion, so the installation guide has you write that file by hand — it takes two minutes. The component is ${MIT} licensed and free.`,
     },
   ];
 }
@@ -396,7 +405,12 @@ export function faqPage(
     mainEntity: questions.map(({ question, answer }) => ({
       "@type": "Question",
       name: question,
-      acceptedAnswer: { "@type": "Answer", text: answer.replaceAll("`", "") },
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: answer
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+          .replaceAll("`", ""),
+      },
     })),
   };
 }

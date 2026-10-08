@@ -247,7 +247,7 @@
   html {
     @apply font-sans;
     scroll-behavior: smooth;
-    scroll-padding-top: 80px;
+    scroll-padding-top: calc(80px + var(--fd-banner-height, 0px));
   }
 
   /* The gallery card ↔ overlay morph (see shared-media-transition.ts).
@@ -391,25 +391,7 @@ video.demo-video::-webkit-media-controls-overlay-enclosure {
   box-shadow: var(--shadow-card);
 }
 
-/**
- * The showcase wall (see `sections/showcase-carousel.tsx`).
- *
- * Positions are written by rAF, so there is almost nothing to do here — except
- * the one case where the wall must not move at all. Stopping it is not enough:
- * a stationary row of absolutely positioned cards puts most of the registry off
- * the right-hand side where no one can reach it. So reduced motion turns the
- * same DOM into an ordinary horizontal scroller, and `--wall-span` (measured in
- * the component) gives the track a real width to scroll through.
- */
 @media (prefers-reduced-motion: reduce) {
-  .wall {
-    overflow-x: auto;
-  }
-
-  .wall .wall-track {
-    width: var(--wall-span, 100%);
-  }
-
   /* `canMorph()` already declines to start one, so this only catches a
      transition begun before the setting changed mid-flight. Belt and braces:
      a half-finished morph is worse than none. */

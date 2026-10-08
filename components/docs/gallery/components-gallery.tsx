@@ -1,7 +1,5 @@
 import { Suspense } from "react";
 import { preload } from "react-dom";
-import { ProBanner } from "@/components/pro-banner";
-import { PRO_ITEMS } from "@/config/catalogue";
 import { renderedDemoPoster } from "@/lib/demo-urls";
 import {
   CATALOGUE_ITEMS,
@@ -52,8 +50,7 @@ export async function ComponentsGallery({ open }: { open?: string }) {
 
   return (
     <>
-      <GalleryHeaderRow meta={meta} />
-      <ProBanner count={PRO_ITEMS.length} className="mb-6 rounded-xl" />
+      <GalleryHeaderRow meta={meta} titleAs={open ? "p" : "h1"} />
       <div className="pb-24">
         {/* GalleryExplorer reads the filter/sort/item from the URL via nuqs
             (useSearchParams), which requires a Suspense boundary on this
@@ -87,7 +84,7 @@ function GalleryGridFallback() {
     <div className="not-prose">
       {/* Matches GalleryExplorer's bar exactly — no border-b, or the fallback
           flashes a rule that the real bar does not have. */}
-      <div className="sticky top-0 z-30 -mx-6 bg-background/90 px-6 py-3 backdrop-blur lg:-mx-8 lg:px-8">
+      <div className="sticky top-[var(--fd-banner-height,0px)] z-30 -mx-6 bg-background/90 px-6 py-3 backdrop-blur lg:-mx-8 lg:px-8">
         <div className="flex items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
             <span className="shrink-0 rounded-full bg-foreground px-3.5 py-1.5 text-sm font-medium text-background">

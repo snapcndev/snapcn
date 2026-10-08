@@ -5,6 +5,7 @@ import localFont from "next/font/local";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
+import { SaleBanner } from "@/components/sale-banner";
 import { cn } from "@/lib/utils";
 import { PostHogProvider } from "./posthog-provider";
 import { SnapCnThemeBridge } from "./snap-cn-theme-bridge";
@@ -203,6 +204,7 @@ export default function RootLayout({
                 search={{ preload: false }}
               >
                 <ThemeShortcut />
+                <SaleBanner />
                 <SnapCnThemeBridge>{children}</SnapCnThemeBridge>
               </RootProvider>
             </NuqsAdapter>

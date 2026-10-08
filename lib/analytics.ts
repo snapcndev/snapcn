@@ -42,6 +42,8 @@ import { withPostHog } from "@/lib/posthog-client";
  * under a name that reads like intent — worse than not measuring it.
  */
 export type CtaId =
+  /** The site-wide early-bird bar: does a deadline on every page move people to pricing? */
+  | "sale_banner"
   | "hero_editor"
   | "hero_browse"
   | "hero_ui_badge"
@@ -83,11 +85,33 @@ export type CtaId =
    */
   | "account_menu_upgrade";
 
-type AnalyticsEvents = {
+export type AnalyticsEvents = {
   install_command_copied: {
     component: string;
     package_manager: "pnpm" | "npm" | "yarn" | "bun" | "prompt";
     surface: "docs" | "landing";
+  };
+  /**
+   * A row of the "Copy prompt" menu on a component's panel. Which agent or app
+   * builder do people take a component into, and is a prompt used more than the
+   * bare CLI line? Like the install copy, it is intent: the install itself is
+   * still `registry_component_fetched`.
+   */
+  component_prompt_used: {
+    component: string;
+    action:
+      | "prompt"
+      | "source"
+      | "image"
+      | "cli"
+      | "claude-code"
+      | "codex"
+      | "cursor"
+      | "replit"
+      | "lovable"
+      | "bolt"
+      | "v0"
+      | "mcp";
   };
   /**
    * "Add to Remotion Studio" — the install with no CLI and no `components.json`.

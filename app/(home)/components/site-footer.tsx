@@ -7,6 +7,7 @@ import {
   GALLERY_COUNT,
 } from "@/lib/gallery-data";
 import { cn } from "@/lib/utils";
+import { HeaderLogo } from "./header-parts";
 
 /**
  * Sitemap footer: one column per group, each headed by a mono eyebrow.
@@ -26,7 +27,7 @@ import { cn } from "@/lib/utils";
  * also keeps the whole thing on the compositor; no layout is touched.
  */
 const LINK = cn(
-  "group relative inline-flex w-fit items-center text-sm text-foreground/75",
+  "group relative inline-flex w-fit items-center text-[0.9375rem] text-foreground",
   "transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none",
   "before:pointer-events-none before:absolute before:left-0 before:top-[1.5em] before:h-[0.05em] before:w-full before:bg-current before:content-['']",
   "before:origin-right before:scale-x-0 before:transition-transform before:duration-300 before:ease-[cubic-bezier(0.4,0,0.2,1)]",
@@ -56,65 +57,70 @@ function DrawArrow() {
   );
 }
 
+const EYEBROW = "text-sm text-muted-foreground";
+
+type Group = {
+  title: string;
+  href?: string;
+  links: { href: string; label: string; pro?: boolean }[];
+};
+
+const GROUPS: Group[] = [
+  ...GALLERY_CATEGORIES.map((category) => ({
+    title: category.label,
+    href: `/docs/${category.id}`,
+    links: CATALOGUE_ITEMS.filter((item) => item.category === category.id).map(
+      (item) => ({ href: item.href, label: item.name, pro: item.pro }),
+    ),
+  })).filter((group) => group.links.length > 0),
+  ...FOOTER_COLUMNS,
+];
+
 export function SiteFooter() {
   return (
     <footer className="border-t border-border">
       <div className="section pt-14 pb-12 sm:pt-16">
-        {/* Every component by name, under its category.
-            CSS columns rather than a grid: the categories run from 2 entries to
-            22, and a grid of seven blocks with those heights leaves a column of
-            white space beside Captions. `break-inside-avoid` keeps a category
-            whole. Derived from CATALOGUE_ITEMS, so a component cannot ship and
-            be missing from here. */}
-        <div className="columns-1 gap-x-8 sm:columns-2 lg:columns-3 xl:columns-4">
-          {GALLERY_CATEGORIES.map((category) => {
-            const items = CATALOGUE_ITEMS.filter(
-              (item) => item.category === category.id,
-            );
-            if (items.length === 0) return null;
-            return (
-              <div key={category.id} className="mb-10 break-inside-avoid">
-                <Link
-                  href={`/docs/${category.id}`}
-                  className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {category.label}
-                </Link>
-                <ul className="mt-4 flex flex-col gap-3">
-                  {items.map((item) => (
-                    <li key={item.href}>
-                      {/* Paid ones too: each has its own page now, and this is
-                          the one link to it on every page of the site. */}
-                      <Link href={item.href} className={LINK}>
-                        {item.name}
-                      </Link>
-                      {item.pro ? (
-                        <span className="ml-1.5 align-middle font-mono text-[0.625rem] uppercase tracking-[0.1em] text-muted-foreground">
-                          Pro
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-10 border-t border-border pt-12 sm:grid-cols-3">
-          {FOOTER_COLUMNS.map(({ title, links }) => (
-            <div key={title}>
-              <p className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {title}
-              </p>
-              <ul className="mt-4 flex flex-col gap-3">
-                {links.map(({ href, label }) => {
-                  // Anything off-site opens in a new tab and says so, rather
-                  // than silently navigating away from the docs.
-                  const external = href.startsWith("http");
-                  return (
+        {/* Every component by name under its category, then the site links —
+            one flow, no divider. CSS columns rather than a grid: the groups run
+            from 2 entries to 22, and a grid of blocks with those heights leaves
+            holes. `break-inside-avoid` keeps a group whole. Derived from
+            CATALOGUE_ITEMS, so a component cannot ship and be missing here. */}
+        {/* Logo and licence on the left, the link groups in three columns on
+            the right — ElevenLabs' footer layout. */}
+        <div className="grid gap-12 lg:grid-cols-[1fr_3fr]">
+          <div className="flex flex-col gap-4">
+            <HeaderLogo />
+            {/* Not a bare "MIT licensed": half the catalogue is paid, and a
+                licence line that covers half of it is a small untruth. */}
+            <p
+              className="max-w-[16rem] text-sm text-muted-foreground"
+              suppressHydrationWarning
+            >
+              © {new Date().getFullYear()} snapcn — {GALLERY_COUNT} components
+              MIT licensed, {CATALOGUE_COUNT - GALLERY_COUNT} Pro
+            </p>
+          </div>
+          <div className="columns-2 gap-x-8 md:columns-3">
+            {GROUPS.map(({ title, href, links }) => (
+              <div key={title} className="mb-10 break-inside-avoid">
+                {href ? (
+                  <Link
+                    href={href}
+                    className={cn(
+                      EYEBROW,
+                      "transition-colors hover:text-foreground",
+                    )}
+                  >
+                    {title}
+                  </Link>
+                ) : (
+                  <p className={EYEBROW}>{title}</p>
+                )}
+                <ul className="mt-4 flex flex-col gap-2.5">
+                  {links.map(({ href, label, pro }) => (
                     <li key={href}>
-                      {external ? (
+                      {/* Anything off-site opens in a new tab and says so. */}
+                      {href.startsWith("http") ? (
                         <a
                           href={href}
                           target="_blank"
@@ -129,24 +135,18 @@ export function SiteFooter() {
                           {label}
                         </Link>
                       )}
+                      {pro ? (
+                        <span className="ml-1.5 align-middle font-mono text-[0.625rem] uppercase tracking-[0.1em] text-muted-foreground">
+                          Pro
+                        </span>
+                      ) : null}
                     </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-
-        <p
-          className="mt-14 text-sm text-muted-foreground sm:mt-16"
-          suppressHydrationWarning
-        >
-          {/* Not a bare "MIT licensed" any more: the grid this page sends
-              people to is 46% paid, and a licence line that covers half of it
-              is the kind of small untruth a reader notices later. */}
-          © {new Date().getFullYear()} snapcn — {GALLERY_COUNT} components MIT
-          licensed, {CATALOGUE_COUNT - GALLERY_COUNT} Pro
-        </p>
       </div>
     </footer>
   );

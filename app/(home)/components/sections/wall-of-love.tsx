@@ -54,12 +54,6 @@ ${SITE_URL}`,
   },
 ] as const;
 
-const DATE_FMT = new Intl.DateTimeFormat("en", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-
 export function WallOfLove() {
   return (
     // Bottom padding only, like every other section here: the showcase wall
@@ -71,77 +65,94 @@ export function WallOfLove() {
           {/* At the same size the changelog and the hero use — the size is what
               keeps this section on the same page as the two above it, and now
               the alignment matches them too. */}
-          <h2 className="mx-auto max-w-[14ch] text-pretty text-center font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
+          <h2 className="ml-auto max-w-[14ch] text-pretty text-right font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
             What people are saying
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-pretty text-center text-body-lg text-current/70">
+          <p className="mt-5 ml-auto max-w-xl text-pretty text-right text-body-lg text-current/70">
             Real posts from X. Every card links to the original.
           </p>
         </FadeUp>
 
         <FadeUp delay={0.08}>
-          <ul className="mt-12 gap-4 sm:columns-2 lg:columns-3">
-            {WALL_POSTS.map((post) => (
-              <li key={post.handle} className="mb-4 break-inside-avoid">
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex h-full flex-col gap-3 rounded-xl border border-border p-5 transition-colors hover:bg-muted/60"
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Plain <img>: these are nine 400px avatars copied into
+          {/* "Show more" without JavaScript: a hidden checkbox the label toggles,
+              and the wall's height cap keyed off it with `peer-checked`. */}
+          <input
+            id="wall-more"
+            type="checkbox"
+            className="peer sr-only"
+            aria-label="Show all posts"
+          />
+          <div className="relative mt-12 max-h-[44rem] overflow-hidden peer-checked:max-h-none peer-checked:[&>[data-fade]]:hidden">
+            <ul className="gap-4 sm:columns-2 lg:columns-4">
+              {WALL_POSTS.map((post) => (
+                <li key={post.handle} className="mb-4 break-inside-avoid">
+                  <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex h-full flex-col gap-4 rounded-[1.25rem] border border-border/60 bg-card p-6 transition-colors hover:bg-muted/60"
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Plain <img>: these are nine 400px avatars copied into
                         /public, already the right size and shape. next/image
                         would add a resize round-trip for no gain. */}
-                    {/* biome-ignore lint/performance/noImgElement: local, fixed-size avatar. */}
-                    <img
-                      src={`/wall-of-love/${post.handle}.jpg`}
-                      alt=""
-                      width={40}
-                      height={40}
-                      loading="lazy"
-                      decoding="async"
-                      className="size-10 shrink-0 rounded-full object-cover"
-                    />
-                    <span className="min-w-0">
-                      {/* A row, not a block, so the badge sits on the name's
+                      {/* biome-ignore lint/performance/noImgElement: local, fixed-size avatar. */}
+                      <img
+                        src={`/wall-of-love/${post.handle}.jpg`}
+                        alt=""
+                        width={48}
+                        height={48}
+                        loading="lazy"
+                        decoding="async"
+                        className="size-12 shrink-0 rounded-full object-cover"
+                      />
+                      <span className="min-w-0">
+                        {/* A row, not a block, so the badge sits on the name's
                           baseline and the *name* is what truncates — put the
                           badge inside the truncating span and a long name eats
                           it before it eats itself. */}
-                      <span className="flex min-w-0 items-center gap-1">
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {post.name}
+                        <span className="flex min-w-0 items-center gap-1">
+                          <span className="truncate text-base font-medium text-foreground">
+                            {post.name}
+                          </span>
+                          {post.verified ? <VerifiedIcon /> : null}
                         </span>
-                        {post.verified ? <VerifiedIcon /> : null}
+                        <span className="block truncate text-sm text-current/50">
+                          @{post.handle}
+                        </span>
                       </span>
-                      <span className="block truncate text-sm text-current/50">
-                        @{post.handle}
-                      </span>
-                    </span>
-                    <XIcon className="ml-auto size-4 shrink-0 text-current/30" />
-                  </div>
+                      <XIcon className="mb-auto ml-auto size-4 shrink-0 text-current/40" />
+                    </div>
 
-                  {/* `whitespace-pre-line` keeps the author's own line breaks —
+                    {/* `whitespace-pre-line` keeps the author's own line breaks —
                       the posts use them as structure (bullets, a beat between
                       thoughts) and reflowing them into a block loses that.
                       `lang` so the right CJK/Latin faces are picked. */}
-                  <p
-                    lang={post.lang}
-                    className="whitespace-pre-line text-pretty text-sm leading-relaxed text-current/80"
-                  >
-                    {post.quote}
-                  </p>
-
-                  <time
-                    dateTime={post.date}
-                    className="mt-auto text-xs text-current/40"
-                  >
-                    {DATE_FMT.format(new Date(post.date))}
-                  </time>
-                </a>
-              </li>
-            ))}
-          </ul>
+                    <p
+                      lang={post.lang}
+                      className="whitespace-pre-line text-pretty text-[0.9375rem] leading-relaxed text-current/85"
+                    >
+                      {post.quote}
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <div
+              data-fade
+              className="absolute inset-x-0 bottom-0 flex h-48 items-end justify-center bg-gradient-to-t from-background via-background/80 to-transparent pb-2"
+            >
+              <label
+                htmlFor="wall-more"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "cursor-pointer bg-background",
+                )}
+              >
+                Show more
+              </label>
+            </div>
+          </div>
         </FadeUp>
 
         <FadeUp delay={0.14}>

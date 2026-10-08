@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { preload } from "react-dom";
-import { PRO_ITEMS } from "@/config/catalogue";
 import {
   RENDERED_DEMOS,
   renderedDemoPoster,
@@ -11,6 +10,7 @@ import {
   GALLERY_COUNT,
   GALLERY_ITEMS,
 } from "@/lib/gallery-data";
+import { PageJsonLd } from "@/lib/page-json-ld";
 import { FAQ_ITEMS, Faq } from "./components/sections/faq";
 import { Hero } from "./components/sections/hero";
 import { HowItWorks } from "./components/sections/how-it-works";
@@ -132,12 +132,8 @@ export default function Page() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD built from constants
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <Hero proCount={PRO_ITEMS.length} />
+      <PageJsonLd graph={jsonLd["@graph"]} path="/" />
+      <Hero />
       <ShowcaseCarousel slides={SLIDES} />
       <WhatYouGet />
       <HowItWorks />

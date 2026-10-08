@@ -19,22 +19,18 @@ export type SyntaxPalette = {
   plain: string;
 };
 
-// Fixed dark editor palette (mirrors the reference mock).
+// GitHub Dark Default, the pair to the GitHub-light palette below. (It was
+// Material's purples, which read as a theme choice rather than as code.)
 export const SYNTAX_DARK: SyntaxPalette = {
-  keyword: "#c792ea",
-  type: "#c9b3ff",
-  fn: "#82aaff",
-  prop: "#a6accd",
-  string: "#c3e88d",
-  number: "#89ddff",
-  boolean: "#f78c6c",
-  // Comments and punctuation, lightened from Material's #676e95. That value is
-  // lit for Material's own #292d3e surface; on this panel's #0a0a0a it measures
-  // 3.87:1 and fails AA. Same hue and chroma, walked up in OKLCH to 4.66:1 —
-  // and a code comment nobody can read is a code comment that may as well not
-  // be in the snippet.
-  punctuation: "#747ba3",
-  plain: "#bcc2e0",
+  keyword: "#ff7b72",
+  type: "#ffa657",
+  fn: "#d2a8ff",
+  prop: "#79c0ff",
+  string: "#a5d6ff",
+  number: "#79c0ff",
+  boolean: "#79c0ff",
+  punctuation: "#8b949e",
+  plain: "#e6edf3",
 };
 
 // Light editor palette (GitHub-light flavoured) for the same token kinds.

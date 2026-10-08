@@ -1,0 +1,110 @@
+---
+title: Font Shuffle
+description: A launch title that decodes out of scrambled glyphs, flashes the accent, settles to ink, then the product name tries on eleven typefaces while the line steps closer
+---
+
+<ComponentPreview name="font-shuffle" />
+
+A launch line, `Introducing snapcn Pro`. It decodes out of scrambled glyphs set
+in the wrong typeface, lands in the accent, settles to ink and holds. Then the
+product name tries on eleven typefaces: mono, light, humanist, pixel, script,
+slab, condensed, italic, blackletter, wide and a bold grotesk. The whole line
+steps closer on every swap.
+
+## How it moves
+
+**Nothing tweens. Every beat is a held state.** The decode, the accent flash
+and the swaps are cuts on the 30fps frame grid, the way the original was made:
+two frames per decode beat, one for the full accent line, three or four per
+typeface.
+
+**The decode is the real line, half-hidden.** It is set in a Baskerville with a
+per-character mask, plus a handful of oversized foreign glyphs (`b`, `e`, `a`)
+that hang on from one beat to the next. Longer or shorter copy samples the same
+mask proportionally, so the density stays the same.
+
+**Each swap is also a zoom.** The line stays centred and steps from ×1.03 to
+×1.25 about the middle of the frame. The lead keeps its serif. Only the subject
+changes face.
+
+## Notes
+
+Every beat was measured off a 2s screen recording, frame by frame. Each was
+fitted in BT.709 Y′CbCr through the capture's own blur, then verified by
+rendering this component at the recording's size and timestamps and diffing the
+two. Timing, layout, zoom and colour are the recording's.
+
+The recording's typefaces are not free, so each one was fingerprinted against
+every Google family in its category and the closest taken: Source Serif 4 (text
+cut, pinned), Libre Baskerville, Fragment Mono, Hind, a pixel face and Mona Sans.
+They load from fontsource; if one cannot, the next face in its stack paints.
+
+The accent is the title's own colour, not a theme token. Pass `accent` to
+change it.
+
+## Installation
+
+<InstallBlock name="font-shuffle" />
+
+## Component code
+
+The exact file `shadcn add` copies into your project.
+
+<ComponentSource name="font-shuffle" />
+
+## Usage
+
+```tsx
+// src/Root.tsx
+import { Composition } from "remotion";
+import { FontShuffle } from "@/components/snap-cn/font-shuffle";
+
+const Launch = () => <FontShuffle lead="Introducing" subject="snapcn Pro" />;
+
+export const RemotionRoot = () => (
+  <Composition
+    id="FontShuffle"
+    component={Launch}
+    durationInFrames={115}
+    fps={30}
+    width={1280}
+    height={720}
+  />
+);
+```
+
+## Props
+
+<PropsTable
+  rows={[
+    {
+      name: "lead",
+      type: "string",
+      default: '"Introducing"',
+      description: "The fixed half of the line. Stays in the serif throughout",
+    },
+    {
+      name: "subject",
+      type: "string",
+      default: '"snapcn Pro"',
+      description: "The half that tries on typefaces",
+    },
+    {
+      name: "accent",
+      type: "string",
+      default: '"#9b8ed3"',
+      description: "The colour the line lands in before it settles to ink",
+    },
+    {
+      name: "theme",
+      type: "Partial<SnapCnTheme>",
+      description:
+        "Design-system token overrides. Anything you leave out falls back to the shadcn defaults",
+    },
+    {
+      name: "mode",
+      type: '"light" | "dark"',
+      description: "Which end of the design system to resolve tokens against",
+    },
+  ]}
+/>

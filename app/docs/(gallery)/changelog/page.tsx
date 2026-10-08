@@ -9,12 +9,8 @@ import {
   itemsByReleaseDate,
 } from "@/lib/gallery-data";
 import { metaDescription, metaTitle } from "@/lib/meta";
-import {
-  docsBreadcrumb,
-  JsonLd,
-  PUBLISHER,
-  SITE_URL,
-} from "@/lib/structured-data";
+import { PageJsonLd } from "@/lib/page-json-ld";
+import { docsBreadcrumb, PUBLISHER, SITE_URL } from "@/lib/structured-data";
 
 const { title: TITLE, description: DESCRIPTION } = DOCS_PAGE_META["changelog"];
 /** Per-page card. `/og` alone is the generic site card. */
@@ -106,7 +102,7 @@ export default function ChangelogPage() {
 
   return (
     <GalleryFrame>
-      <JsonLd graph={jsonLd} />
+      <PageJsonLd graph={jsonLd} path="/docs/changelog" />
       <DocsTopBar />
 
       <div className="mx-auto w-full max-w-3xl py-12 sm:py-16">

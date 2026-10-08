@@ -115,7 +115,7 @@ export function HowItWorks() {
     >
       <div className="section">
         <FadeUp>
-          <h2 className="mx-auto max-w-[12ch] text-pretty text-center font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
+          <h2 className="ml-auto max-w-[12ch] text-pretty text-right font-sans text-[clamp(2.25rem,4.6vw,3.5rem)] font-normal leading-[1.06] tracking-[-0.03em] text-foreground">
             Compose it, then animate it
           </h2>
         </FadeUp>

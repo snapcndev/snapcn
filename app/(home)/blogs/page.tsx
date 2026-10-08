@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { JsonLd, PUBLISHER, SITE_URL } from "@/lib/structured-data";
+import { PageJsonLd } from "@/lib/page-json-ld";
+import { PUBLISHER, SITE_URL } from "@/lib/structured-data";
 import { blogPosts } from "@/source";
 
 const TITLE = "Blog";
@@ -45,7 +46,8 @@ export default function BlogIndexPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pt-12 pb-20 md:pt-16 md:pb-28">
-      <JsonLd
+      <PageJsonLd
+        path="/blogs"
         graph={[
           {
             "@type": "Blog",

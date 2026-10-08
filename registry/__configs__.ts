@@ -10,6 +10,7 @@ import { channelThreadConfig } from "@/registry/snap-cn/channel-thread/config";
 import { checkCycleConfig } from "@/registry/snap-cn/check-cycle/config";
 import { countGridConfig } from "@/registry/snap-cn/count-grid/config";
 import { cursorTrackConfig } from "@/registry/snap-cn/cursor-track/config";
+import { fontShuffleConfig } from "@/registry/snap-cn/font-shuffle/config";
 import { followerRushConfig } from "@/registry/snap-cn/follower-rush/config";
 import { heroLaunchConfig } from "@/registry/snap-cn/hero-launch/config";
 import { karaokeCaptionsConfig } from "@/registry/snap-cn/karaoke-captions/config";
@@ -93,6 +94,7 @@ export const CONFIGS: Record<string, ComponentConfig> = {
   "orb-swarm": orbSwarmConfig,
   "word-wheel": wordWheelConfig,
   "capture-reveal": captureRevealConfig,
+  "font-shuffle": fontShuffleConfig,
   "check-cycle": checkCycleConfig,
   "text-highlight": textHighlightConfig,
   "text-reveal": textRevealConfig,
